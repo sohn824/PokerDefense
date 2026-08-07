@@ -11,8 +11,10 @@
 
 ## 현재 상태 요약
 
-- **진행 단계:** M1 완료 (포커 코어 + 테스트) + 템플릿 잔재 정리
+- **진행 단계:** M0·M1 완료. M2 착수 가능
 - **코드:** `Assets/_Project/Scripts/Poker/` (Card, Deck, HandCategory, HandResult, HandEvaluator), `Assets/_Project/Scripts/Tests/Editor/`
+- **씬:** `_Project/Scenes/Boot.unity`(빌드 0), `Game.unity`(빌드 1). 둘 다 직교 카메라 하나뿐인 빈 씬
+- **렌더링:** URP 2D (`Assets/Settings/PokerDefense_2DRenderer.asset`, PC·Mobile RP 에셋 양쪽에 연결)
 - **어셈블리:** asmdef 없음. 게임 코드는 `Assembly-CSharp`, 테스트는 `Assembly-CSharp-Editor`
 - **테스트:** EditMode 36/36 통과 (2026-08-07 확인)
 - **지켜야 할 관례:** 레이어 역방향 `using` 금지, `Poker`에서 `UnityEngine.Random` 금지(재현성), ScriptableObject·MonoBehaviour 금지 — DESIGN.md §2 참조
@@ -22,6 +24,22 @@
 ---
 
 ## 이력
+
+### 2026-08-07 — M0 마무리 (렌더러 / 씬 / 폴더)
+
+M1을 먼저 하느라 미뤄둔 M0 잔여분을 처리했다. M2(카드 UI)는 이게 없으면 시작할 수 없다.
+
+- **URP 2D 렌더러로 전환.** `PC_Renderer`·`Mobile_Renderer`가 둘 다 `UniversalRendererData`(3D)였다. URP 3D 템플릿 그대로였던 것. `PokerDefense_2DRenderer.asset`(`Renderer2DData`)을 만들어 `PC_RPAsset`·`Mobile_RPAsset` 양쪽의 `m_RendererDataList`를 교체했다.
+  - URP 17에서는 `ResourceReloader`가 사라졌다(셰이더 리소스가 `GraphicsSettings`로 이동). 그래서 렌더러 에셋에 리소스를 채우는 단계가 필요 없었다.
+- **씬 2개 생성.** `_Project/Scenes/Boot.unity`, `Game.unity`. 각각 직교 카메라(size 5, Solid Color) 하나가 전부다. `UniversalAdditionalCameraData`를 명시적으로 붙여 런타임 자동 추가를 피했다.
+- **빌드 세팅:** Boot(0) → Game(1).
+  - 함정: `manage_build`로 씬 목록을 바꿔도 `EditorBuildSettings.asset`은 디스크에 즉시 안 써진다. `File/Save Project`를 실행해야 반영된다.
+- **고아 에셋 삭제.** `Assets/Settings/` 전체와 후보들의 GUID 참조를 전수 조사한 뒤 참조 0건인 것만 지웠다.
+  - 삭제: `PC_Renderer.asset`, `Mobile_Renderer.asset`(2D 렌더러로 교체되며 고아가 됨), `Assets/Scenes/SampleScene.unity` 및 빈 `Assets/Scenes/` 폴더
+  - **`SampleSceneProfile.asset`은 남겼다.** `PC_RPAsset`·`Mobile_RPAsset`의 `m_VolumeProfile`이 이걸 가리킨다. URP 템플릿이 만든 배선이라 이름이 프로젝트와 안 맞지만 실제로 쓰이고 있다. `DefaultVolumeProfile`로 갈아끼우는 건 포스트프로세싱 값이 바뀌는 일이라 지금 범위 밖.
+  - `InputSystem_Actions.inputactions`도 유지 — `ProjectSettings/EditorBuildSettings.asset`이 참조 중.
+- **폴더 뼈대 생성** (DESIGN §2 구조대로 18개). 각 리프에 `.gitkeep`을 뒀다. 빈 폴더는 git이 추적하지 않는데 Unity가 만든 폴더 `.meta`는 추적되므로, 클론하면 고아 `.meta`가 생긴다. Unity는 `.`으로 시작하는 파일을 무시하므로 `.gitkeep.meta`는 생기지 않는다(확인함).
+- **검증:** 삭제 후 Boot·Game 각각 플레이 진입/종료 — **콘솔 에러·경고 0건**. 삭제한 3개 GUID의 잔여 참조 0건. EditMode 36/36 통과(1.01s). M0 검증 조건("빈 씬이 에러 없이 실행됨") 충족.
 
 ### 2026-08-07 — asmdef 전면 폐지
 
@@ -68,7 +86,7 @@
   - Deck: 중복 없는 52장, 동일 시드 재현성, 고갈 시 예외
 - 테스트 표기용 헬퍼 `Hand.Of("As Ks Qs Js Ts")`는 테스트 어셈블리에만 둔다. 프로덕션 코드에 파서를 넣지 않았다.
 - **검증:** Unity Test Runner EditMode 36/36 통과 (1.09s). 컴파일 에러·경고 없음.
-- **남은 것:** M0 중 **URP 2D 렌더러 설정과 씬 생성은 아직 하지 않았다** (M1이 순수 C#이라 필요하지 않았음). M2 착수 전에 처리해야 한다. 족보→유닛 매핑 테이블(`HandUnitTable`)은 M3에서 만든다.
+- **남은 것:** M0 중 **URP 2D 렌더러 설정과 씬 생성은 아직 하지 않았다** (M1이 순수 C#이라 필요하지 않았음). M2 착수 전에 처리해야 한다. → 2026-08-07에 처리 완료. 족보→유닛 매핑 테이블(`HandUnitTable`)은 M3에서 만든다.
 
 ### 2026-08-06 — 기본 구조 설계
 
