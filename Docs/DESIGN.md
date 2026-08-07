@@ -46,10 +46,20 @@
 
 ## 2. 어셈블리 / 레이어 구조
 
-3개 어셈블리로 나눈다. 목적은 **포커 로직을 Unity 없이 테스트 가능하게 만드는 것** 하나뿐이다.
+**asmdef를 쓰지 않는다.** 모든 코드가 Unity의 predefined assembly에 들어간다.
 
 ```
-PokerDefense.Poker      ← 순수 C#. UnityEngine 참조 없음. EditMode 테스트 대상
+Assembly-CSharp           ← 게임 코드 전부 (Poker/Game/UI)
+        ↑
+Assembly-CSharp-Editor    ← Editor/ 폴더 밑. EditMode 테스트
+```
+
+`Assembly-CSharp-Editor`는 `Assembly-CSharp`을 자동으로 참조하므로 테스트가 게임 코드를 볼 수 있다. 에디터에서 폴더만 만들면 되고 설정할 것이 없다.
+
+### 레이어는 폴더와 네임스페이스로만 표현한다
+
+```
+PokerDefense.Poker      ← 포커 규칙 전용
         ↑
 PokerDefense.Game       ← 런타임 전체 (플로우/보드/유닛/적/데이터 SO)
         ↑
@@ -57,7 +67,29 @@ PokerDefense.UI         ← 카드 UI, HUD, 팝업
 ```
 
 - `Poker`는 `Game`을 모른다. `Game`은 `UI`를 모른다 (UI가 `Game`을 구독).
-- `UI` 분리는 카드 연출과 전투 로직이 서로를 오염시키지 않게 하기 위함. 규모가 더 커지지 않으면 이 3개에서 늘리지 않는다.
+- **이 방향을 컴파일러가 강제하지 않는다.** 한 어셈블리이므로 어느 쪽이든 서로를 참조할 수 있다. 지키는 것은 전적으로 관례다.
+
+### 관례로 지킬 것
+
+- **역방향 참조 금지.** `Poker` 네임스페이스 안에서 `PokerDefense.Game`/`PokerDefense.UI`를 `using` 하지 않는다. `Game`에서 `PokerDefense.UI`를 `using` 하지 않는다.
+- **셔플에 `UnityEngine.Random`을 쓰지 않는다.** 전역 정적 상태라 인스턴스별 시드를 잡을 수 없고, 그러면 `Deck(int seed)`의 재현성 테스트가 성립하지 않는다. `System.Random` 주입을 유지한다.
+- **`Poker`에 ScriptableObject·MonoBehaviour를 두지 않는다.** 족보 → 유닛 매핑처럼 게임 밸런스에 속하는 것은 `Game`의 `HandUnitTable`이 담당한다.
+
+컴파일러가 막아주지 않으므로 이 세 줄이 유일한 방어선이다. 어겨도 빌드는 통과한다.
+
+### 테스트가 asmdef 없이 동작하는 근거
+
+Unity Test Framework 1.6.0 소스 기준:
+
+- `EditorLoadedTestAssemblyProvider.cs` — 테스트 러너는 asmdef를 보지 않는다. **로드된 어셈블리 중 `nunit.framework`를 참조하는 것**을 전부 스캔하고, `AssemblyFlags.EditorOnly`면 EditMode로 분류한다. `Assembly-CSharp-Editor`가 여기에 해당한다.
+- `FolderPathTestCompilationContextProvider.cs` — 경로에 `Editor` 폴더가 있으면 테스트 스크립트가 컴파일 가능한 위치로 인정한다.
+- `nunit.framework.dll`(`com.unity.ext.nunit`)은 `isExplicitlyReferenced: 0`이라 predefined assembly가 자동 참조한다.
+
+**대신 포기한 것:**
+
+- `[UnityTest]`, `LogAssert` 등 `UnityEngine.TestTools`를 쓸 수 없다. `UnityEngine.TestRunner.asmdef`가 `autoReferenced: false`라 predefined assembly가 자동 참조하지 않는다. 순수 NUnit(`[Test]`, `[TestCase]`, `Assert`)만 가능하다.
+- PlayMode 테스트 불가. 필요해지면 그때 테스트용 asmdef를 하나 만든다.
+- 파일 하나 고쳐도 전체 재컴파일. 이 규모에서는 체감되지 않는다.
 
 ### 폴더 구조
 
@@ -69,15 +101,15 @@ Assets/_Project/
 ├── Prefabs/        Units/, Enemies/, Projectiles/, UI/
 ├── Scenes/         Boot.unity, Game.unity
 └── Scripts/
-    ├── Poker/          (asmdef: PokerDefense.Poker)
-    ├── Game/           (asmdef: PokerDefense.Game)
+    ├── Poker/          namespace PokerDefense.Poker
+    ├── Game/           namespace PokerDefense.Game
     │   ├── Flow/       GameFlowController, RoundContext
     │   ├── Board/      GridBoard, GridSlot, PlacementController, MergeResolver
     │   ├── Units/      UnitInstance, UnitTargeting, UnitAttack, Projectile
     │   ├── Enemies/    EnemyInstance, EnemyPath, WaveRunner, TargetRegistry
     │   └── Data/       *Definition.cs (SO 클래스 정의)
-    ├── UI/             (asmdef: PokerDefense.UI)
-    └── Tests/EditMode/ (asmdef: PokerDefense.Tests.EditMode)
+    ├── UI/             namespace PokerDefense.UI
+    └── Tests/Editor/   → Assembly-CSharp-Editor (폴더명이 Editor여야 함)
 ```
 
 ---
@@ -156,7 +188,7 @@ public static class HandEvaluator
 
 ### 3.4 테스트 (M1의 성공 기준)
 
-`PokerDefense.Tests.EditMode`에서 13개 카테고리 각각의 대표 핸드 + 경계 케이스를 검증한다.
+`Scripts/Tests/Editor/`에서 13개 카테고리 각각의 대표 핸드 + 경계 케이스를 검증한다.
 - 마운틴이 `Straight`가 아니라 `Mountain`으로 잡히는가
 - 백스트레이트가 `Straight`로 잡히지 않는가 (A를 1로 해석)
 - K-A-2-3-4 는 스트레이트가 **아닌가** (랩어라운드 불허)
@@ -239,7 +271,7 @@ PvE 전용이므로 결정론적 고정 틱을 도입하지 않는다. 일반적
 
 | # | 내용 | 검증 조건 |
 |---|---|---|
-| M0 | 폴더/asmdef 뼈대, URP 2D 렌더러 설정 | 빈 씬이 에러 없이 실행됨 |
+| M0 | 폴더 뼈대, URP 2D 렌더러 설정 | 빈 씬이 에러 없이 실행됨 |
 | M1 | 포커 코어 (Card/Deck/HandEvaluator) | §3.4의 EditMode 테스트 전부 통과 |
 | M2 | 카드 UI + 드로우/교체 플로우 | 5장 드로우 → N장 선택 교체 1회 → 족보명 화면 표시 |
 | M3 | 그리드 + 배치 + 머지 | 소환된 유닛 배치 → 동일 유닛 2기 머지 시 ★2 및 스탯 상승 확인 |

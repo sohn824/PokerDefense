@@ -12,14 +12,41 @@
 ## 현재 상태 요약
 
 - **진행 단계:** M1 완료 (포커 코어 + 테스트) + 템플릿 잔재 정리
-- **코드:** `Assets/_Project/Scripts/Poker/` (Card, Deck, HandCategory, HandResult, HandEvaluator), `Assets/_Project/Scripts/Tests/EditMode/`
-- **테스트:** EditMode 36개 전부 통과
+- **코드:** `Assets/_Project/Scripts/Poker/` (Card, Deck, HandCategory, HandResult, HandEvaluator), `Assets/_Project/Scripts/Tests/Editor/`
+- **어셈블리:** asmdef 없음. 게임 코드는 `Assembly-CSharp`, 테스트는 `Assembly-CSharp-Editor`
+- **테스트:** EditMode 36/36 통과 (2026-08-07 확인)
+- **지켜야 할 관례:** 레이어 역방향 `using` 금지, `Poker`에서 `UnityEngine.Random` 금지(재현성), ScriptableObject·MonoBehaviour 금지 — DESIGN.md §2 참조
 - **다음 작업:** M2 — 카드 UI + 드로우/교체 플로우
 - **대기 중인 결정:** DESIGN.md §7 열린 이슈 1번(저등급 편중 완화 수단) — M4 이전 확정 필요
 
 ---
 
 ## 이력
+
+### 2026-08-07 — asmdef 전면 폐지
+
+- **배경:** 어셈블리 분리 없이 에디터만으로 관리하고 싶다는 요청. 바로 전날 기록에 "불가능"이라고 적어둔 것이 있어 Test Framework 1.6.0 패키지 소스를 직접 확인했다.
+- **그 "불가능" 판단은 틀렸다.** 근거로 든 두 명제 중 하나만 맞았다.
+  - 맞음: asmdef는 predefined assembly를 참조할 수 없다.
+  - **틀림:** "Test Runner는 nunit을 참조하는 asmdef가 있어야 테스트를 발견한다." 실제로는 `EditorLoadedTestAssemblyProvider.cs`가 asmdef를 전혀 보지 않고, **로드된 어셈블리 중 `nunit.framework`를 참조하는 것**을 스캔한 뒤 `AssemblyFlags.EditorOnly`면 EditMode로 분류한다.
+  - 그리고 필요한 참조 방향은 `Assembly-CSharp-Editor` → `Assembly-CSharp`인데, 이건 predefined assembly끼리라 자동으로 성립한다. 막히는 방향(asmdef → predefined)과 반대여서 애초에 문제가 아니었다.
+- **변경:**
+  - `PokerDefense.Poker.asmdef`, `PokerDefense.Tests.EditMode.asmdef` 삭제 (각 `.meta` 포함)
+  - `Scripts/Tests/EditMode/` → `Scripts/Tests/Editor/` 폴더명 변경. `FolderPathTestCompilationContextProvider.cs`가 경로에 `Editor` 폴더가 있는지로 판정하므로 이름이 정확히 `Editor`여야 한다.
+  - **C# 코드는 한 줄도 바뀌지 않았다.** 네임스페이스는 어셈블리와 무관하므로 `PokerDefense.Poker` 그대로. 기존 테스트는 순수 NUnit만 써서 참조 손실도 없었다.
+- **포기한 것:** `[UnityTest]`·`LogAssert` 등 `UnityEngine.TestTools` (해당 asmdef가 `autoReferenced: false`), PlayMode 테스트, 그리고 레이어 의존 방향의 컴파일러 강제. 필요해지면 테스트용 asmdef 하나만 되살리면 된다.
+- **검증:** 리프레시 후 `Library/ScriptAssemblies`에서 `PokerDefense.*.dll`이 사라지고 `Assembly-CSharp.dll`·`Assembly-CSharp-Editor.dll`이 생성됨. 콘솔 컴파일 에러 0건. EditMode **36/36 통과** (1.10s).
+
+### 2026-08-06 — Poker 어셈블리의 엔진 참조 허용
+
+- **배경:** M1에서는 `PokerDefense.Poker`를 `noEngineReferences: true`로 두어 UnityEngine 참조를 컴파일 단계에서 차단했다. 셔플 재현성(`System.Random` 주입 강제)과 밸런싱 시뮬레이터의 `dotnet` 콘솔 이식성을 노린 것이었다. 구조가 이해하기 어렵다는 판단에 따라 이 제약을 해제한다.
+- `noEngineReferences: false`로 변경. 이제 `Poker`에서 `Debug.Log` 등 Unity API를 쓸 수 있다.
+- ~~**어셈블리 자체를 없애는 선택지는 검토 결과 불가능했다.**~~ **이 판단은 틀렸다.** 2026-08-07 항목 참조 — 다음 날 asmdef를 전부 제거했다.
+- **컴파일러 대신 관례로 지켜야 하는 것 2가지** (DESIGN.md §2에 기록):
+  - 셔플에 `UnityEngine.Random`을 쓰지 않는다 → 쓰면 `같은_시드는_같은_순서를_만든다` 테스트가 깨진다
+  - `Poker`에 ScriptableObject·MonoBehaviour를 두지 않는다 → 밸런스 데이터는 `Game`의 `HandUnitTable` 담당
+- 코드는 한 줄도 바뀌지 않았다. 권한만 열었다.
+- **검증:** 하지 못했다. Unity MCP 연결이 끊겨 리프레시·테스트 실행이 불가능했다. → 2026-08-07 asmdef 폐지 작업에서 36/36 통과로 확인됨.
 
 ### 2026-08-06 — 프로젝트 정리
 
@@ -31,7 +58,7 @@
 
 ### 2026-08-06 — M1: 포커 코어 구현
 
-- `PokerDefense.Poker` 어셈블리 생성. `noEngineReferences: true`로 두어 UnityEngine 참조를 컴파일 단계에서 차단했다. 설계상의 "순수 C#" 약속이 문서가 아니라 빌드로 강제된다.
+- `PokerDefense.Poker` 어셈블리 생성.
 - `Card`(readonly struct, `IEquatable`), `Deck`(시드 주입 Fisher-Yates, 라운드마다 새로 생성), `HandCategory`(13종), `HandResult`, `HandEvaluator` 구현.
 - `PokerDefense.Tests.EditMode` 어셈블리와 테스트 36개 작성.
   - 13개 카테고리 대표 핸드 전수
