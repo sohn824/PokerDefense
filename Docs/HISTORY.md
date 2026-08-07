@@ -11,19 +11,37 @@
 
 ## 현재 상태 요약
 
-- **진행 단계:** M0·M1 완료. M2 착수 가능
-- **코드:** `Assets/_Project/Scripts/Poker/` (Card, Deck, HandCategory, HandResult, HandEvaluator), `Assets/_Project/Scripts/Tests/Editor/`
-- **씬:** `_Project/Scenes/Boot.unity`(빌드 0), `Game.unity`(빌드 1). 둘 다 직교 카메라 하나뿐인 빈 씬
-- **렌더링:** URP 2D (`Assets/Settings/PokerDefense_2DRenderer.asset`, PC·Mobile RP 에셋 양쪽에 연결)
+- **진행 단계:** M0·M1·M2 완료. M3 착수 가능
+- **코드:** `Scripts/Poker/`(포커 코어), `Scripts/Game/Flow/`(RoundPhase, RoundContext, RoundController), `Scripts/UI/`(CardView, RoundScreen, HandCategoryNames), `Scripts/Tests/Editor/`
+- **씬:** `_Project/Scenes/Boot.unity`(빌드 0, 카메라만), `Game.unity`(빌드 1, 카드 UI 전체)
+- **렌더링:** URP 2D (`Assets/Settings/PokerDefense_2DRenderer.asset`, PC·Mobile RP 에셋 양쪽에 연결). UI는 uGUI + TMP
 - **어셈블리:** asmdef 없음. 게임 코드는 `Assembly-CSharp`, 테스트는 `Assembly-CSharp-Editor`
-- **테스트:** EditMode 36/36 통과 (2026-08-07 확인)
+- **테스트:** EditMode 61/61 통과 (2026-08-07 확인)
 - **지켜야 할 관례:** 레이어 역방향 `using` 금지, `Poker`에서 `UnityEngine.Random` 금지(재현성), ScriptableObject·MonoBehaviour 금지 — DESIGN.md §2 참조
-- **다음 작업:** M2 — 카드 UI + 드로우/교체 플로우
+- **UI 표기는 영문이다.** 한글 폰트가 없어서다. 폰트를 넣으면 `HandCategoryNames.cs` 한 파일만 고치면 된다
+- **다음 작업:** M3 — 그리드 + 배치 + 머지
 - **대기 중인 결정:** DESIGN.md §7 열린 이슈 1번(저등급 편중 완화 수단) — M4 이전 확정 필요
 
 ---
 
 ## 이력
+
+### 2026-08-07 — M2: 카드 UI + 드로우/교체 플로우
+
+- **`RoundContext`(순수 C#)가 페이즈 순서를 강제한다.** Draw → Exchange(자리당 1회, 여러 번 호출) → FinishExchange → Evaluate. 잘못된 순서로 부르면 예외를 던진다. MonoBehaviour가 아니라서 EditMode 테스트가 그대로 붙는다 — 이게 UI를 통하지 않고 규칙을 검증할 수 있는 이유다.
+- **교체는 자리 단위로 잠근다.** `IsLocked(index)`. 한 라운드에 교체를 여러 번 누를 수 있지만 같은 자리는 한 번뿐이라 최대 5장까지 바뀐다. 나눠 바꾸게 한 이유는 바뀐 결과를 보고 다음 선택을 하게 만들기 위함이다(DESIGN §1). 잠긴 자리가 섞인 요청은 **손패를 한 장도 건드리지 않고** 통째로 거부한다 — 검사를 전부 끝낸 뒤에 교체한다.
+- 교체가 여러 번이 되면서 "교체 끝"이 별도 동작이 되어야 했다. `FinishExchange()`와 UI의 `Confirm Hand` 버튼이 그것이다. 버튼이 2개(교체/확정)에서 3개(Exchange/Confirm Hand/New Round)로 늘었다.
+- **`RoundController`(MonoBehaviour)는 이벤트만 노출한다.** `HandChanged`/`PhaseChanged`/`Evaluated`. UI가 구독하고 입력은 메서드로 되돌려준다. Game이 UI를 모르는 상태를 유지했다(DESIGN §2).
+- Evaluate는 종료 조건이 "즉시"라(DESIGN §1) `ConfirmHand` 안에서 교체 종료 직후 바로 판정한다. 플레이어 입력이 필요한 페이즈는 Exchange 하나뿐이다.
+- 잠긴 카드는 `Button.interactable = false`로 표시한다. uGUI의 disabled 틴트가 그대로 "못 바꾸는 자리"로 읽혀서 별도 잠금 아이콘을 두지 않았다.
+- **UI는 uGUI + TextMeshPro.** TMP Essential Resources가 임포트되어 있지 않아 `TMP_PackageResourceImporter.ImportResources(true, false, false)`로 먼저 넣었다(메뉴 항목은 대화창을 띄워 자동화가 안 된다).
+- **`EventSystem`에 `InputSystemUIInputModule`을 붙였다.** `activeInputHandler: 1`(Input System 전용)이라 기본 `StandaloneInputModule`을 쓰면 런타임에 터진다.
+- 카드 5칸은 **씬에 고정**했다. 손패 크기가 상수 5라 프리팹/런타임 생성이 필요 없다.
+- **무늬는 기호(♠) 대신 문자(S/H/D/C).** TMP 기본 폰트 LiberationSans SDF에 카드 심볼 글리프가 없어 기호를 쓰면 두부가 나온다. 같은 이유로 족보명도 영문(`HandCategoryNames`)이다.
+- 선택 하이라이트를 처음엔 글자 위에 얹었더니 랭크·무늬가 뭉개졌다. `SetAsFirstSibling()`으로 배경 바로 위·글자 아래로 내렸다.
+- **테스트 25개 추가** (`RoundContextTests`) — 페이즈 순서 강제, 자리 잠금, 여러 번 교체, **나눠서 교체해도 한 번에 교체한 것과 손패가 같음**(같은 시드 기준), 잠긴 자리 섞였을 때 손패 무변경, 교체 후에도 손패 무중복, 인덱스 범위·중복 검증, 시드 재현성, `HandEvaluator` 결과 일치.
+- **검증:** EditMode **61/61 통과**. Game 씬 플레이로 전체 플로우 실행 — 5장 드로우 → 1장 교체 → 결과 보고 1장 더 → 2장 한꺼번에 → 마지막 1장 → 확정 → 족보명 표시("One Pair") → New Round로 잠금 해제까지 확인. 잠긴 카드 클릭 차단, 전부 잠겼을 때 Exchange 비활성·안내 문구 전환도 확인. **콘솔 에러·경고 0건.**
+- **남은 것:** 카드 뒤집기·교체 연출 없음(즉시 교체). M3에서 `HandUnitTable`과 소환을 붙일 때 `RoundPhase.Place`가 실제 동작을 갖는다.
 
 ### 2026-08-07 — M0 마무리 (렌더러 / 씬 / 폴더)
 
