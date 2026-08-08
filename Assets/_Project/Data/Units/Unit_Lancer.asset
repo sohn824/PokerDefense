@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Lancer
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: three_of_a_kind
-  displayName: Lancer
+  displayName: "\uB9C8\uD06C\uC2A4\uB9E8"
   placeholderColor: {r: 0.3, g: 0.55, b: 0.82, a: 1}
   attackPower: 30
   attacksPerSecond: 1.1

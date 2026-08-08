@@ -6,7 +6,7 @@ namespace PokerDefense.Game
     /**
      * GameFlowController
      *
-     * 라운드 루프를 잇는다 (DESIGN §1)
+     * 라운드 루프를 잇는다
      * 자동으로 넘어가는 구간만 여기서 처리하고, 플레이어 입력이 필요한 구간은 각 컨트롤러가 그대로 맡는다
      *
      *   Draw      즉시              <- StartRound
@@ -22,9 +22,13 @@ namespace PokerDefense.Game
     {
         [SerializeField] RoundController round;
         [SerializeField] CombatController combat;
+        [SerializeField] StageController stage;
 
         // 라운드가 새로 열리거나 루프가 멈췄을 때
         public event Action FlowChanged;
+
+        // 유지 보너스를 받았을 때 (인자: 받은 Chip)
+        public event Action<int> HoldBonusEarned;
 
         // 지금까지 시작한 라운드 수
         public int RoundNumber { get; private set; }
@@ -35,6 +39,22 @@ namespace PokerDefense.Game
         void Awake()
         {
             combat.CombatFinished += OnCombatFinished;
+            round.Evaluated += OnEvaluated;
+        }
+
+        // 교체를 덜 쓸수록 Chip을 준다 (DESIGN §9.1)
+        // 확정 시점에 확정되는 값이라 여기서 지급한다
+        void OnEvaluated(PokerDefense.Poker.HandResult result)
+        {
+            int bonus = stage.Economy.HoldBonusFor(round.UsedExchanges);
+
+            if (bonus <= 0)
+            {
+                return;
+            }
+
+            stage.AddChip(bonus);
+            HoldBonusEarned?.Invoke(bonus);
         }
 
         void Start()

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Highlander
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: mountain
-  displayName: Highlander
+  displayName: "\uB9C8\uC6B4\uD2F4\uD0B9"
   placeholderColor: {r: 0.72, g: 0.68, b: 0.3, a: 1}
   attackPower: 65
   attacksPerSecond: 1.2

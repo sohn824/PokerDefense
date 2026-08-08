@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Warden
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: full_house
-  displayName: Warden
+  displayName: "\uBC30\uD130\uB9AC"
   placeholderColor: {r: 0.75, g: 0.38, b: 0.72, a: 1}
   attackPower: 70
   attacksPerSecond: 1.3

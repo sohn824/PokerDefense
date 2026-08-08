@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Trickster
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: back_straight
-  displayName: Trickster
+  displayName: "\uC5D0\uC774\uC2A4"
   placeholderColor: {r: 0.35, g: 0.72, b: 0.45, a: 1}
   attackPower: 60
   attacksPerSecond: 1.2

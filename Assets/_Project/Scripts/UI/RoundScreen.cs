@@ -7,21 +7,27 @@ using UnityEngine.UI;
 
 namespace PokerDefense.UI
 {
-    /// <summary>
-    /// 드로우 -> 교체 -> 족보 표시 화면. RoundController를 구독만 하고 입력은 메서드 호출로 넘긴다.
-    /// 손패 크기가 상수 5라 카드 칸을 씬에 고정해 두고 생성하지 않는다.
-    ///
-    /// 교체는 여러 번 할 수 있고 한 번 바꾼 자리는 잠긴다. 그래서 "교체"와 "확정"이 별개 버튼이다.
-    /// </summary>
+    /**
+     * RoundScreen
+     *
+     * 드로우 -> 교체 -> 족보 표시 화면. RoundController를 구독만 하고 입력은 메서드로 넘긴다
+     * 손패 크기가 상수 5라 카드 칸을 씬에 고정해 두고 생성하지 않는다
+     *
+     * 교체 중에도 **지금 확정하면 나올 족보·유닛·유지 보너스**를 보여준다
+     * 이게 없으면 유지 보너스가 감으로 찍는 도박이 된다 (DESIGN §9.1)
+     */
     public sealed class RoundScreen : MonoBehaviour
     {
         [SerializeField] RoundController controller;
+        [SerializeField] StageController stage;
+        [SerializeField] HandUnitTable unitTable;
         [SerializeField] CardView[] cardViews;
         [SerializeField] TMP_Text categoryLabel;
         [SerializeField] TMP_Text statusLabel;
         [SerializeField] Button exchangeButton;
         [SerializeField] TMP_Text exchangeLabel;
         [SerializeField] Button confirmButton;
+        [SerializeField] TMP_Text confirmLabel;
 
         RoundPhase phase;
 
@@ -121,13 +127,32 @@ namespace PokerDefense.UI
 
             if (!exchanging)
             {
+                confirmLabel.text = "확정";
                 return;
             }
+
+            ShowPreview();
 
             int left = controller.ExchangeableCount;
             statusLabel.text = left == 0
                 ? "더 바꿀 카드가 없습니다 - 확정하세요"
                 : $"카드를 눌러 교체하세요 (남은 자리 {left}칸, 자리당 1회)";
+        }
+
+        /**
+         * 지금 확정하면 어떤 족보로 어떤 유닛이 나오고 유지 보너스가 얼마인지 미리 보여준다
+         * 이걸 모르면 "확정할지 더 바꿀지"를 판단할 수 없다 (DESIGN §9.1)
+         */
+        void ShowPreview()
+        {
+            HandResult preview = controller.PreviewHand();
+            UnitDefinition unit = unitTable.For(preview.Category);
+            int bonus = stage.Economy.HoldBonusFor(controller.UsedExchanges);
+
+            categoryLabel.text = HandCategoryNames.Of(preview.Category);
+            confirmLabel.text = bonus > 0
+                ? $"확정  {unit.DisplayName} +{bonus}"
+                : $"확정  {unit.DisplayName}";
         }
     }
 }

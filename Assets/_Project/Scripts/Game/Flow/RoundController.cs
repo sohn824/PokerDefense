@@ -23,8 +23,14 @@ namespace PokerDefense.Game
 
         public int ExchangeableCount => round.ExchangeableCount;
 
+        public int UsedExchanges => round == null ? 0 : round.UsedExchanges;
+
         // 라운드가 아직 안 열렸으면 Draw로 본다
         public RoundPhase Phase => round == null ? RoundPhase.Draw : round.Phase;
+
+        // 지금 확정하면 어떤 족보가 되는지. 교체 중에도 볼 수 있어야 유지 보너스를 판단할 수 있다
+        // HandEvaluator는 순수 함수라 아무 때나 불러도 된다 (DESIGN §9.1)
+        public HandResult PreviewHand() => HandEvaluator.Evaluate(round.Hand);
 
         // 라운드를 여는 주체는 GameFlowController다. 여기서 스스로 시작하면 루프 주인이 둘이 된다
         /// <summary>새 라운드. 덱을 새로 셔플하고 5장 뽑는다 (DESIGN §3.2 — 라운드마다 새 덱).</summary>

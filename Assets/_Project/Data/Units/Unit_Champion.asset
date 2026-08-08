@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Champion
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: four_of_a_kind
-  displayName: Champion
+  displayName: "\uCFFC\uB4DC\uCE90\uB17C"
   placeholderColor: {r: 0.85, g: 0.35, b: 0.45, a: 1}
   attackPower: 95
   attacksPerSecond: 1.3

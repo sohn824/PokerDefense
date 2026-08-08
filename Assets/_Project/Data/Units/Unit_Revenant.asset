@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Revenant
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: back_straight_flush
-  displayName: Revenant
+  displayName: "\uD15C\uD398\uC2A4\uD2B8"
   placeholderColor: {r: 0.2, g: 0.78, b: 0.72, a: 1}
   attackPower: 150
   attacksPerSecond: 1.5

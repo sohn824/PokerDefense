@@ -12,10 +12,12 @@ namespace PokerDefense.Game
     [CreateAssetMenu(menuName = "PokerDefense/Stage Definition", fileName = "Stage_")]
     public sealed class StageDefinition : ScriptableObject
     {
-        [SerializeField] int startingLife = 20;
+        [SerializeField] int startingLife = 15;
+        [SerializeField] int startingChip;
         [SerializeField] WaveDefinition[] waves;
 
         public int StartingLife => startingLife;
+        public int StartingChip => startingChip;
         public IReadOnlyList<WaveDefinition> Waves => waves;
     }
 }

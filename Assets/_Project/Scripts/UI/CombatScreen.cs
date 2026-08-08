@@ -144,7 +144,7 @@ namespace PokerDefense.UI
         {
             StageContext stage = controller.Stage;
 
-            lifeLabel.text = "라이프 " + stage.Life;
+            lifeLabel.text = $"라이프 {stage.Life}   Chip {stage.Chip}";
 
             if (stage.IsGameOver)
             {

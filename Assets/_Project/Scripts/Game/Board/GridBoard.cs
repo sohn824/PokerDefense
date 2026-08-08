@@ -234,6 +234,41 @@ namespace PokerDefense.Game
             return PlacementResult.Merged;
         }
 
+        // 유닛을 빈 칸으로 옮김. 배치 위치가 전투 결과에 영향을 주므로 필요하다
+        public bool TryMoveSlot(int from, int to)
+        {
+            if (from < 0 || from >= SlotCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(from), $"슬롯 범위를 벗어남: {from}");
+            }
+            if (to < 0 || to >= SlotCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(to), $"슬롯 범위를 벗어남: {to}");
+            }
+
+            if (from == to || slots[from] == null || slots[to] != null)
+            {
+                return false;
+            }
+
+            slots[to] = slots[from];
+            slots[from] = null;
+            return true;
+        }
+
+        // 슬롯을 비우고 있던 유닛을 돌려줌. 판매용이며 빈 칸이면 null
+        public UnitInstance TakeAt(int index)
+        {
+            if (index < 0 || index >= SlotCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $"슬롯 범위를 벗어남: {index}");
+            }
+
+            UnitInstance unit = slots[index];
+            slots[index] = null;
+            return unit;
+        }
+
         // 그리드 슬롯에 있는 유닛과 합칠 유닛이 그리드 내에 있는지 검사
         public bool HasMergePartner(int index)
         {

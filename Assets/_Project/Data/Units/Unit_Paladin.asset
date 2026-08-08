@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Paladin
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: straight_flush
-  displayName: Paladin
+  displayName: "\uB808\uC77C\uAC70\uB108"
   placeholderColor: {r: 0.9, g: 0.5, b: 0.2, a: 1}
   attackPower: 130
   attacksPerSecond: 1.4

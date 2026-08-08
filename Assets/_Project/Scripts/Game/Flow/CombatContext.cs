@@ -6,6 +6,7 @@ namespace PokerDefense.Game
 {
     public enum CombatOutcome
     {
+        // 진행중
         InProgress,
 
         // 제한시간 안에 전멸시킴
@@ -18,14 +19,10 @@ namespace PokerDefense.Game
     /**
      * CombatContext
      *
-     * 웨이브 하나의 전투. 스폰, 적 이동, 유닛 공격, 클리어 판정을 전부 여기서 돌린다
-     *
-     * MonoBehaviour가 아니고 deltaTime을 인자로 받는다 (DESIGN §5.6)
-     * 고정 틱을 강제하지 않으므로 Update + deltaTime 방침과 충돌하지 않으면서,
-     * 테스트에서 Tick을 원하는 만큼 돌려 전투 한 판을 통째로 시뮬레이션할 수 있다
+     * 웨이브 하나의 전투. 스폰, 적 이동, 유닛 공격, 클리어 판정을 전부 여기서 담당
      *
      * 유닛 공격 쿨다운은 여기서 슬롯별로 들고 있다
-     * 보드(GridBoard)는 배치 상태만 알고 전투 상태는 모른다
+     * 보드(GridBoard)는 배치 상태만 알고 전투 상태는 모름
      */
     public sealed class CombatContext
     {
@@ -66,19 +63,19 @@ namespace PokerDefense.Game
 
         public float ElapsedTime { get; private set; }
 
-        // 살아 있는 적만 들어 있다
+        // 살아 있는 적 리스트
         public IReadOnlyList<EnemyInstance> Enemies => enemies;
 
         public int RemainingEnemies => enemies.Count;
 
-        // 아직 나오지 않은 적까지 포함한 잔여 수. 시간 초과 시 라이프를 깎는 기준이다
+        // 아직 나오지 않은 적까지 포함한 잔여 적 수
         public int UnresolvedEnemies => enemies.Count + (schedule.Count - nextSpawnIndex);
 
         public void Tick(float deltaTime)
         {
             if (deltaTime < 0f)
             {
-                throw new ArgumentOutOfRangeException(nameof(deltaTime), "시간은 뒤로 흐르지 않습니다");
+                throw new ArgumentOutOfRangeException(nameof(deltaTime), "deltaTime은 음수가 될 수 없음");
             }
 
             if (Outcome != CombatOutcome.InProgress)
@@ -161,7 +158,7 @@ namespace PokerDefense.Game
 
                 if (target == null)
                 {
-                    // 사거리에 아무도 없으면 쿨다운을 0에 붙여둔다. 적이 들어오는 즉시 쏜다
+                    // 사거리에 아무도 없으면 다음에 찾았을 때 바로 쏠 수 있도록 쿨타임 초기화
                     cooldowns[slot] = 0f;
                     continue;
                 }
@@ -171,7 +168,7 @@ namespace PokerDefense.Game
             }
         }
 
-        // 사거리 안에서 가장 앞선 적 하나 (DESIGN §5.5)
+        // 사거리 안에서 가장 앞선 적을 찾기
         EnemyInstance FindTarget(int slot, UnitInstance unit)
         {
             Vector2 slotPosition = GridBoard.SlotToLocalPosition(slot);
@@ -206,11 +203,12 @@ namespace PokerDefense.Game
             }
         }
 
+        // 웨이브 성공/실패 판정
         void UpdateOutcome()
         {
             bool spawnedEverything = nextSpawnIndex >= schedule.Count;
 
-            // 마지막 적이 제한시간과 동시에 죽으면 클리어로 친다
+            // 마지막 적이 제한시간과 동시에 죽으면 성공으로 판정
             if (spawnedEverything && enemies.Count == 0)
             {
                 Outcome = CombatOutcome.Cleared;

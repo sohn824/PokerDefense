@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Scout
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: high_card
-  displayName: Scout
+  displayName: "\uC2A4\uCE74\uC6B0\uD2B8"
   placeholderColor: {r: 0.55, g: 0.57, b: 0.62, a: 1}
   attackPower: 10
   attacksPerSecond: 1

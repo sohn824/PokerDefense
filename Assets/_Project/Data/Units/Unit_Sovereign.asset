@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Sovereign
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: royal_straight_flush
-  displayName: Sovereign
+  displayName: "\uC18C\uBC84\uB9B0"
   placeholderColor: {r: 0.95, g: 0.8, b: 0.25, a: 1}
   attackPower: 180
   attacksPerSecond: 1.5

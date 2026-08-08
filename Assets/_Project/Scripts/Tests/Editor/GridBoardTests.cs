@@ -393,6 +393,55 @@ namespace PokerDefense.Tests
         }
 
         [Test]
+        public void 빈_칸으로_유닛을_옮길_수_있다()
+        {
+            var board = new GridBoard();
+            var unit = Archer();
+            board.TryPlace(0, unit);
+
+            Assert.IsTrue(board.TryMoveSlot(0, 8));
+
+            Assert.IsNull(board[0]);
+            Assert.AreSame(unit, board[8]);
+            Assert.AreEqual(1, board.OccupiedCount);
+        }
+
+        [Test]
+        public void 유닛이_있는_칸으로는_옮길_수_없다()
+        {
+            // 옮기기와 머지를 섞지 않는다. 머지는 TryMergeSlots가 맡는다
+            var board = new GridBoard();
+            board.TryPlace(0, Archer());
+            board.TryPlace(1, Archer());
+
+            Assert.IsFalse(board.TryMoveSlot(0, 1));
+            Assert.IsNotNull(board[0]);
+            Assert.AreEqual(1, board[1].Star);
+        }
+
+        [Test]
+        public void 빈_칸은_옮길_대상이_아니다()
+        {
+            var board = new GridBoard();
+
+            Assert.IsFalse(board.TryMoveSlot(0, 1));
+            Assert.IsFalse(board.TryMoveSlot(0, 0));
+        }
+
+        [Test]
+        public void TakeAt은_슬롯을_비우고_유닛을_돌려준다()
+        {
+            var board = new GridBoard();
+            var unit = Archer();
+            board.TryPlace(4, unit);
+
+            Assert.AreSame(unit, board.TakeAt(4));
+            Assert.IsNull(board[4]);
+            Assert.AreEqual(0, board.OccupiedCount);
+            Assert.IsNull(board.TakeAt(4), "빈 칸에서 꺼내면 null");
+        }
+
+        [Test]
         public void Clear하면_전부_비워진다()
         {
             var board = new GridBoard();

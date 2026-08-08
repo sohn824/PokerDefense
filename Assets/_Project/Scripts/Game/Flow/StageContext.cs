@@ -5,9 +5,9 @@ namespace PokerDefense.Game
     /**
      * StageContext
      *
-     * 웨이브 진행과 라이프. 전투 하나보다 오래 사는 상태다
+     * 한 판(스테이지) 동안 유지되는 상태 - 웨이브 진행, 라이프, Chip
+     * 전투 하나보다 오래 살고 스테이지가 끝나면 전부 사라진다 (메타 성장 없음)
      * 클리어하면 다음 웨이브로, 시간 초과면 남은 적 수만큼 라이프가 깎인다 (DESIGN §5.4)
-     * 잔여 적은 다음 웨이브로 넘기지 않는다 - CombatContext를 새로 만들기 때문에 자연히 사라진다
      */
     public sealed class StageContext
     {
@@ -22,9 +22,13 @@ namespace PokerDefense.Game
 
             this.definition = definition;
             Life = definition.StartingLife;
+            Chip = definition.StartingChip;
         }
 
         public int Life { get; private set; }
+
+        // 스테이지 안에서만 쓰는 재화 (DESIGN §9.2)
+        public int Chip { get; private set; }
 
         public int WaveIndex { get; private set; }
 
@@ -62,6 +66,33 @@ namespace PokerDefense.Game
             }
 
             WaveIndex++;
+        }
+
+        public void AddChip(int amount)
+        {
+            if (amount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), $"획득 Chip이 음수입니다: {amount}");
+            }
+
+            Chip += amount;
+        }
+
+        /// <summary>Chip이 모자라면 false를 돌려주고 아무것도 바뀌지 않는다.</summary>
+        public bool TrySpendChip(int amount)
+        {
+            if (amount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), $"소비 Chip이 음수입니다: {amount}");
+            }
+
+            if (Chip < amount)
+            {
+                return false;
+            }
+
+            Chip -= amount;
+            return true;
         }
     }
 }

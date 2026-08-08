@@ -33,6 +33,9 @@ namespace PokerDefense.Game
         // 이번 라운드에 이미 교체해서 더는 바꿀 수 없는 자리인지 판별
         public bool IsLocked(int index) => locked[index];
 
+        // 이번 라운드에 실제로 교체한 장수. 유지 보너스 계산에 쓴다 (DESIGN §9.1)
+        public int UsedExchanges => HandSize - ExchangeableCount;
+
         // 아직 바꿀 수 있는 손패 자리 수
         public int ExchangeableCount
         {

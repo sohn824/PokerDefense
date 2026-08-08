@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Unit_Vanguard
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: straight
-  displayName: Vanguard
+  displayName: "\uB79C\uC11C"
   placeholderColor: {r: 0.42, g: 0.45, b: 0.85, a: 1}
   attackPower: 45
   attacksPerSecond: 1.2

@@ -11,22 +11,27 @@ namespace PokerDefense.UI
      * BoardScreen
      *
      * 15슬롯 보드의 표현과 입력. PlacementController를 구독만 하고 입력은 메서드로 넘김
-     * 슬롯은 월드 스페이스이고, 배치 대기 안내와 포기 버튼만 uGUI로 남는다
-     * 슬롯 수가 상수 15라 칸을 씬에 고정해 두고 생성하지 않는다
+     * 슬롯은 월드 스페이스이고, 안내 문구와 버튼만 uGUI로 남는다
      *
-     * 탭 규칙 두 가지
+     * 탭 규칙 (DESIGN §9.4)
      * - 배치 대기 유닛이 있으면: 칸을 누르면 배치하거나 머지
-     * - 없으면: 유닛을 눌러 고르고 다른 유닛을 눌러 합침 (성급 최대치는 이 경로로만 만들 수 있음)
+     * - 없으면: 유닛을 눌러 고른 뒤
+     *     빈 칸을 누르면 이동, 짝을 누르면 머지, 판매 버튼을 누르면 판매
+     *   모드를 늘리지 않고 세 행동을 한 선택으로 흡수한다
      */
     public sealed class BoardScreen : MonoBehaviour
     {
         const int NoSelection = -1;
 
         [SerializeField] PlacementController placement;
+        [SerializeField] StageController stage;
         [SerializeField] Camera boardCamera;
         [SerializeField] UnitSlotView[] slots;
         [SerializeField] TMP_Text pendingLabel;
-        [SerializeField] Button discardButton;
+        [SerializeField] Button sellButton;
+        [SerializeField] TMP_Text sellLabel;
+        [SerializeField] Button supportButton;
+        [SerializeField] TMP_Text supportLabel;
 
         int selected = NoSelection;
 
@@ -37,10 +42,15 @@ namespace PokerDefense.UI
                 slots[i].Bind(i);
             }
 
-            discardButton.onClick.AddListener(placement.DiscardPending);
+            sellButton.onClick.AddListener(OnSell);
+            supportButton.onClick.AddListener(OnSupportSummon);
 
             placement.PendingChanged += OnPendingChanged;
             placement.Placed += OnPlaced;
+            placement.BoardChanged += Refresh;
+
+            // Chip이 바뀌면 지원 소환 버튼의 활성 여부가 달라진다
+            stage.Changed += Refresh;
 
             Refresh();
         }
@@ -111,12 +121,37 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 두 번째 탭이 머지 대상. 실패하면 선택만 푼다
-            if (placement.TryMergeSlots(selected, slot.Index) == false)
+            // 두 번째 탭 - 빈 칸이면 이동, 짝이면 머지
+            bool moved = placement.Board[slot.Index] == null
+                ? placement.TryMoveSlot(selected, slot.Index)
+                : placement.TryMergeSlots(selected, slot.Index);
+
+            selected = NoSelection;
+
+            if (moved == false)
             {
-                selected = NoSelection;
                 Refresh();
             }
+        }
+
+        void OnSell()
+        {
+            if (placement.Pending != null)
+            {
+                placement.TrySellPending();
+                return;
+            }
+
+            if (selected != NoSelection)
+            {
+                placement.TrySellSlot(selected);
+                selected = NoSelection;
+            }
+        }
+
+        void OnSupportSummon()
+        {
+            placement.TrySupportSummon();
         }
 
         void Refresh()
@@ -136,40 +171,52 @@ namespace PokerDefense.UI
                 }
                 else if (selected == NoSelection)
                 {
-                    // 합칠 상대가 있는 유닛만 강조. 나머지는 눌러도 할 일이 없다
-                    bool hasPartner = board.HasMergePartner(i);
-                    slots[i].SetHighlight(hasPartner, false);
-                    slots[i].SetInteractable(hasPartner);
+                    // 유닛이 있는 칸은 전부 고를 수 있다. 고르면 이동·머지·판매가 열린다
+                    bool hasUnit = board[i] != null;
+                    slots[i].SetHighlight(board.HasMergePartner(i), false);
+                    slots[i].SetInteractable(hasUnit);
                 }
                 else
                 {
                     bool isSelected = i == selected;
-                    bool mergeable = isSelected || board.CanMergeSlots(selected, i);
-                    slots[i].SetHighlight(mergeable, isSelected);
-                    slots[i].SetInteractable(mergeable);
+                    bool actionable = isSelected
+                                      || board[i] == null
+                                      || board.CanMergeSlots(selected, i);
+                    slots[i].SetHighlight(actionable, isSelected);
+                    slots[i].SetInteractable(actionable);
                 }
             }
 
-            UpdatePendingLabel(pending);
+            UpdateLabels(pending);
         }
 
-        void UpdatePendingLabel(UnitInstance pending)
+        void UpdateLabels(UnitInstance pending)
         {
-            if (pending == null)
+            supportButton.interactable = placement.CanSupportSummon;
+            supportLabel.text = $"지원 소환 {placement.SupportSummonCost}";
+
+            if (pending != null)
             {
-                pendingLabel.text = selected == NoSelection
-                    ? "족보를 확정하면 유닛이 소환됩니다"
-                    : $"{Describe(placement.Board[selected])} 합치기 - 같은 유닛을 누르세요";
-                discardButton.gameObject.SetActive(false);
+                bool stuck = placement.IsStuck;
+
+                sellButton.gameObject.SetActive(true);
+                sellLabel.text = "소환 유닛 판매";
+                pendingLabel.text = stuck
+                    ? $"{Describe(pending)}을 놓을 자리가 없습니다 - 판매하세요"
+                    : $"{Describe(pending)} 소환 (공격력 {pending.AttackPower:0.#}) - 칸을 누르세요";
                 return;
             }
 
-            bool stuck = placement.IsStuck;
-            discardButton.gameObject.SetActive(stuck);
+            if (selected != NoSelection)
+            {
+                sellButton.gameObject.SetActive(true);
+                sellLabel.text = "판매";
+                pendingLabel.text = $"{Describe(placement.Board[selected])} 선택 - 빈 칸은 이동, 같은 유닛은 합치기";
+                return;
+            }
 
-            pendingLabel.text = stuck
-                ? $"{Describe(pending)}을 놓을 자리가 없습니다"
-                : $"{Describe(pending)} 소환 (공격력 {pending.AttackPower:0.#}) - 칸을 누르세요";
+            sellButton.gameObject.SetActive(false);
+            pendingLabel.text = "족보를 확정하면 유닛이 소환됩니다";
         }
 
         static string Describe(UnitInstance unit)
