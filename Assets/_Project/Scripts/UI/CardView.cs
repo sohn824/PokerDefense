@@ -6,10 +6,11 @@ using UnityEngine.UI;
 
 namespace PokerDefense.UI
 {
-    /// <summary>
-    /// 손패 카드 한 장. 플레이스홀더 표시다 — 무늬는 기호(♠) 대신 문자(S/H/D/C)를 쓴다.
-    /// TMP 기본 폰트에 카드 심볼 글리프가 없어 기호를 쓰면 두부가 나온다. M6에서 스프라이트로 교체한다.
-    /// </summary>
+    /**
+     * CardView
+     *
+     * 손패 카드 한 장. 플레이스홀더 표시이며 M6에서 스프라이트로 교체한다
+     */
     public sealed class CardView : MonoBehaviour
     {
         static readonly Color RedSuit = new Color(0.80f, 0.15f, 0.15f);
@@ -31,10 +32,10 @@ namespace PokerDefense.UI
 
         public void Show(Card card)
         {
-            rankLabel.text = RankText(card.Rank);
-            suitLabel.text = SuitText(card.Suit);
+            rankLabel.text = CardText.RankOf(card.Rank);
+            suitLabel.text = CardText.SuitOf(card.Suit);
 
-            Color color = IsRed(card.Suit) ? RedSuit : BlackSuit;
+            Color color = CardText.IsRed(card.Suit) ? RedSuit : BlackSuit;
             rankLabel.color = color;
             suitLabel.color = color;
         }
@@ -50,24 +51,5 @@ namespace PokerDefense.UI
             button.interactable = interactable;
         }
 
-        static bool IsRed(Suit suit) => suit == Suit.Heart || suit == Suit.Diamond;
-
-        static string RankText(Rank rank) => rank switch
-        {
-            Rank.Ten => "10",
-            Rank.Jack => "J",
-            Rank.Queen => "Q",
-            Rank.King => "K",
-            Rank.Ace => "A",
-            _ => ((int)rank).ToString(),
-        };
-
-        static string SuitText(Suit suit) => suit switch
-        {
-            Suit.Spade => "S",
-            Suit.Heart => "H",
-            Suit.Diamond => "D",
-            _ => "C",
-        };
     }
 }

@@ -68,7 +68,15 @@ namespace PokerDefense.UI
         void ShowResult(HandResult result)
         {
             categoryLabel.text = HandCategoryNames.Of(result.Category);
-            statusLabel.text = "Key cards: " + string.Join(" ", result.KeyCards);
+
+            var keyCards = new System.Text.StringBuilder("키카드");
+
+            for (int i = 0; i < result.KeyCards.Count; i++)
+            {
+                keyCards.Append(' ').Append(CardText.Of(result.KeyCards[i]));
+            }
+
+            statusLabel.text = keyCards.ToString();
         }
 
         void OnCardClicked(CardView card)
@@ -111,7 +119,7 @@ namespace PokerDefense.UI
 
             exchangeButton.interactable = exchanging && selected > 0;
             confirmButton.interactable = exchanging;
-            exchangeLabel.text = selected == 0 ? "Exchange" : $"Exchange {selected}";
+            exchangeLabel.text = selected == 0 ? "교체" : $"교체 {selected}장";
 
             if (!exchanging)
             {
@@ -120,8 +128,8 @@ namespace PokerDefense.UI
 
             int left = controller.ExchangeableCount;
             statusLabel.text = left == 0
-                ? "No cards left to swap - confirm your hand"
-                : $"Tap cards to swap ({left} left, one swap each)";
+                ? "더 바꿀 카드가 없습니다 - 확정하세요"
+                : $"카드를 눌러 교체하세요 (남은 자리 {left}칸, 자리당 1회)";
         }
     }
 }

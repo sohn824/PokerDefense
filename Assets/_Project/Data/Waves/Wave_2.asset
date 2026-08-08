@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c4fb4739ff4e56438d1b8f8c1c27a48, type: 3}
+  m_Name: Wave_2
+  m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.WaveDefinition
+  waveNumber: 2
+  timeLimit: 30
+  entries:
+  - enemy: {fileID: 11400000, guid: 52f861e302c310f4cab346e08b81eb60, type: 2}
+    count: 6
+    interval: 0.9
+    startDelay: 0
+  - enemy: {fileID: 11400000, guid: 71de88334ad5ea94a9f3a351f9968735, type: 2}
+    count: 6
+    interval: 0.4
+    startDelay: 5

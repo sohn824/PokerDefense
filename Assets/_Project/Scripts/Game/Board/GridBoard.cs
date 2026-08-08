@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace PokerDefense.Game
 {
@@ -18,9 +19,7 @@ namespace PokerDefense.Game
      * GridBoard
      * 
      * 5열 × 3행 = 15슬롯 보드
-     * 유닛 배치, 유닛 머지 규칙을 소유
-     * 
-     * 슬롯 ↔ 월드 좌표 변환은 아직 없다. 유닛이 월드의 적을 조준해야 하는 M4에서 붙인다.
+     * 유닛 배치, 유닛 머지 규칙, 슬롯의 배치 좌표를 소유
      */
     public sealed class GridBoard
     {
@@ -28,7 +27,77 @@ namespace PokerDefense.Game
         public const int Rows = 3;
         public const int SlotCount = Columns * Rows;
 
+        // 슬롯 한 칸의 월드 크기. 유닛 사거리도 같은 단위로 잰다.
+        public const float CellSize = 1f;
+
         readonly UnitInstance[] slots = new UnitInstance[SlotCount];
+
+        // 슬롯 인덱스 -> 보드 중심을 원점으로 하는 로컬 좌표
+        // 월드 좌표가 아니라 로컬 좌표를 주는 이유는 보드를 씬 어디에 두든 상관없게 하기 위함
+        // 0번이 좌상단, 14번이 우하단
+        public static Vector2 SlotToLocalPosition(int index)
+        {
+            if (index < 0 || index >= SlotCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $"슬롯 범위를 벗어남: {index}");
+            }
+
+            int column = index % Columns;
+            int row = index / Columns;
+
+            float x = (column - (Columns - 1) * 0.5f) * CellSize;
+            float y = ((Rows - 1) * 0.5f - row) * CellSize;
+
+            return new Vector2(x, y);
+        }
+
+        // 적이 도는 트랙이 보드 바깥으로 떨어진 거리
+        public const float TrackMargin = 0.9f;
+
+        // 트랙은 보드를 감싸는 닫힌 사각 루프다 (DESIGN §5.3)
+        // 웨이포인트를 씬에 찍지 않고 그리드 크기에서 계산한다
+        public static float TrackHalfWidth => Columns * 0.5f * CellSize + TrackMargin;
+        public static float TrackHalfHeight => Rows * 0.5f * CellSize + TrackMargin;
+        public static float TrackLength => 4f * (TrackHalfWidth + TrackHalfHeight);
+
+        // 트랙 위 진행도 -> 보드 중심 기준 로컬 좌표
+        // 진행도는 좌상단에서 시작해 시계 방향으로 한 바퀴가 1이다
+        // 1을 넘으면 다음 바퀴로 감긴다 (적은 죽을 때까지 계속 돈다)
+        public static Vector2 TrackPosition(float progress)
+        {
+            float wrapped = progress - Mathf.Floor(progress);
+            float distance = wrapped * TrackLength;
+
+            float width = TrackHalfWidth * 2f;
+            float height = TrackHalfHeight * 2f;
+
+            // 위쪽 (왼 -> 오)
+            if (distance < width)
+            {
+                return new Vector2(-TrackHalfWidth + distance, TrackHalfHeight);
+            }
+
+            distance -= width;
+
+            // 오른쪽 (위 -> 아래)
+            if (distance < height)
+            {
+                return new Vector2(TrackHalfWidth, TrackHalfHeight - distance);
+            }
+
+            distance -= height;
+
+            // 아래쪽 (오 -> 왼)
+            if (distance < width)
+            {
+                return new Vector2(TrackHalfWidth - distance, -TrackHalfHeight);
+            }
+
+            distance -= width;
+
+            // 왼쪽 (아래 -> 위)
+            return new Vector2(-TrackHalfWidth, -TrackHalfHeight + distance);
+        }
 
         // UnitInstance의 indexer
         // UnitInstance 객체를 배열 인덱스 접근 시 get 내부를 실행

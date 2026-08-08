@@ -11,22 +11,77 @@
 
 ## 현재 상태 요약
 
-- **진행 단계:** M0·M1·M2·M3 완료. M4 착수 가능
-- **코드:** `Scripts/Poker/`(포커 코어), `Scripts/Game/Flow/`(RoundPhase, RoundContext, RoundController), `Scripts/Game/Board/`(GridBoard, PlacementController), `Scripts/Game/Units/`(UnitInstance), `Scripts/Game/Data/`(UnitDefinition, HandUnitTable), `Scripts/UI/`, `Scripts/Tests/Editor/`
-- **데이터:** `_Project/Data/Units/` 유닛 13종, `_Project/Data/HandUnitTable.asset` 매핑. **수치는 전부 플레이스홀더이며 M6에서 밸런싱한다**
-- **씬:** `_Project/Scenes/Boot.unity`(빌드 0, 카메라만), `Game.unity`(빌드 1, 보드 15칸 + 카드 UI)
-- **렌더링:** URP 2D (`Assets/Settings/PokerDefense_2DRenderer.asset`, PC·Mobile RP 에셋 양쪽에 연결). UI는 uGUI + TMP. **Game 뷰는 Portrait 1080x1920** (세로 타깃)
+- **진행 단계:** M0~M4 완료. M5 착수 가능
+- **코드:** `Scripts/Poker/`(포커 코어), `Scripts/Game/Flow/`(라운드 + 전투 + 스테이지), `Scripts/Game/Board/`, `Scripts/Game/Units/`, `Scripts/Game/Enemies/`, `Scripts/Game/Data/`, `Scripts/UI/`, `Scripts/Tests/Editor/`
+- **데이터:** 유닛 13종 + `HandUnitTable`, 적 3종 + 웨이브 3개 + `Stage_1`. **수치는 전부 플레이스홀더이며 M6에서 밸런싱한다**
+- **씬:** `Boot.unity`(빌드 0, 카메라만), `Game.unity`(빌드 1). **보드·적은 월드 스페이스, 카드 UI와 HUD만 uGUI**
+- **렌더링:** URP 2D. **Game 뷰는 Portrait 1080x1920**, 카메라 직교 크기 6.6, 보드 중심 월드 y=3.4
 - **어셈블리:** asmdef 없음. 게임 코드는 `Assembly-CSharp`, 테스트는 `Assembly-CSharp-Editor`
-- **테스트:** EditMode 87/87 통과 (2026-08-08 확인)
+- **테스트:** EditMode 115/115 통과 (2026-08-08 확인)
 - **지켜야 할 관례:** 레이어 역방향 `using` 금지, `Poker`에서 `UnityEngine.Random` 금지(재현성), ScriptableObject·MonoBehaviour 금지 — DESIGN.md §2 참조
-- **UI 표기는 영문이다.** 한글 폰트가 없어서다. 폰트를 넣으면 `HandCategoryNames.cs` 한 파일만 고치면 된다
-- **다음 작업:** M4 — 웨이브 + 전투 + 클리어 판정
-- **대기 중인 결정:** DESIGN §7 열린 이슈 **1번(저등급 편중 완화)은 M4 전에 반드시 확정해야 한다.** 2번(그리드 가득 참)은 M3에서 "유닛 포기"로 임시 처리해 둔 상태
+- **UI 표기는 한글이다.** 폰트는 Maplestory(Light 기본 / Bold 굵기 연결), TMP **Dynamic 아틀라스**
+- **폰트에 없는 글자 주의:** `♦`(U+2666), `—`(U+2014), `–`(U+2013)이 없다. 각각 `◆`, `-`로 대체했다. 새 기호를 쓰기 전에 `HasCharacter(c, false, true)`로 확인할 것
+- **다음 작업:** M5 — 라운드 루프 결합 + HUD. 지금은 `New Round`·`Start Combat` 버튼으로 수동 진입한다
+- **대기 중인 결정:** DESIGN §7 열린 이슈 1번(저등급 편중 완화)은 **보류 중이며 M5 전에 정해야 한다**. 2번(그리드 가득 참)은 M3에서 "유닛 포기"로 임시 처리해 둔 상태
 - **대기 중인 결정:** DESIGN.md §7 열린 이슈 1번(저등급 편중 완화 수단) — M4 이전 확정 필요
 
 ---
 
 ## 이력
+
+### 2026-08-08 — 한글 폰트 적용, UI 한글화
+
+- Maplestory 폰트(Light / Bold) TTF를 `_Project/Art/Fonts/`에 넣고 TMP 폰트 에셋을 만들었다.
+- **아틀라스는 Dynamic이다.** 한글 음절이 11,172자라 정적 아틀라스로는 감당이 안 된다. 쓰이는 글자만 그때그때 굽는다.
+  - `CreateFontAsset` 후 아틀라스 텍스처와 머티리얼을 **서브에셋으로 넣어야** 리로드 때 사라지지 않는다.
+  - Light의 굵기 표(`m_FontWeightTable`) 700 항목에 Bold를 연결해 `FontStyles.Bold`가 가짜 굵기가 아니라 진짜 Bold로 나오게 했다.
+- TMP 기본 폰트를 교체하고, 씬에 이미 있던 텍스트 66개(uGUI 21 + 월드 45)를 전부 갈아끼웠다. 기본값만 바꾸면 기존 컴포넌트는 LiberationSans를 계속 물고 있다.
+- **폰트 커버리지를 먼저 확인하고 표기를 정했다.** Dynamic 폰트는 문자 테이블이 비어 있어 `HasCharacter(c)`만으로는 판정이 안 되고 `HasCharacter(c, false, true)`로 원본 TTF를 조회해야 한다.
+  - 있음: 한글 전체, 영숫자, `♠♥♣★☆◆◇`
+  - **없음: `♦`(U+2666), `♢`, `—`(U+2014), `–`(U+2013)**
+  - 다이아는 `◆`(U+25C6)로, em dash는 `-`로 대체했다. 실제로 두 번 두부가 났고 스크린샷으로 잡았다.
+- 폰트 때문에 영문으로 뒀던 세 곳을 되돌렸다: 족보명(`HandCategoryNames`), 카드 무늬(S/H/D/C → `♠♥◆♣`), 성급(`*` → `★`).
+- 나머지 UI 문구도 한글로 통일했다. 절반만 한글이면 더 어색하다.
+- **`CardText`를 새로 뺐다.** `Card.ToString()`("4h")은 로그·테스트용이라 화면에 그대로 쓰면 카드 앞면(`4♥`)과 표기가 어긋난다. 키카드 표시가 실제로 그랬다.
+- **유닛·적 이름은 영문 그대로다**(Scout, Guard, Grunt...). SO 에셋의 데이터라 코드가 아니라 이름 정하기의 문제다.
+- **검증:** EditMode **115/115 통과**. Game 씬 실플레이로 족보명·키카드·성급·카드 무늬·전투 HUD 전부 확인, **두부 0개, 콘솔 에러·경고 0건**.
+
+### 2026-08-08 — M4: 웨이브 + 전투 + 클리어 판정
+
+설계(아래 항목)대로 a~f 6단계를 진행했다.
+
+- **a. 보드를 월드 스페이스로 옮겼다.** `GridBoard`에 `CellSize`(1)와 `SlotToLocalPosition`을 넣고, `UnitSlotView`·`BoardScreen`을 `SpriteRenderer` + `BoxCollider2D` 기반으로 재작성했다.
+  - **검증 조건이었던 "기존 87개 테스트 무수정 통과"를 충족했다.** 표현만 바꿨고 규칙 코드는 한 줄도 안 건드렸다는 증거다.
+  - 클릭은 `Pointer.current` → `ScreenToWorldPoint` → `Physics2D.OverlapPoint`로 잡는다. 카드 UI 위 클릭은 `EventSystem.IsPointerOverGameObject()`로 걸러낸다.
+  - 누를 수 없는 칸은 `hitbox.enabled = false`로 Physics2D 검사에서 아예 뺀다. uGUI 시절 `Button.interactable`이 하던 역할이다.
+  - 플레이스홀더 스프라이트 `Art/Sprites/Square.png`(32px, PPU 32 → 1칸 = 1 월드 유닛)를 만들어 슬롯·적이 공유한다.
+- **b~e. 전투를 순수 C#으로 만들었다.** `CombatContext.Tick(float deltaTime)`, `EnemyInstance`, `StageContext`, SO 3종.
+  - 트랙은 `GridBoard`가 계산하는 닫힌 사각 루프다(반경 3.4 x 2.4, 길이 23.2). 적 위치는 진행도 하나이고 바퀴 수를 포함해 누적된다.
+  - 유닛 공격 쿨다운은 `CombatContext`가 슬롯별로 들고 있다. **`GridBoard`는 전투 상태를 모른다.**
+  - 사거리에 적이 없으면 쿨다운을 0에 붙여둔다. 적이 들어오는 즉시 쏘게 하기 위함이다.
+  - `UnresolvedEnemies`는 **아직 안 나온 적까지** 포함한다. 제한시간이 스폰보다 먼저 끝나면 안 나온 적도 라이프를 깎아야 하기 때문이다.
+- **f. 씬에 붙였다.** `CombatController`가 `Update`에서 `Time.deltaTime`을 넘기고, `CombatScreen`이 적 스프라이트를 목록에 맞춰 만들고 지운다. HP는 게이지 없이 색 밝기로 보여준다.
+- **폰트 함정이 또 나왔다.** `UnitInstance.ToString()`의 `★`(U+2605)가 LiberationSans에 없어 두부가 났다. `ToString()`은 로그용으로 두고 화면 표기는 `BoardScreen.Describe()`가 `*`로 만든다.
+- **`PlayerSettings.runInBackground`를 켰다.** 에디터가 포커스를 잃으면 플레이어 루프가 거의 멈춰 MCP로 실시간 동작을 관찰할 수 없었다. 모바일 타깃에서는 이 설정이 무시되므로 부작용이 없다.
+- **만들지 않은 것:** 타겟팅 방식 enum(1종 고정), 투사체(즉시 히트), 골드·처치 보상, `TargetRegistry` 클래스, `RoundPhase.Combat`/`Result`(전이가 없으면 죽은 값이라 M5에서 넣는다).
+- **테스트 28개 추가** (`CombatTests` 21, `GridBoardTests` 좌표 7). 트랙 형상, 스폰 수량·간격, 사거리 안팎, 성급에 따른 처치 속도 차이, 클리어·시간초과, 라이프 감소·하한 0, 웨이브 진행.
+- **검증:** EditMode **115/115 통과**. Game 씬 실플레이 —
+  - 유닛 6기 배치 → 웨이브 1(5마리, 25초 제한) **12.81초에 전멸, 클리어. 라이프 20 유지**, 웨이브 2로 넘어감
+  - 보드를 비우고 웨이브 2(12마리, 30초) → **시간 초과, 라이프 20 → 8** (잔여 12만큼), 적 스프라이트 정리됨, 웨이브 3으로 넘어감
+  - **콘솔 에러·경고 0건**
+- **남은 것:** 전투 연출 없음(피격·사망 이펙트, 투사체). 라운드↔전투 자동 연결은 M5.
+
+### 2026-08-08 — M4 설계
+
+코드는 아직 없다. 결정만 기록한다.
+
+- **보드를 월드 스페이스로 옮기기로 했다** (DESIGN §5.1). M3 때 "M4에서 좌표 변환만 붙이면 된다"고 적었는데 부정확했다. 적이 월드를 이동하고 유닛이 사거리로 조준하는 순간, 보드가 캔버스에 남아 있으면 사거리를 픽셀로 다뤄야 하고 URP 2D 렌더러를 세팅해둔 의미가 없어진다.
+  - 옮기는 것은 표현뿐이다. `GridBoard`·`PlacementController`·`UnitInstance` 327줄은 그대로 살고 `UnitSlotView`·`BoardScreen` 207줄만 재작성한다.
+- **전투도 순수 C#으로 둔다.** `CombatContext.Tick(float deltaTime)`이 핵심이다. `deltaTime`을 인자로 받으면 고정 틱을 강제하지 않아 §5.6과 충돌하지 않으면서, 테스트에서 전투 한 판을 통째로 시뮬레이션할 수 있다. **M4 검증 조건이 그대로 EditMode 테스트가 된다.**
+- **트랙은 닫힌 루프다.** §5.4가 "적이 새어나갈 때"가 아니라 "제한시간 종료 시 잔여 적 수만큼" 라이프를 깎으므로, 적은 죽을 때까지 계속 돈다. 웨이포인트는 씬 오브젝트로 두지 않고 `GridBoard`가 그리드 크기에서 계산한다. 적 위치는 진행도(0~1) 하나로 표현하고 월드 좌표는 그릴 때만 변환한다.
+- **M4에서 만들지 않는 것:** 타겟팅 방식 enum(1종 고정), 투사체(즉시 히트), 골드·처치 보상 필드, `TargetRegistry` 클래스(`CombatContext`가 직접 보유). 전부 "쓰일 때 만든다" 원칙이다.
+- **§7 열린 이슈 1번(저등급 편중)은 보류하기로 했다.** 어느 안을 골라도 전투 루프·데이터 구조는 바뀌지 않아 M4가 막히지 않는다. 다만 M4를 마쳐도 난이도가 말이 되는지는 알 수 없다 — M5 전에는 정해야 한다.
+- M4 세부 단계 6개와 각각의 검증 조건을 DESIGN §8에 적었다. a단계는 **기존 87개 테스트가 무수정으로 통과**하는 것이 검증 조건이다.
 
 ### 2026-08-08 — M3: 그리드 + 배치 + 머지
 

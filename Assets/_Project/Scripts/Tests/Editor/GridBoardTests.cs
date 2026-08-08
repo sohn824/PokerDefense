@@ -58,6 +58,63 @@ namespace PokerDefense.Tests
         }
 
         [Test]
+        public void 보드_중앙_슬롯은_원점이다()
+        {
+            // 5x3이라 정가운데(1행 2열 = 7번)가 보드 중심이다
+            Assert.AreEqual(Vector2.zero, GridBoard.SlotToLocalPosition(7));
+        }
+
+        [Test]
+        public void 슬롯_0번은_좌상단_14번은_우하단이다()
+        {
+            Vector2 topLeft = GridBoard.SlotToLocalPosition(0);
+            Vector2 bottomRight = GridBoard.SlotToLocalPosition(14);
+
+            Assert.Less(topLeft.x, 0f, "0번이 왼쪽이 아니다");
+            Assert.Greater(topLeft.y, 0f, "0번이 위쪽이 아니다");
+            Assert.Greater(bottomRight.x, 0f, "14번이 오른쪽이 아니다");
+            Assert.Less(bottomRight.y, 0f, "14번이 아래쪽이 아니다");
+        }
+
+        [Test]
+        public void 가로_이웃_슬롯의_간격은_한_칸이다()
+        {
+            Vector2 a = GridBoard.SlotToLocalPosition(0);
+            Vector2 b = GridBoard.SlotToLocalPosition(1);
+
+            Assert.AreEqual(GridBoard.CellSize, b.x - a.x, 0.0001f);
+            Assert.AreEqual(a.y, b.y, 0.0001f, "같은 행인데 높이가 다르다");
+        }
+
+        [Test]
+        public void 세로_이웃_슬롯의_간격은_한_칸이다()
+        {
+            Vector2 a = GridBoard.SlotToLocalPosition(0);
+            Vector2 b = GridBoard.SlotToLocalPosition(GridBoard.Columns);
+
+            Assert.AreEqual(GridBoard.CellSize, a.y - b.y, 0.0001f, "행이 내려가면 y가 낮아져야 한다");
+            Assert.AreEqual(a.x, b.x, 0.0001f, "같은 열인데 가로가 다르다");
+        }
+
+        [Test]
+        public void 모든_슬롯_좌표는_서로_다르다()
+        {
+            var seen = new System.Collections.Generic.HashSet<Vector2>();
+
+            for (int i = 0; i < GridBoard.SlotCount; i++)
+            {
+                Assert.IsTrue(seen.Add(GridBoard.SlotToLocalPosition(i)), $"{i}번 좌표가 겹친다");
+            }
+        }
+
+        [TestCase(-1)]
+        [TestCase(15)]
+        public void 범위를_벗어난_슬롯_좌표는_예외를_던진다(int index)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => GridBoard.SlotToLocalPosition(index));
+        }
+
+        [Test]
         public void 처음에는_모든_슬롯이_비어_있다()
         {
             var board = new GridBoard();

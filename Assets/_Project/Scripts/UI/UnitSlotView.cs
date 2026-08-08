@@ -1,34 +1,30 @@
-using System;
 using PokerDefense.Game;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace PokerDefense.UI
 {
-    /// <summary>
-    /// 보드 슬롯 한 칸. 비어 있으면 빈 칸 색, 유닛이 있으면 유닛 색 + 이름 + ★ + 공격력을 보여준다.
-    /// 플레이스홀더다 — M6에서 스프라이트로 교체한다.
-    /// </summary>
+    /**
+     * UnitSlotView
+     *
+     * 보드 슬롯 한 칸의 월드 표현
+     * 비어 있으면 빈 칸 색, 유닛이 있으면 유닛 색 + 이름 + 성급 + 공격력을 보여줌
+     * 클릭 판정은 BoardScreen이 hitbox를 Physics2D로 찍어서 한다
+     */
     public sealed class UnitSlotView : MonoBehaviour
     {
         static readonly Color EmptyColor = new Color(0.24f, 0.25f, 0.29f);
+        static readonly Color PlaceableColor = new Color(1f, 1f, 1f, 0.22f);
+        static readonly Color SelectedColor = new Color(1f, 0.82f, 0.15f, 0.45f);
 
-        [SerializeField] Image background;
-        [SerializeField] TMP_Text nameLabel;
-        [SerializeField] TMP_Text starLabel;
-        [SerializeField] TMP_Text powerLabel;
-        [SerializeField] Image highlight;
-        [SerializeField] Button button;
-
-        public event Action<UnitSlotView> Clicked;
+        [SerializeField] SpriteRenderer background;
+        [SerializeField] SpriteRenderer highlight;
+        [SerializeField] TextMeshPro nameLabel;
+        [SerializeField] TextMeshPro starLabel;
+        [SerializeField] TextMeshPro powerLabel;
+        [SerializeField] Collider2D hitbox;
 
         public int Index { get; private set; }
-
-        void Awake()
-        {
-            button.onClick.AddListener(() => Clicked?.Invoke(this));
-        }
 
         public void Bind(int index)
         {
@@ -48,22 +44,21 @@ namespace PokerDefense.UI
 
             background.color = unit.Definition.PlaceholderColor;
             nameLabel.text = unit.Definition.DisplayName;
-            starLabel.text = new string('*', unit.Star);
+            starLabel.text = new string('★', unit.Star);
             powerLabel.text = "ATK " + unit.AttackPower.ToString("0.#");
         }
 
-        /// <summary>테두리 강조. 머지 상대로 고른 칸은 노랑, 그냥 놓을 수 있는 칸은 흰색.</summary>
+        // 머지 상대로 고른 칸은 노랑, 그냥 놓을 수 있는 칸은 흰색
         public void SetHighlight(bool on, bool selected)
         {
             highlight.enabled = on;
-            highlight.color = selected
-                ? new Color(1f, 0.82f, 0.15f, 0.45f)
-                : new Color(1f, 1f, 1f, 0.22f);
+            highlight.color = selected ? SelectedColor : PlaceableColor;
         }
 
+        // 누를 수 없는 칸은 hitbox를 꺼서 Physics2D 검사에서 아예 빠지게 한다
         public void SetInteractable(bool interactable)
         {
-            button.interactable = interactable;
+            hitbox.enabled = interactable;
         }
     }
 }
