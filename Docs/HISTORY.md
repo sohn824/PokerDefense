@@ -11,20 +11,41 @@
 
 ## 현재 상태 요약
 
-- **진행 단계:** M0·M1·M2 완료. M3 착수 가능
-- **코드:** `Scripts/Poker/`(포커 코어), `Scripts/Game/Flow/`(RoundPhase, RoundContext, RoundController), `Scripts/UI/`(CardView, RoundScreen, HandCategoryNames), `Scripts/Tests/Editor/`
-- **씬:** `_Project/Scenes/Boot.unity`(빌드 0, 카메라만), `Game.unity`(빌드 1, 카드 UI 전체)
-- **렌더링:** URP 2D (`Assets/Settings/PokerDefense_2DRenderer.asset`, PC·Mobile RP 에셋 양쪽에 연결). UI는 uGUI + TMP
+- **진행 단계:** M0·M1·M2·M3 완료. M4 착수 가능
+- **코드:** `Scripts/Poker/`(포커 코어), `Scripts/Game/Flow/`(RoundPhase, RoundContext, RoundController), `Scripts/Game/Board/`(GridBoard, PlacementController), `Scripts/Game/Units/`(UnitInstance), `Scripts/Game/Data/`(UnitDefinition, HandUnitTable), `Scripts/UI/`, `Scripts/Tests/Editor/`
+- **데이터:** `_Project/Data/Units/` 유닛 13종, `_Project/Data/HandUnitTable.asset` 매핑. **수치는 전부 플레이스홀더이며 M6에서 밸런싱한다**
+- **씬:** `_Project/Scenes/Boot.unity`(빌드 0, 카메라만), `Game.unity`(빌드 1, 보드 15칸 + 카드 UI)
+- **렌더링:** URP 2D (`Assets/Settings/PokerDefense_2DRenderer.asset`, PC·Mobile RP 에셋 양쪽에 연결). UI는 uGUI + TMP. **Game 뷰는 Portrait 1080x1920** (세로 타깃)
 - **어셈블리:** asmdef 없음. 게임 코드는 `Assembly-CSharp`, 테스트는 `Assembly-CSharp-Editor`
-- **테스트:** EditMode 61/61 통과 (2026-08-07 확인)
+- **테스트:** EditMode 87/87 통과 (2026-08-08 확인)
 - **지켜야 할 관례:** 레이어 역방향 `using` 금지, `Poker`에서 `UnityEngine.Random` 금지(재현성), ScriptableObject·MonoBehaviour 금지 — DESIGN.md §2 참조
 - **UI 표기는 영문이다.** 한글 폰트가 없어서다. 폰트를 넣으면 `HandCategoryNames.cs` 한 파일만 고치면 된다
-- **다음 작업:** M3 — 그리드 + 배치 + 머지
+- **다음 작업:** M4 — 웨이브 + 전투 + 클리어 판정
+- **대기 중인 결정:** DESIGN §7 열린 이슈 **1번(저등급 편중 완화)은 M4 전에 반드시 확정해야 한다.** 2번(그리드 가득 참)은 M3에서 "유닛 포기"로 임시 처리해 둔 상태
 - **대기 중인 결정:** DESIGN.md §7 열린 이슈 1번(저등급 편중 완화 수단) — M4 이전 확정 필요
 
 ---
 
 ## 이력
+
+### 2026-08-08 — M3: 그리드 + 배치 + 머지
+
+- **`GridBoard`(순수 C#)가 15슬롯 점유와 배치·머지 규칙을 소유한다.** `TryPlace`는 빈 칸이면 배치, 같은 유닛·같은 성급이면 머지, 그 외에는 **보드를 건드리지 않고** 거부한다.
+- **`UnitInstance`는 불변이다.** 머지는 성급을 올리는 대신 승급된 새 인스턴스를 만들고 보드가 슬롯을 교체한다. 중간 상태가 생기지 않는다.
+- **구현 중 발견한 설계 구멍: 그대로 뒀으면 ★3에 영원히 도달할 수 없었다.** 머지가 "소환 유닛을 놓을 때"만 일어나면, 소환 유닛은 항상 ★1이라 ★2에 얹을 수 없고 보드 위 ★2 두 기를 합칠 방법이 없다.
+  - 처음 쓴 테스트 `board.TryPlace(0, board[1])`는 통과했지만 **UI에 그런 경로가 없었다.** 테스트가 실제 사용을 반영하지 못한 사례다. 게다가 그 호출은 1번 슬롯을 비우지도 않아 유닛이 복제됐다.
+  - `TryMergeSlots(from, to)`를 추가했다. 재료 슬롯이 비워진다. UI는 유닛을 탭해 고르고 상대를 탭해 합치는 2탭 방식이다. DESIGN §5.2에 두 경로를 명시했다.
+- **DESIGN §2와 달라진 것 2가지** (문서를 실제에 맞게 고쳤다):
+  - `GridSlot` 클래스를 만들지 않았다. 슬롯은 `UnitInstance[]`면 충분하다.
+  - `MergeResolver`를 만들지 않았다. 머지는 배치의 일부라 `GridBoard`가 함께 처리한다. 규칙 하나를 위해 클래스를 나누지 않았다.
+- **보드는 uGUI 그리드다.** DESIGN §5.1의 슬롯↔월드 좌표 변환은 유닛이 월드의 적을 조준해야 하는 M4에서 붙인다.
+- **성급 배수는 사거리에 곱하지 않는다.** 사거리까지 늘면 배치 위치를 고르는 의미가 줄어든다.
+- 유닛 13종 + `HandUnitTable` 에셋을 생성했다. 공격력은 등장 확률(DESIGN §3.3)에 대충 반비례시킨 시작값이고 **전부 플레이스홀더**다.
+- **Game 뷰가 16:9 가로라 보드가 잘렸다.** 타깃은 9:16 세로(DESIGN §0)다. Portrait 1080x1920을 추가해 선택했다.
+- **§7 열린 이슈 2번(그리드 가득 참)을 임시 처리했다.** 놓을 자리가 없으면 "Discard Unit" 버튼을 내고 유닛을 버린다. 보상이 없어 아깝기만 한 처리이므로 정식 결정 전까지의 자리끼움이다.
+- **테스트 26개 추가** (`GridBoardTests`) — 배치/머지/거부, 성급·종류 불일치, ★3 상한, 거부 시 보드 무변경, 슬롯 간 머지로 재료 칸 비워짐, `CanPlaceAt`·`CanMergeSlots`·`HasMergePartner`가 실제 시도 결과와 일치, 머지가 원본 인스턴스를 바꾸지 않음.
+- **검증:** EditMode **87/87 통과**. Game 씬 플레이로 확인 — Guard ★1(ATK 14) 두 기 머지 → **★2 ATK 28**(정확히 배수 2배), 점유 슬롯은 늘지 않음. Scout ★1 넷을 2탭 머지로 이어 붙여 **★3 ATK 40** 도달, ★3에는 더 못 얹음. 다른 유닛이 있는 칸은 클릭 자체가 막힘. 보드 15/15에서 `IsStuck` → Discard 버튼 노출 → 포기 동작까지 확인. **콘솔 에러·경고 0건.**
+- **남은 것:** 배치·머지 연출 없음(즉시 반영). 유닛 이동(빈 칸으로 옮기기)은 넣지 않았다 — 요구에 없었다.
 
 ### 2026-08-07 — M2: 카드 UI + 드로우/교체 플로우
 

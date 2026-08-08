@@ -6,9 +6,7 @@ namespace PokerDefense.Poker
     {
         public readonly HandCategory Category;
 
-        /// <summary>
-        /// 연출용 하이라이트 대상. 페어면 2장, 스트레이트/플러시류면 5장 전부.
-        /// </summary>
+        // 족보로 결정된 key 카드 리스트 (ex - 원 페어면 2장 / 스트레이트면 5장)
         public readonly IReadOnlyList<Card> KeyCards;
 
         public HandResult(HandCategory category, IReadOnlyList<Card> keyCards)

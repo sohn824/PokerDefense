@@ -4,23 +4,19 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Game
 {
-    /// <summary>
-    /// 라운드 하나의 카드 상태. Draw -> Exchange(여러 번) -> Evaluate 순서로만 진행한다.
-    /// MonoBehaviour가 아니라서 EditMode 테스트에서 그대로 쓸 수 있다.
-    ///
-    /// 교체는 자리 단위로 잠긴다. 한 라운드에 여러 번 교체할 수 있지만 같은 자리는 한 번뿐이라,
-    /// 결국 최대 5장까지 바뀐다. 한 번에 몰아서 바꾸지 않고 나눠 바꿀 수 있게 한 것은
-    /// 바뀐 결과를 보고 다음 선택을 하게 만들기 위함이다.
-    ///
-    /// 교체도 같은 덱에서 뽑으므로 한 라운드 안에서는 중복 카드가 나오지 않는다 (DESIGN §3.2).
-    /// </summary>
+    /**
+     * RoundContext
+     * 
+     * 라운드 하나의 흐름
+     * 카드 드로우 -> 카드 교체 (카드 하나당 한번씩 가능, 교체한 자리는 잠김) -> 족보 판정 순서로 진행
+     */
     public sealed class RoundContext
     {
         public const int HandSize = 5;
 
-        readonly Deck deck;
-        readonly Card[] hand = new Card[HandSize];
-        readonly bool[] locked = new bool[HandSize];
+        readonly Deck deck; // 전체 덱
+        readonly Card[] hand = new Card[HandSize]; // 5장 손패
+        readonly bool[] locked = new bool[HandSize]; // 교체해서 잠긴 자리인지 여부
 
         public RoundContext(int seed)
         {
@@ -31,13 +27,13 @@ namespace PokerDefense.Game
 
         public IReadOnlyList<Card> Hand => hand;
 
-        /// <summary>Evaluate를 부르기 전에는 의미 없는 값이다.</summary>
+        // 손패 족보 - Evaluate로 판정하기 전에는 의미 없는 값
         public HandResult Result { get; private set; }
 
-        /// <summary>이번 라운드에 이미 교체해서 더는 바꿀 수 없는 자리인지.</summary>
+        // 이번 라운드에 이미 교체해서 더는 바꿀 수 없는 자리인지 판별
         public bool IsLocked(int index) => locked[index];
 
-        /// <summary>아직 바꿀 수 있는 자리 수.</summary>
+        // 아직 바꿀 수 있는 손패 자리 수
         public int ExchangeableCount
         {
             get
@@ -46,7 +42,7 @@ namespace PokerDefense.Game
 
                 for (int i = 0; i < HandSize; i++)
                 {
-                    if (!locked[i])
+                    if (locked[i] == false)
                     {
                         count++;
                     }
@@ -56,6 +52,7 @@ namespace PokerDefense.Game
             }
         }
 
+        // Draw Phase -> 덱에서 카드를 드로우하고 Exchange Phase로 넘김
         public void Draw()
         {
             Require(RoundPhase.Draw);
@@ -68,10 +65,8 @@ namespace PokerDefense.Game
             Phase = RoundPhase.Exchange;
         }
 
-        /// <summary>
-        /// 고른 자리의 카드를 새로 뽑은 카드로 바꾸고 그 자리를 잠근다.
-        /// 이미 잠긴 자리를 고르면 예외를 던지며, 이때 손패는 한 장도 바뀌지 않는다.
-        /// </summary>
+        // 고른 자리의 카드를 교체하고 그 자리는 잠금
+        // 이미 잠긴 자리를 골랐으면 예외를 던지고 실패 처리
         public void Exchange(IReadOnlyList<int> indices)
         {
             Require(RoundPhase.Exchange);
@@ -91,7 +86,7 @@ namespace PokerDefense.Game
             }
         }
 
-        /// <summary>교체를 끝내고 판정 단계로 넘어간다.</summary>
+        // Exchange Phase를 끝내고 Evaluate Phase로 넘김
         public void FinishExchange()
         {
             Require(RoundPhase.Exchange);
@@ -99,6 +94,7 @@ namespace PokerDefense.Game
             Phase = RoundPhase.Evaluate;
         }
 
+        // Evaluate Phase - 족보를 판정하고 Place Phase로 넘김
         public HandResult Evaluate()
         {
             Require(RoundPhase.Evaluate);
@@ -108,7 +104,7 @@ namespace PokerDefense.Game
             return Result;
         }
 
-        /// <summary>손패를 건드리기 전에 전부 검사한다. 일부만 교체되고 실패하는 일이 없어야 한다.</summary>
+        // 손패 검증 - 비정상 시도일 경우 예외를 던지고 실패 처리
         void Validate(IReadOnlyList<int> indices)
         {
             for (int i = 0; i < indices.Count; i++)
@@ -117,19 +113,19 @@ namespace PokerDefense.Game
 
                 if (index < 0 || index >= HandSize)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(indices), $"손패 인덱스 범위를 벗어났다: {index}");
+                    throw new ArgumentOutOfRangeException(nameof(indices), $"손패 범위를 벗어난 인덱스 입니다: {index}");
                 }
 
                 if (locked[index])
                 {
-                    throw new InvalidOperationException($"이미 교체한 자리는 이번 라운드에 다시 바꿀 수 없다: {index}");
+                    throw new InvalidOperationException($"이미 교체한 자리는 이번 라운드에 다시 바꿀 수 없습니다: {index}");
                 }
 
                 for (int j = i + 1; j < indices.Count; j++)
                 {
                     if (indices[j] == index)
                     {
-                        throw new ArgumentException($"같은 인덱스를 두 번 교체할 수 없다: {index}", nameof(indices));
+                        throw new ArgumentException($"같은 인덱스를 두 번 교체할 수 없습니다: {index}", nameof(indices));
                     }
                 }
             }
@@ -139,7 +135,7 @@ namespace PokerDefense.Game
         {
             if (Phase != expected)
             {
-                throw new InvalidOperationException($"{expected} 페이즈에서만 가능하다. 현재: {Phase}");
+                throw new InvalidOperationException($"{expected} 페이즈에서만 가능한 동작입니다. 현재: {Phase}");
             }
         }
     }

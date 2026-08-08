@@ -107,11 +107,11 @@ Assets/_Project/
 └── Scripts/
     ├── Poker/          namespace PokerDefense.Poker
     ├── Game/           namespace PokerDefense.Game
-    │   ├── Flow/       GameFlowController, RoundContext
-    │   ├── Board/      GridBoard, GridSlot, PlacementController, MergeResolver
-    │   ├── Units/      UnitInstance, UnitTargeting, UnitAttack, Projectile
-    │   ├── Enemies/    EnemyInstance, EnemyPath, WaveRunner, TargetRegistry
-    │   └── Data/       *Definition.cs (SO 클래스 정의)
+    │   ├── Flow/       RoundPhase, RoundContext, RoundController
+    │   ├── Board/      GridBoard, PlacementController
+    │   ├── Units/      UnitInstance, (M4: UnitTargeting, UnitAttack, Projectile)
+    │   ├── Enemies/    (M4: EnemyInstance, EnemyPath, WaveRunner, TargetRegistry)
+    │   └── Data/       UnitDefinition, HandUnitTable, (M4: Enemy/Wave/Stage)
     ├── UI/             namespace PokerDefense.UI
     └── Tests/Editor/   → Assembly-CSharp-Editor (폴더명이 Editor여야 함)
 ```
@@ -222,7 +222,9 @@ public static class HandEvaluator
 
 - 중앙 **5열 × 3행 = 15슬롯** 그리드. 슬롯 하나에 유닛 하나.
 - 적은 그리드를 감싸는 **고정 웨이포인트 트랙**을 순회한다. 유닛은 사거리 안에 들어온 적을 자동 공격한다.
-- `GridBoard`가 슬롯 ↔ 월드 좌표 변환과 점유 상태를 소유한다. 유닛/적은 서로를 직접 찾지 않고 `TargetRegistry`(활성 적 목록)를 통해 조회한다 — 매 프레임 `FindObjectsOfType` 호출을 막기 위함.
+- `GridBoard`가 점유 상태와 배치·머지 규칙을 소유한다. 슬롯은 `UnitInstance[15]`이고 인덱스로만 다룬다.
+  **슬롯 ↔ 월드 좌표 변환은 M4에서 붙인다.** 유닛이 월드의 적을 조준해야 할 때 필요해지는 것이고, M3까지는 uGUI 그리드면 충분하다.
+- 유닛/적은 서로를 직접 찾지 않고 `TargetRegistry`(활성 적 목록)를 통해 조회한다 — 매 프레임 `FindObjectsOfType` 호출을 막기 위함.
 
 ### 5.2 머지
 
@@ -230,6 +232,15 @@ public static class HandEvaluator
 동일 `UnitDefinition` + 동일 성급 유닛 2기 → 같은 유닛의 ★+1 (최대 ★3). 스탯은 `UnitDefinition`의 성급 배수를 적용한다.
 
 대안으로 "동일 티어 2기 → 상위 티어 1기"가 있지만, 그러면 *하이카드 2기 = 원페어 1기*가 되어 족보를 맞춘 가치가 희석된다. 족보 축(유닛 종류)과 머지 축(성급)을 직교시키는 편이 낫다.
+
+**머지 경로는 두 가지다. 둘 다 있어야 한다.**
+
+1. **소환 유닛 → 보드**: 배치할 때 같은 유닛·같은 성급 칸을 고르면 합쳐진다.
+2. **보드 → 보드**: 이미 놓인 두 유닛을 합친다 (`GridBoard.TryMergeSlots`). 재료 쪽 칸이 비워진다.
+
+2번이 없으면 **★3에 도달할 수 없다.** 소환되는 유닛은 항상 ★1이라 ★2에 얹을 수 없고, 보드 위의 ★2 두 기를 합칠 방법이 사라지기 때문이다. UI에서는 유닛을 탭해 고르고 상대를 탭해 합친다.
+
+성급은 공격력·공격속도에만 곱해지고 **사거리에는 곱해지지 않는다.** 성급으로 사거리까지 늘면 배치 위치를 고르는 의미가 줄어든다.
 
 ### 5.3 클리어 판정
 
@@ -260,6 +271,7 @@ PvE 전용이므로 결정론적 고정 틱을 도입하지 않는다. 일반적
    대안: 교체 횟수를 라운드 진행에 따라 늘리기 / 교체 시 특정 무늬·숫자를 고정하는 강화 요소.
 
 2. **그리드가 가득 찼을 때.** 15슬롯이 다 차면 소환된 유닛을 어떻게 할지 (자동 판매 / 배치 거부 / 강제 머지 선택).
+   → **M3의 임시 처리:** 놓을 자리가 하나도 없으면(`PlacementController.IsStuck`) "Discard Unit" 버튼을 내고 유닛을 그냥 버린다. 보상이 없어 아깝기만 한 처리이므로 정식 결정 전까지의 자리끼움이다.
 
 3. **골드의 용도.** 위 1번의 추가 소환 외에 유닛 판매·글로벌 강화 등이 필요한지.
 
