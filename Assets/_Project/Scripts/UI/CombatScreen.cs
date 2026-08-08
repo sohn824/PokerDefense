@@ -156,7 +156,8 @@ namespace PokerDefense.UI
             }
             else
             {
-                waveLabel.text = $"웨이브 {stage.CurrentWave.WaveNumber}";
+                // 라운드 N이 웨이브 N을 치른다. 둘은 1:1이라 라운드만 보여준다
+                waveLabel.text = $"라운드 {stage.CurrentWave.WaveNumber}";
             }
 
             startButton.interactable = controller.CanStart;

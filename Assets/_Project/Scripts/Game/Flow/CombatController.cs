@@ -13,6 +13,7 @@ namespace PokerDefense.Game
      */
     public sealed class CombatController : MonoBehaviour
     {
+        [SerializeField] RoundController round;
         [SerializeField] PlacementController placement;
         [SerializeField] StageDefinition stageDefinition;
 
@@ -27,7 +28,16 @@ namespace PokerDefense.Game
 
         public bool IsFighting => combat != null && combat.Outcome == CombatOutcome.InProgress;
 
+        /**
+         * 전투로 넘어갈 수 있는 조건
+         *
+         * 페이즈는 순차적이고 배타적이다 (DESIGN §1). 그래서 두 가지를 함께 본다
+         * - Place 페이즈여야 한다. 교체 도중에 전투로 뛰면 그 라운드의 소환을 건너뛰게 된다
+         * - 배치 대기 유닛이 없어야 한다. 남겨두고 넘어가면 다음 라운드의 소환이 덮어써 조용히 사라진다
+         */
         public bool CanStart => IsFighting == false
+                                && round.Phase == RoundPhase.Place
+                                && placement.Pending == null
                                 && Stage.IsGameOver == false
                                 && Stage.IsAllWavesCleared == false;
 

@@ -40,6 +40,24 @@
 | `Combat` | 웨이브 스폰, 유닛 자동 전투, 제한시간 카운트 | 적 전멸 or 시간 초과 |
 | `Result` | 클리어/실패 판정, 보상 정산 | 즉시 → 다음 `Draw` |
 
+**라운드 N은 웨이브 N을 치른다.** 둘은 1:1이라 HUD는 라운드만 보여준다.
+
+**자동으로 넘어가는 구간과 플레이어 입력이 필요한 구간이 갈린다.** `GameFlowController`는 자동 구간만 맡는다.
+
+| 전이 | 방식 |
+|---|---|
+| `Draw` → `Exchange` | 자동 (드로우 즉시) |
+| `Exchange` → `Evaluate` | **플레이어** — 확정 버튼 |
+| `Evaluate` → `Place` | 자동 (판정 즉시 소환) |
+| `Place` → `Combat` | **플레이어** — 전투 시작 버튼 |
+| `Combat` → `Result` | 자동 (전멸 or 시간 초과) |
+| `Result` → 다음 `Draw` | 자동 |
+
+**`Combat`으로 넘어가려면 두 조건을 모두 만족해야 한다.** 페이즈가 순차적·배타적이기 때문이다.
+
+- `Place` 페이즈여야 한다. 교체 도중에 전투로 뛰면 그 라운드의 소환을 통째로 건너뛴다.
+- 배치 대기 유닛이 없어야 한다. 남겨두고 넘어가면 다음 라운드의 소환이 덮어써서 조용히 사라진다.
+
 **설계 결정: 교체는 자리 단위로 잠근다.** 라운드 안에서 몇 번이든 교체를 누를 수 있지만, 한 번 바꾼 자리는 그 라운드에 다시 못 바꾼다. 결과적으로 최대 교체 장수는 5장으로 "한 번에 몰아서 5장까지"와 같다. 나눠 바꾸게 한 이유는 **바뀐 결과를 보고 다음 선택을 하게** 만들기 위함이다. 한 장씩 열어보는 편이 기대감이 크다.
 
 부작용 하나: 중간 정보를 보고 판단하므로 플레이어가 약간 더 강해진다. §7 열린 이슈 1번(저등급 편중)에는 유리한 방향이라 지금은 그대로 둔다.
@@ -108,7 +126,8 @@ Assets/_Project/
     ├── Poker/          namespace PokerDefense.Poker
     ├── Game/           namespace PokerDefense.Game
     │   ├── Flow/       RoundPhase, RoundContext, RoundController,
-    │   │               CombatContext, CombatController, StageContext
+    │   │               CombatContext, CombatController, StageContext,
+    │   │               GameFlowController
     │   ├── Board/      GridBoard, PlacementController
     │   ├── Units/      UnitInstance
     │   ├── Enemies/    EnemyInstance

@@ -22,7 +22,6 @@ namespace PokerDefense.UI
         [SerializeField] Button exchangeButton;
         [SerializeField] TMP_Text exchangeLabel;
         [SerializeField] Button confirmButton;
-        [SerializeField] Button newRoundButton;
 
         RoundPhase phase;
 
@@ -35,7 +34,6 @@ namespace PokerDefense.UI
 
             exchangeButton.onClick.AddListener(OnExchange);
             confirmButton.onClick.AddListener(controller.ConfirmHand);
-            newRoundButton.onClick.AddListener(controller.StartRound);
 
             controller.PhaseChanged += ShowPhase;
             controller.HandChanged += ShowHand;

@@ -23,11 +23,10 @@ namespace PokerDefense.Game
 
         public int ExchangeableCount => round.ExchangeableCount;
 
-        void Start()
-        {
-            StartRound();
-        }
+        // 라운드가 아직 안 열렸으면 Draw로 본다
+        public RoundPhase Phase => round == null ? RoundPhase.Draw : round.Phase;
 
+        // 라운드를 여는 주체는 GameFlowController다. 여기서 스스로 시작하면 루프 주인이 둘이 된다
         /// <summary>새 라운드. 덱을 새로 셔플하고 5장 뽑는다 (DESIGN §3.2 — 라운드마다 새 덱).</summary>
         public void StartRound()
         {
