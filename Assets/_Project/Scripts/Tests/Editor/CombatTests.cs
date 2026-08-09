@@ -260,6 +260,44 @@ namespace PokerDefense.Tests
             Assert.Less(star2.ElapsedTime, star1.ElapsedTime, "★2가 더 느리게 잡았다");
         }
 
+        [Test]
+        public void 전투_중에_유닛을_옮겨도_연사가_되지_않는다()
+        {
+            // 전투 중 배치 변경은 허용된 전략이다 (DESIGN §1)
+            // 쿨다운을 슬롯으로 들고 있으면 빈 칸으로 옮길 때마다 쿨다운 0을 물려받아 이동만으로 연사가 된다
+            var unit = MakeUnit(10f, 1f, range: 100f);
+            var enemy = MakeEnemy(1000000f, 0f);
+            var wave = MakeWave(enemy, count: 1, interval: 0f, timeLimit: 1000f);
+
+            var still = new GridBoard();
+            still.TryPlace(0, new UnitInstance(unit));
+            var stillCombat = new CombatContext(still, wave);
+
+            var moving = new GridBoard();
+            moving.TryPlace(0, new UnitInstance(unit));
+            var movingCombat = new CombatContext(moving, wave);
+
+            int at = 0;
+
+            for (int i = 0; i < 100; i++)
+            {
+                stillCombat.Tick(0.1f);
+
+                movingCombat.Tick(0.1f);
+                int next = (at + 1) % GridBoard.SlotCount;
+
+                if (moving.TryMoveSlot(at, next))
+                {
+                    at = next;
+                }
+            }
+
+            float stillDamage = enemy.MaxHp - stillCombat.Enemies[0].Hp;
+            float movingDamage = enemy.MaxHp - movingCombat.Enemies[0].Hp;
+
+            Assert.AreEqual(stillDamage, movingDamage, 0.001f, "이동한 쪽이 더 때렸다면 쿨다운이 초기화된 것이다");
+        }
+
         // ---------- M4 검증 조건 ----------
 
         [Test]

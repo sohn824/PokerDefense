@@ -19,19 +19,18 @@ namespace PokerDefense.Game
             public EnemyDefinition enemy;
             public int count;
 
-            [Tooltip("이 엔트리 안에서 한 마리씩 나오는 간격(초)")]
+            [Tooltip("Entry에서 한 마리씩 나오는 간격(초)")]
             public float interval;
 
-            [Tooltip("웨이브 시작 후 이 엔트리가 시작되는 시각(초)")]
+            [Tooltip("웨이브 시작 후 이 Entry가 시작되는 시각(초)")]
             public float startDelay;
         }
 
         [SerializeField] int waveNumber = 1;
 
-        [Tooltip("이 시간이 지나면 남은 적 수만큼 라이프가 깎인다")]
         [SerializeField] float timeLimit = 30f;
 
-        [Tooltip("이 웨이브를 클리어하면 받는 Joker 수. 보스 웨이브에만 넣는다")]
+        [Tooltip("이 웨이브를 클리어하면 받는 Joker 수 (보스 웨이브 전용)")]
         [SerializeField] int jokerReward;
 
         [SerializeField] SpawnEntry[] entries;

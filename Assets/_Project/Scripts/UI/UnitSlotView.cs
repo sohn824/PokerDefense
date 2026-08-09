@@ -7,9 +7,8 @@ namespace PokerDefense.UI
     /**
      * UnitSlotView
      *
-     * 보드 슬롯 한 칸의 월드 표현
-     * 비어 있으면 빈 칸 색, 유닛이 있으면 유닛 색 + 이름 + 성급 + 공격력을 보여줌
-     * 클릭 판정은 BoardScreen이 hitbox를 Physics2D로 찍어서 한다
+     * 보드 슬롯 한 칸의 월드 스페이스 표현
+     * 비어 있으면 빈 칸 색, 유닛이 있으면 유닛 색 + 이름 + 성급 + 공격력을 표시
      */
     public sealed class UnitSlotView : MonoBehaviour
     {
@@ -55,7 +54,7 @@ namespace PokerDefense.UI
             highlight.color = selected ? SelectedColor : PlaceableColor;
         }
 
-        // 누를 수 없는 칸은 hitbox를 꺼서 Physics2D 검사에서 아예 빠지게 한다
+        // 누를 수 없는 칸은 hitbox를 꺼서 Physics2D 검사에서 아예 빠지게 함
         public void SetInteractable(bool interactable)
         {
             hitbox.enabled = interactable;

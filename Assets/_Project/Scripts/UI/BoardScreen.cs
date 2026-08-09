@@ -10,14 +10,9 @@ namespace PokerDefense.UI
     /**
      * BoardScreen
      *
-     * 15슬롯 보드의 표현과 입력. PlacementController를 구독만 하고 입력은 메서드로 넘김
-     * 슬롯은 월드 스페이스이고, 안내 문구와 버튼만 uGUI로 남는다
-     *
-     * 탭 규칙 (DESIGN §9.4)
-     * - 배치 대기 유닛이 있으면: 칸을 누르면 배치하거나 머지
-     * - 없으면: 유닛을 눌러 고른 뒤
-     *     빈 칸을 누르면 이동, 짝을 누르면 머지, 판매 버튼을 누르면 판매, 조커 버튼을 누르면 성급 +1
-     *   모드를 늘리지 않고 네 행동을 한 선택으로 흡수한다
+     * 15슬롯 그리드 슬롯 표현, 입력 처리
+     * PlacementController를 구독만 하고 입력은 메서드로 넘김
+     * 그리드 슬롯은 월드 스페이스 / 안내 문구, 버튼 등의 요소는 UI 레이어
      */
     public sealed class BoardScreen : MonoBehaviour
     {
@@ -25,6 +20,7 @@ namespace PokerDefense.UI
 
         [SerializeField] PlacementController placement;
         [SerializeField] StageController stage;
+        [SerializeField] RoundController round;
         [SerializeField] Camera boardCamera;
         [SerializeField] UnitSlotView[] slots;
         [SerializeField] TMP_Text pendingLabel;
@@ -48,17 +44,31 @@ namespace PokerDefense.UI
             supportButton.onClick.AddListener(OnSupportSummon);
             jokerButton.onClick.AddListener(OnUseJoker);
 
+            // PlacementController 이벤트 구독
             placement.PendingChanged += OnPendingChanged;
             placement.Placed += OnPlaced;
             placement.BoardChanged += Refresh;
 
-            // Chip이 바뀌면 지원 소환 버튼의 활성 여부가 달라진다
+            // StageController 이벤트 구독
             stage.Changed += Refresh;
+
+            // RoundController 이벤트 구독
+            round.PhaseChanged += OnPhaseChanged;
 
             Refresh();
         }
 
-        // 월드 슬롯은 uGUI 버튼이 아니라서 클릭을 직접 잡는다
+        
+        // 전투 중에도 보드를 조작할 수 있으므로 유닛을 고른 채로 웨이브가 끝날 수 있는데
+        // 웨이브가 끝나면 강제로 유닛 선택을 해제하고 Refresh 호출    
+        void OnPhaseChanged(RoundPhase phase)
+        {
+            selected = NoSelection;
+            Refresh();
+        }
+
+        // 그리드 슬롯은 UI 버튼이 아니고 월드 스페이스이므로
+        // 마우스 클릭을 직접 검사해줘야 함
         void Update()
         {
             if (Pointer.current == null || Pointer.current.press.wasPressedThisFrame == false)
@@ -76,40 +86,46 @@ namespace PokerDefense.UI
             Vector2 worldPoint = boardCamera.ScreenToWorldPoint(screenPoint);
 
             Collider2D hit = Physics2D.OverlapPoint(worldPoint);
-
             if (hit == null)
             {
                 return;
             }
 
+            // OverlapPoint로 찾은 오브젝트에서 UnitSlotView 컴포넌트를 가져와서 클릭 처리
             UnitSlotView slot = hit.GetComponent<UnitSlotView>();
-
             if (slot != null)
             {
                 OnSlotClicked(slot);
             }
         }
 
+        // 선택한 유닛이 바뀌었을 때 호출
+        // selected 상태를 초기화하고 Refresh를 호출해 UI 상태 갱신
         void OnPendingChanged(UnitInstance pending)
         {
             selected = NoSelection;
             Refresh();
         }
 
+        // 그리드 슬롯에 유닛을 배치했을 때 호출
+        // selected 상태를 초기화하고 Refresh를 호출해 UI 상태 갱신
         void OnPlaced(int index, PlacementResult result)
         {
             selected = NoSelection;
             Refresh();
         }
 
+        // 그리드 슬롯을 클릭했을 때 호출
         void OnSlotClicked(UnitSlotView slot)
         {
+            // 배치 대기 중인 유닛이 있으면 배치 시도
             if (placement.Pending != null)
             {
                 placement.TryPlace(slot.Index);
                 return;
             }
 
+            // 선택한 유닛을 다시 클릭했으면 선택 해제
             if (selected == slot.Index)
             {
                 selected = NoSelection;
@@ -117,6 +133,7 @@ namespace PokerDefense.UI
                 return;
             }
 
+            // 선택한 유닛이 없는 상태면 선택 처리
             if (selected == NoSelection)
             {
                 selected = slot.Index;
@@ -124,13 +141,14 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 두 번째 탭 - 빈 칸이면 이동, 짝이면 머지
+            // 선택한 그리드 슬롯이 빈 칸이면 이동, 머지 가능하면 머지
             bool moved = placement.Board[slot.Index] == null
                 ? placement.TryMoveSlot(selected, slot.Index)
                 : placement.TryMergeSlots(selected, slot.Index);
 
             selected = NoSelection;
 
+            // 이동이나 머지가 실패하면 선택 상태를 초기화하고 Refresh 호출
             if (moved == false)
             {
                 Refresh();
@@ -170,25 +188,33 @@ namespace PokerDefense.UI
             UnitInstance pending = placement.Pending;
             GridBoard board = placement.Board;
 
+            // 고른 칸이 비었으면 선택 상태 초기화
+            if (selected != NoSelection && board[selected] == null)
+            {
+                selected = NoSelection;
+            }
+
             for (int i = 0; i < slots.Length; i++)
             {
                 slots[i].Show(board[i]);
 
                 if (pending != null)
                 {
+                    // 대기 유닛이 있으면 배치 가능한 슬롯들을 하이라이트
                     bool placeable = board.CanPlaceAt(i, pending);
                     slots[i].SetHighlight(placeable, false);
                     slots[i].SetInteractable(placeable);
                 }
                 else if (selected == NoSelection)
                 {
-                    // 유닛이 있는 칸은 전부 고를 수 있다. 고르면 이동·머지·판매가 열린다
+                    // 아무것도 안 고른 상태에서는 고를 수 있는 슬롯들을 하이라이트
                     bool hasUnit = board[i] != null;
                     slots[i].SetHighlight(board.HasMergePartner(i), false);
                     slots[i].SetInteractable(hasUnit);
                 }
                 else
                 {
+                    // 이미 배치된 유닛을 고른 상태에서는 이동/머지 가능한 슬롯들을 하이라이트
                     bool isSelected = i == selected;
                     bool actionable = isSelected
                                       || board[i] == null
@@ -201,6 +227,7 @@ namespace PokerDefense.UI
             UpdateLabels(pending);
         }
 
+        // UI 버튼과 안내 문구 갱신
         void UpdateLabels(UnitInstance pending)
         {
             supportButton.interactable = placement.CanSupportSummon;
