@@ -2,10 +2,11 @@ using UnityEngine;
 
 namespace PokerDefense.Game
 {
-    /// <summary>
-    /// 유닛 종류 하나의 정의. 수치는 전부 여기 있고 코드에는 두지 않는다 (DESIGN §4).
-    /// 지금 들어 있는 값은 전부 플레이스홀더이며 M6에서 밸런싱한다.
-    /// </summary>
+    /**
+     * UnitDefinition
+     * 
+     * 유닛 종류 하나의 정의
+     */
     [CreateAssetMenu(menuName = "PokerDefense/Unit Definition", fileName = "Unit_")]
     public sealed class UnitDefinition : ScriptableObject
     {

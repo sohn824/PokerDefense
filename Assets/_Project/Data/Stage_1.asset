@@ -14,7 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.StageDefinition
   startingLife: 15
   startingChip: 0
+  maxLifeDamagePerWave: 5
   waves:
   - {fileID: 11400000, guid: d5ddc6e76db5187459c7aeb16deda1e9, type: 2}
   - {fileID: 11400000, guid: d186f003c91f0a046ac4cf563eefe19f, type: 2}
   - {fileID: 11400000, guid: 8cc782cab7711e94ebe19fa9eb3dca41, type: 2}
+  - {fileID: 11400000, guid: a453895e0e1188e4ba374f4e46ffc5cd, type: 2}
+  - {fileID: 11400000, guid: 827c4fba0e8f54141a2790c6a4807f1a, type: 2}
+  - {fileID: 11400000, guid: ecd0ba407178a8e47a354d3600538f26, type: 2}
+  - {fileID: 11400000, guid: 99406d23cce17ac4baaa853dc4810cda, type: 2}
+  - {fileID: 11400000, guid: 2545a4d3b32ed594183dad0fa8576361, type: 2}
+  - {fileID: 11400000, guid: f4de2b34c0921fa4e8b0361c1a4d6069, type: 2}
+  - {fileID: 11400000, guid: 35ff166cffd4e3e4c8c10cdb8b7ba230, type: 2}
+  - {fileID: 11400000, guid: e156cf89c1982ec449a7d2ba80ae8ffc, type: 2}
+  - {fileID: 11400000, guid: a6814e4f222c47d499f89c3c7e9c0fe0, type: 2}
+  - {fileID: 11400000, guid: ef4bbc6b6fee6e24eb58cf8e2d601c12, type: 2}
+  - {fileID: 11400000, guid: 11f8108b2eb03464499c49a4666abc53, type: 2}
+  - {fileID: 11400000, guid: 32eb8f383b839de4a93dca9da1a03338, type: 2}

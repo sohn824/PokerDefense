@@ -65,7 +65,7 @@ namespace PokerDefense.Game
             }
 
             int unresolved = combat.UnresolvedEnemies;
-            stageController.ApplyCombatResult(combat.Outcome, unresolved);
+            stageController.ApplyCombatResult(combat.Outcome, unresolved, combat.UnresolvedBosses);
             CombatFinished?.Invoke(combat.Outcome, unresolved);
         }
     }

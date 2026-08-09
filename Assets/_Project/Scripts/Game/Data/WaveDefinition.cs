@@ -31,10 +31,14 @@ namespace PokerDefense.Game
         [Tooltip("이 시간이 지나면 남은 적 수만큼 라이프가 깎인다")]
         [SerializeField] float timeLimit = 30f;
 
+        [Tooltip("이 웨이브를 클리어하면 받는 Joker 수. 보스 웨이브에만 넣는다")]
+        [SerializeField] int jokerReward;
+
         [SerializeField] SpawnEntry[] entries;
 
         public int WaveNumber => waveNumber;
         public float TimeLimit => timeLimit;
+        public int JokerReward => jokerReward;
         public IReadOnlyList<SpawnEntry> Entries => entries;
 
         public int TotalEnemyCount

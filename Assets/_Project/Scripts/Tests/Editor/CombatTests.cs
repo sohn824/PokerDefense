@@ -279,6 +279,30 @@ namespace PokerDefense.Tests
         }
 
         [Test]
+        public void 전멸시켜도_스폰이_남았으면_다음_스폰까지_기다린다()
+        {
+            var board = new GridBoard();
+            board.TryPlace(7, new UnitInstance(MakeUnit(1000f, 5f, range: 100f)));
+
+            // 0초에 1기, 10초에 1기. 첫 적을 잡아도 웨이브는 안 끝난다
+            var wave = MakeWave(MakeEnemy(100f, 0f), count: 2, interval: 10f, timeLimit: 30f);
+            var combat = new CombatContext(board, wave);
+
+            Run(combat, 5f);
+
+            Assert.AreEqual(CombatOutcome.InProgress, combat.Outcome);
+            Assert.AreEqual(0, combat.RemainingEnemies, "화면에는 적이 없다");
+            Assert.AreEqual(1, combat.UnresolvedEnemies, "아직 안 나온 적이 남았다");
+            Assert.AreEqual(10f - combat.ElapsedTime, combat.SecondsToNextSpawn, 0.001f);
+
+            Run(combat, 10f);
+
+            Assert.AreEqual(CombatOutcome.Cleared, combat.Outcome);
+            Assert.Less(combat.ElapsedTime, 30f, "제한시간을 기다리지 않는다");
+            Assert.AreEqual(-1f, combat.SecondsToNextSpawn, "더 나올 적이 없다");
+        }
+
+        [Test]
         public void 제한시간을_넘기면_시간_초과다()
         {
             // 유닛이 하나도 없으니 적이 죽지 않는다
@@ -314,7 +338,7 @@ namespace PokerDefense.Tests
             var combat = new CombatContext(new GridBoard(), wave);
 
             Run(combat, 10f);
-            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies);
+            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies, combat.UnresolvedBosses);
 
             Assert.AreEqual(20 - 4, stage.Life);
         }
@@ -330,7 +354,7 @@ namespace PokerDefense.Tests
             var combat = new CombatContext(board, wave);
 
             Run(combat, 30f);
-            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies);
+            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies, combat.UnresolvedBosses);
 
             Assert.AreEqual(20, stage.Life);
         }
@@ -359,7 +383,7 @@ namespace PokerDefense.Tests
 
             var combat = new CombatContext(new GridBoard(), wave);
             Run(combat, 5f);
-            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies);
+            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies, combat.UnresolvedBosses);
 
             Assert.AreEqual(0, stage.Life);
             Assert.IsTrue(stage.IsGameOver);
@@ -373,7 +397,7 @@ namespace PokerDefense.Tests
 
             var combat = new CombatContext(new GridBoard(), wave);
             Run(combat, 5f);
-            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies);
+            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies, combat.UnresolvedBosses);
 
             Assert.AreEqual(0, stage.Life);
         }
@@ -387,12 +411,12 @@ namespace PokerDefense.Tests
 
             Assert.AreSame(first, stage.CurrentWave);
 
-            stage.ApplyResult(CombatOutcome.Cleared, 0);
+            stage.ApplyResult(CombatOutcome.Cleared, 0, 0);
 
             Assert.AreSame(second, stage.CurrentWave);
             Assert.IsFalse(stage.IsAllWavesCleared);
 
-            stage.ApplyResult(CombatOutcome.Cleared, 0);
+            stage.ApplyResult(CombatOutcome.Cleared, 0, 0);
 
             Assert.IsTrue(stage.IsAllWavesCleared);
             Assert.IsNull(stage.CurrentWave);
@@ -404,7 +428,7 @@ namespace PokerDefense.Tests
             var wave = MakeWave(MakeEnemy(100f, 0f), 1, 0f, 10f);
             var stage = new StageContext(MakeStage(20, wave));
 
-            Assert.Throws<InvalidOperationException>(() => stage.ApplyResult(CombatOutcome.InProgress, 0));
+            Assert.Throws<InvalidOperationException>(() => stage.ApplyResult(CombatOutcome.InProgress, 0, 0));
         }
 
         [Test]

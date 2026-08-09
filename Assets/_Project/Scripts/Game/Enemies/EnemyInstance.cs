@@ -7,8 +7,8 @@ namespace PokerDefense.Game
      * EnemyInstance
      *
      * 트랙 위를 도는 적 1기
-     * 위치는 트랙 진행도 하나로만 들고 있고, 월드 좌표는 그릴 때 변환한다 (DESIGN §5.3)
-     * 진행도는 바퀴 수를 포함해 계속 누적된다 - 그래야 "가장 앞선 적"이 비교 한 번으로 끝난다
+     * 위치는 트랙 진행도 하나로만 들고 있고, 월드 좌표는 그릴 때 변환
+     * 진행도는 바퀴 수를 포함해 계속 누적 ("가장 앞선 적"을 판정하기 위함)
      */
     public sealed class EnemyInstance
     {

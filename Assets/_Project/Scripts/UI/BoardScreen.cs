@@ -16,8 +16,8 @@ namespace PokerDefense.UI
      * 탭 규칙 (DESIGN §9.4)
      * - 배치 대기 유닛이 있으면: 칸을 누르면 배치하거나 머지
      * - 없으면: 유닛을 눌러 고른 뒤
-     *     빈 칸을 누르면 이동, 짝을 누르면 머지, 판매 버튼을 누르면 판매
-     *   모드를 늘리지 않고 세 행동을 한 선택으로 흡수한다
+     *     빈 칸을 누르면 이동, 짝을 누르면 머지, 판매 버튼을 누르면 판매, 조커 버튼을 누르면 성급 +1
+     *   모드를 늘리지 않고 네 행동을 한 선택으로 흡수한다
      */
     public sealed class BoardScreen : MonoBehaviour
     {
@@ -32,6 +32,8 @@ namespace PokerDefense.UI
         [SerializeField] TMP_Text sellLabel;
         [SerializeField] Button supportButton;
         [SerializeField] TMP_Text supportLabel;
+        [SerializeField] Button jokerButton;
+        [SerializeField] TMP_Text jokerLabel;
 
         int selected = NoSelection;
 
@@ -44,6 +46,7 @@ namespace PokerDefense.UI
 
             sellButton.onClick.AddListener(OnSell);
             supportButton.onClick.AddListener(OnSupportSummon);
+            jokerButton.onClick.AddListener(OnUseJoker);
 
             placement.PendingChanged += OnPendingChanged;
             placement.Placed += OnPlaced;
@@ -154,6 +157,14 @@ namespace PokerDefense.UI
             placement.TrySupportSummon();
         }
 
+        void OnUseJoker()
+        {
+            if (selected != NoSelection)
+            {
+                placement.TryUseJoker(selected);
+            }
+        }
+
         void Refresh()
         {
             UnitInstance pending = placement.Pending;
@@ -194,6 +205,16 @@ namespace PokerDefense.UI
         {
             supportButton.interactable = placement.CanSupportSummon;
             supportLabel.text = $"지원 소환 {placement.SupportSummonCost}";
+
+            // 조커는 고른 유닛에만 쓴다. 고르기 전에는 대상이 없어 버튼을 띄울 이유가 없다
+            bool jokerOffered = pending == null && selected != NoSelection;
+            jokerButton.gameObject.SetActive(jokerOffered);
+
+            if (jokerOffered)
+            {
+                jokerButton.interactable = placement.CanUseJokerOn(selected);
+                jokerLabel.text = $"조커 ★+1 ({stage.Stage.Jokers})";
+            }
 
             if (pending != null)
             {

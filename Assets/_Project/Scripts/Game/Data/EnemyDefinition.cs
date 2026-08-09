@@ -12,9 +12,7 @@ namespace PokerDefense.Game
     /**
      * EnemyDefinition
      *
-     * 적 종류 하나의 정의. 수치는 전부 여기 있고 코드에는 두지 않는다 (DESIGN §4)
-     * 지금 들어 있는 값은 전부 플레이스홀더이며 M6에서 밸런싱한다
-     * 처치 보상(골드)은 §7 열린 이슈 1·3번이 정해지면 그때 추가한다
+     * 적 종류 하나의 정의
      */
     [CreateAssetMenu(menuName = "PokerDefense/Enemy Definition", fileName = "Enemy_")]
     public sealed class EnemyDefinition : ScriptableObject

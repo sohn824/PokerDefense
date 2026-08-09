@@ -8,8 +8,8 @@ namespace PokerDefense.Game
      * 유닛 배치 페이즈 컨트롤러
      *
      * 판정 결과를 유닛 1기로 바꿔 들고 있다가 플레이어가 고른 슬롯에 배치
-     * Place 단계에서 가능한 행동을 전부 소유 (DESIGN §9.4)
-     * 배치 / 머지 / 이동 / 판매 / 지원 소환
+     * Place 단계에서 가능한 행동을 전부 관리
+     * 배치 / 머지 / 이동 / 판매 / 지원 소환 / Joker 사용
      */
     public sealed class PlacementController : MonoBehaviour
     {
@@ -62,8 +62,13 @@ namespace PokerDefense.Game
         {
             SupportSummonsUsed = 0;
             Pending = new UnitInstance(unitTable.For(result.Category));
+            stage.Stats.RecordSummon(Pending);
             PendingChanged?.Invoke(Pending);
         }
+
+        // Joker를 써서 고른 유닛의 성급을 한 단계 올릴 수 있는지
+        public bool CanUseJokerOn(int index)
+            => stage.Stage.Jokers > 0 && board[index] != null && board[index].IsMaxStar == false;
 
         // 고른 슬롯에 배치하거나 머지
         // 실패했을 경우 false를 반환하고 아무것도 바뀌지 않음
@@ -82,6 +87,7 @@ namespace PokerDefense.Game
             }
 
             Pending = null;
+            stage.Stats.RecordUnit(board[index]);
             Placed?.Invoke(index, result);
             PendingChanged?.Invoke(null);
             return true;
@@ -95,11 +101,31 @@ namespace PokerDefense.Game
                 return false;
             }
 
+            stage.Stats.RecordUnit(board[to]);
             Placed?.Invoke(to, PlacementResult.Merged);
             return true;
         }
 
-        // 유닛을 빈 칸으로 옮김. 배치 위치가 전투 결과를 바꾸므로 필요하다
+        // Joker로 머지 없이 성급을 올리기
+        public bool TryUseJoker(int index)
+        {
+            if (CanUseJokerOn(index) == false)
+            {
+                return false;
+            }
+
+            if (stage.TryUseJoker() == false)
+            {
+                return false;
+            }
+
+            board.TryPromoteAt(index);
+            stage.Stats.RecordUnit(board[index]);
+            Placed?.Invoke(index, PlacementResult.Merged);
+            return true;
+        }
+
+        // 유닛을 빈 칸으로 옮기기
         public bool TryMoveSlot(int from, int to)
         {
             if (board.TryMoveSlot(from, to) == false)
@@ -111,7 +137,7 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // 보드의 유닛을 팔아 Chip으로 바꿈. 가격은 종류와 무관하게 성급으로만 정해진다 (DESIGN §9.2)
+        // 보드의 유닛을 팔아 Chip으로 바꾸기
         public bool TrySellSlot(int index)
         {
             UnitInstance unit = board[index];
@@ -127,8 +153,7 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // 배치 대기 유닛을 팜. 보드가 가득 찼을 때의 탈출구다 (§7 열린 이슈 2번)
-        // 보상 없이 버리던 Discard를 대체한다
+        // 배치 대기 유닛을 팔기
         public bool TrySellPending()
         {
             if (Pending == null)
@@ -142,7 +167,7 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // Chip으로 랜덤 하위 유닛 ★1을 뽑아 빈 칸에 놓음 (DESIGN §9.3)
+        // Chip으로 랜덤 하위 유닛 ★1을 뽑아 빈 칸에 놓기
         public bool TrySupportSummon()
         {
             if (CanSupportSummon == false)
@@ -157,7 +182,8 @@ namespace PokerDefense.Game
 
             SupportSummonsUsed++;
 
-            var unit = new UnitInstance(supportSummon.Draw());
+            UnitInstance unit = new UnitInstance(supportSummon.Draw());
+            stage.Stats.RecordSummon(unit);
 
             for (int i = 0; i < GridBoard.SlotCount; i++)
             {

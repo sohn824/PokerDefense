@@ -8,7 +8,7 @@ namespace PokerDefense.Game
     /**
      * EconomyDefinition
      *
-     * Chip 경제 수치 (DESIGN §9)
+     * Chip 경제 수치
      * 스테이지마다 달라질 값이 아니라 게임 전역 규칙이라 StageDefinition과 분리했다
      * 지금 값은 전부 플레이스홀더이며 M10에서 밸런싱한다
      */

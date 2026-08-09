@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38b0e06aed4fbf34e80243172e414d82, type: 3}
-  m_Name: Enemy_Brute
+  m_Name: Enemy_FinalBoss
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.EnemyDefinition
-  id: brute
-  displayName: Brute
-  placeholderColor: {r: 0.62, g: 0.25, b: 0.72, a: 1}
-  maxHp: 320
-  moveSpeed: 1.3
-  type: 0
+  id: final_boss
+  displayName: Final Boss
+  placeholderColor: {r: 0.95, g: 0.25, b: 0.15, a: 1}
+  maxHp: 2600
+  moveSpeed: 0.9
+  type: 2

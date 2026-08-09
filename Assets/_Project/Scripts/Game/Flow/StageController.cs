@@ -21,6 +21,9 @@ namespace PokerDefense.Game
 
         public StageContext Stage { get; private set; }
 
+        // 결과 화면용 성과 기록 (DESIGN §9.6). 규칙에 관여하지 않아 StageContext와 분리했다
+        public RunStats Stats { get; } = new RunStats();
+
         public EconomyDefinition Economy => economy;
 
         void Awake()
@@ -46,13 +49,25 @@ namespace PokerDefense.Game
                 return false;
             }
 
+            Stats.RecordChipSpent(amount);
             Changed?.Invoke();
             return true;
         }
 
-        public void ApplyCombatResult(CombatOutcome outcome, int unresolvedEnemies)
+        public bool TryUseJoker()
         {
-            Stage.ApplyResult(outcome, unresolvedEnemies);
+            if (Stage.TryUseJoker() == false)
+            {
+                return false;
+            }
+
+            Changed?.Invoke();
+            return true;
+        }
+
+        public void ApplyCombatResult(CombatOutcome outcome, int unresolvedEnemies, int unresolvedBosses)
+        {
+            Stage.ApplyResult(outcome, unresolvedEnemies, unresolvedBosses);
             Changed?.Invoke();
         }
     }

@@ -43,9 +43,19 @@ namespace PokerDefense.UI
 
         void OnCombatFinished(CombatOutcome outcome, int unresolved)
         {
-            lastOutcome = outcome == CombatOutcome.Cleared
-                ? "웨이브 클리어"
-                : $"시간 초과 - {unresolved}마리 남음, 라이프 -{unresolved}";
+            if (outcome == CombatOutcome.Cleared)
+            {
+                // 보스를 잡아야만 조커가 나오므로 획득 사실을 짚어 준다 (DESIGN §5.2.1)
+                lastOutcome = controller.Combat.Wave.JokerReward > 0
+                    ? "웨이브 클리어 - 조커 획득"
+                    : "웨이브 클리어";
+            }
+            else
+            {
+                // 라이프 피해는 잔여 적 수와 다를 수 있다 - 상한이 있고 보스는 따로 친다 (DESIGN §5.4)
+                int damage = controller.Stage.LifeDamageFor(unresolved, controller.Combat.UnresolvedBosses);
+                lastOutcome = $"시간 초과 - {unresolved}마리 남음, 라이프 -{damage}";
+            }
 
             ClearViews();
         }
@@ -144,7 +154,10 @@ namespace PokerDefense.UI
         {
             StageContext stage = controller.Stage;
 
-            lifeLabel.text = $"라이프 {stage.Life}   Chip {stage.Chip}";
+            // 조커는 보스에서만 나오므로 들고 있을 때만 자리를 차지한다
+            lifeLabel.text = stage.Jokers > 0
+                ? $"라이프 {stage.Life}   Chip {stage.Chip}   조커 {stage.Jokers}"
+                : $"라이프 {stage.Life}   Chip {stage.Chip}";
 
             if (stage.IsGameOver)
             {
@@ -167,11 +180,35 @@ namespace PokerDefense.UI
             {
                 CombatContext combat = controller.Combat;
                 float left = Mathf.Max(0f, combat.Wave.TimeLimit - combat.ElapsedTime);
-                combatLabel.text = $"{left:0.0}초  |  적 {combat.RemainingEnemies}";
+                combatLabel.text = $"{left:0.0}초  |  {DescribeEnemies(combat)}";
                 return;
             }
 
             combatLabel.text = lastOutcome;
+        }
+
+        /**
+         * 남은 적 표기
+         *
+         * 웨이브는 스폰 스케줄이라, 화면의 적을 다 잡아도 아직 안 나온 적이 남아 있을 수 있다
+         * 그때 "적 0"만 띄우면 게임이 멈춘 것처럼 보이므로 무엇을 기다리는지 대신 보여준다
+         */
+        static string DescribeEnemies(CombatContext combat)
+        {
+            int alive = combat.RemainingEnemies;
+            int pending = combat.UnresolvedEnemies - alive;
+
+            if (pending <= 0)
+            {
+                return $"적 {alive}";
+            }
+
+            if (alive == 0)
+            {
+                return $"다음 적까지 {combat.SecondsToNextSpawn:0.0}초  (남은 {pending})";
+            }
+
+            return $"적 {alive}  (남은 {pending})";
         }
     }
 }

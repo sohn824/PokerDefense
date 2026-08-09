@@ -36,6 +36,11 @@ namespace PokerDefense.Game
         // 게임 오버나 스테이지 클리어로 루프가 멈췄는지
         public bool IsFinished { get; private set; }
 
+        // 루프가 멈춘 시점까지 걸린 시간. 결과 화면이 쓴다 (DESIGN §9.6)
+        public float ElapsedSeconds { get; private set; }
+
+        float startedAt;
+
         void Awake()
         {
             combat.CombatFinished += OnCombatFinished;
@@ -46,6 +51,8 @@ namespace PokerDefense.Game
         // 확정 시점에 확정되는 값이라 여기서 지급한다
         void OnEvaluated(PokerDefense.Poker.HandResult result)
         {
+            stage.Stats.RecordHand(result.Category);
+
             int bonus = stage.Economy.HoldBonusFor(round.UsedExchanges);
 
             if (bonus <= 0)
@@ -59,6 +66,8 @@ namespace PokerDefense.Game
 
         void Start()
         {
+            startedAt = Time.time;
+
             // 첫 라운드도 여기서 연다. RoundController가 스스로 시작하면 루프 주인이 둘이 된다
             StartNextRound();
         }
@@ -69,6 +78,7 @@ namespace PokerDefense.Game
             if (combat.Stage.IsGameOver || combat.Stage.IsAllWavesCleared)
             {
                 IsFinished = true;
+                ElapsedSeconds = Time.time - startedAt;
                 FlowChanged?.Invoke();
                 return;
             }

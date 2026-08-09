@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2c4fb4739ff4e56438d1b8f8c1c27a48, type: 3}
-  m_Name: Wave_3
+  m_Name: Wave_8
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.WaveDefinition
-  waveNumber: 3
-  timeLimit: 30
+  waveNumber: 8
+  timeLimit: 38
   jokerReward: 0
   entries:
-  - enemy: {fileID: 11400000, guid: 52f861e302c310f4cab346e08b81eb60, type: 2}
-    count: 6
-    interval: 0.9
-    startDelay: 0
   - enemy: {fileID: 11400000, guid: 71de88334ad5ea94a9f3a351f9968735, type: 2}
-    count: 6
-    interval: 0.4
-    startDelay: 6
+    count: 14
+    interval: 0.3
+    startDelay: 0
+  - enemy: {fileID: 11400000, guid: d0aca76ef896fb74e95222ca3006bf95, type: 2}
+    count: 2
+    interval: 2
+    startDelay: 12

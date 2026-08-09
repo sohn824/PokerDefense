@@ -71,6 +71,44 @@ namespace PokerDefense.Game
         // 아직 나오지 않은 적까지 포함한 잔여 적 수
         public int UnresolvedEnemies => enemies.Count + (schedule.Count - nextSpawnIndex);
 
+        /**
+         * 다음 적이 나오기까지 남은 시간. 더 나올 적이 없으면 -1
+         *
+         * 화면에 적이 하나도 없는데 스폰이 남아 있으면 게임이 멈춘 것처럼 보인다
+         * 그 구간에 무엇을 기다리는지 보여주기 위한 값이다
+         */
+        public float SecondsToNextSpawn
+            => nextSpawnIndex >= schedule.Count
+                ? -1f
+                : Mathf.Max(0f, schedule[nextSpawnIndex].Time - ElapsedTime);
+
+        // 잔여 적 중 보스 수
+        public int UnresolvedBosses
+        {
+            get
+            {
+                int count = 0;
+
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    if (enemies[i].Definition.Type == EnemyType.Boss)
+                    {
+                        count++;
+                    }
+                }
+
+                for (int i = nextSpawnIndex; i < schedule.Count; i++)
+                {
+                    if (schedule[i].Enemy.Type == EnemyType.Boss)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
         public void Tick(float deltaTime)
         {
             if (deltaTime < 0f)

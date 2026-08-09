@@ -33,7 +33,6 @@ namespace PokerDefense.Game
         readonly UnitInstance[] slots = new UnitInstance[SlotCount];
 
         // 슬롯 인덱스 -> 보드 중심을 원점으로 하는 로컬 좌표
-        // 월드 좌표가 아니라 로컬 좌표를 주는 이유는 보드를 씬 어디에 두든 상관없게 하기 위함
         // 0번이 좌상단, 14번이 우하단
         public static Vector2 SlotToLocalPosition(int index)
         {
@@ -54,15 +53,14 @@ namespace PokerDefense.Game
         // 적이 도는 트랙이 보드 바깥으로 떨어진 거리
         public const float TrackMargin = 0.9f;
 
-        // 트랙은 보드를 감싸는 닫힌 사각 루프다 (DESIGN §5.3)
-        // 웨이포인트를 씬에 찍지 않고 그리드 크기에서 계산한다
+        // 적이 도는 트랙은 보드를 감싸는 닫힌 사각 루프
         public static float TrackHalfWidth => Columns * 0.5f * CellSize + TrackMargin;
         public static float TrackHalfHeight => Rows * 0.5f * CellSize + TrackMargin;
         public static float TrackLength => 4f * (TrackHalfWidth + TrackHalfHeight);
 
-        // 트랙 위 진행도 -> 보드 중심 기준 로컬 좌표
-        // 진행도는 좌상단에서 시작해 시계 방향으로 한 바퀴가 1이다
-        // 1을 넘으면 다음 바퀴로 감긴다 (적은 죽을 때까지 계속 돈다)
+        // 트랙 위 적 진행 로직
+        // 진행도(progress)는 좌상단에서 시작해 시계 방향으로 한 바퀴가 1임
+        // 1을 넘으면 한바퀴 돈 것으로 보고 리셋
         public static Vector2 TrackPosition(float progress)
         {
             float wrapped = progress - Mathf.Floor(progress);
@@ -71,7 +69,7 @@ namespace PokerDefense.Game
             float width = TrackHalfWidth * 2f;
             float height = TrackHalfHeight * 2f;
 
-            // 위쪽 (왼 -> 오)
+            // 트랙 위쪽 (진행 방향: 왼쪽 -> 오른쪽)
             if (distance < width)
             {
                 return new Vector2(-TrackHalfWidth + distance, TrackHalfHeight);
@@ -79,7 +77,7 @@ namespace PokerDefense.Game
 
             distance -= width;
 
-            // 오른쪽 (위 -> 아래)
+            // 트랙 오른쪽 (진행 방향: 위 -> 아래)
             if (distance < height)
             {
                 return new Vector2(TrackHalfWidth, TrackHalfHeight - distance);
@@ -87,7 +85,7 @@ namespace PokerDefense.Game
 
             distance -= height;
 
-            // 아래쪽 (오 -> 왼)
+            // 트랙 아래쪽 (진행 방향: 오른쪽 -> 왼쪽)
             if (distance < width)
             {
                 return new Vector2(TrackHalfWidth - distance, -TrackHalfHeight);
@@ -95,7 +93,7 @@ namespace PokerDefense.Game
 
             distance -= width;
 
-            // 왼쪽 (아래 -> 위)
+            // 트랙 왼쪽 (진행 방향: 아래 -> 위쪽)
             return new Vector2(-TrackHalfWidth, -TrackHalfHeight + distance);
         }
 
@@ -253,6 +251,23 @@ namespace PokerDefense.Game
 
             slots[to] = slots[from];
             slots[from] = null;
+            return true;
+        }
+
+        // 짝 없이 성급만 한 단계 올림. Joker 전용이며 최대 성급이면 거부 (DESIGN §5.2.1)
+        public bool TryPromoteAt(int index)
+        {
+            if (index < 0 || index >= SlotCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $"슬롯 범위를 벗어남: {index}");
+            }
+
+            if (slots[index] == null || slots[index].IsMaxStar)
+            {
+                return false;
+            }
+
+            slots[index] = slots[index].Promoted();
             return true;
         }
 
