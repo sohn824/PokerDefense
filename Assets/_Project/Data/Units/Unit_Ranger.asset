@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: Unit_Ranger
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: two_pair
-  displayName: "\uD2B8\uC708\uB808\uC778\uC800"
+  displayName: "\uD22C\uD398\uC5B4 \uD2B8\uC708\uB808\uC778\uC800"
   placeholderColor: {r: 0.38, g: 0.62, b: 0.72, a: 1}
-  attackPower: 22
-  attacksPerSecond: 1.1
+  attackPower: 15
+  attacksPerSecond: 1
   range: 2.5
   starMultipliers:
   - 1
   - 2
   - 4
+  attackPattern: 2
+  multiTargets: 2
+  splashRadius: 1
+  pierceLength: 2

@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: Unit_Guard
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: one_pair
-  displayName: "\uAC74\uC2AC\uB9C1\uC5B4"
+  displayName: "\uC6D0\uD398\uC5B4 \uAC74\uC2AC\uB9C1\uC5B4"
   placeholderColor: {r: 0.45, g: 0.62, b: 0.55, a: 1}
-  attackPower: 14
-  attacksPerSecond: 1
+  attackPower: 7
+  attacksPerSecond: 2
   range: 2
   starMultipliers:
   - 1
   - 2
   - 4
+  attackPattern: 0
+  multiTargets: 2
+  splashRadius: 1
+  pierceLength: 2

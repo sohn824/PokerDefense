@@ -8,7 +8,12 @@ namespace PokerDefense.UI
      * UnitSlotView
      *
      * 보드 슬롯 한 칸의 월드 스페이스 표현
-     * 비어 있으면 빈 칸 색, 유닛이 있으면 유닛 색 + 이름 + 성급 + 공격력을 표시
+     *
+     * 칸에는 **무엇인지와 몇 성인지만** 둔다. 수치는 유닛을 고르면 상세 패널이 보여준다 (DESIGN §10.3)
+     * 칸이 1080 기준 145px이라 네 가지를 밀어 넣으면 아트가 들어갈 자리가 없어진다.
+     * 칸 자체는 더 못 키운다 - 트랙이 이미 화면 가로를 거의 다 쓴다
+     *
+     * **이름은 아트가 없는 동안의 대역이다.** M10에서 스프라이트로 교체하며 이름 라벨은 지운다
      */
     public sealed class UnitSlotView : MonoBehaviour
     {
@@ -18,9 +23,11 @@ namespace PokerDefense.UI
 
         [SerializeField] SpriteRenderer background;
         [SerializeField] SpriteRenderer highlight;
+
+        [Tooltip("M10에서 유닛 스프라이트로 교체할 이름 대역")]
         [SerializeField] TextMeshPro nameLabel;
+
         [SerializeField] TextMeshPro starLabel;
-        [SerializeField] TextMeshPro powerLabel;
         [SerializeField] Collider2D hitbox;
 
         public int Index { get; private set; }
@@ -37,14 +44,15 @@ namespace PokerDefense.UI
                 background.color = EmptyColor;
                 nameLabel.text = string.Empty;
                 starLabel.text = string.Empty;
-                powerLabel.text = string.Empty;
                 return;
             }
 
             background.color = unit.Definition.PlaceholderColor;
-            nameLabel.text = unit.Definition.DisplayName;
             starLabel.text = new string('★', unit.Star);
-            powerLabel.text = "ATK " + unit.AttackPower.ToString("0.#");
+
+            // 한글은 아무 자리에서나 개행돼 "로열 스트레이/트 플러시 소버/린"처럼 잘린다
+            // 띄어쓰기를 개행으로 바꿔 단어 단위로만 끊는다
+            nameLabel.text = unit.Definition.DisplayName.Replace(' ', '\n');
         }
 
         // 머지 상대로 고른 칸은 노랑, 그냥 놓을 수 있는 칸은 흰색

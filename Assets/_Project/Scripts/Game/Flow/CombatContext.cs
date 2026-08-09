@@ -32,9 +32,16 @@ namespace PokerDefense.Game
             public EnemyDefinition Enemy;
         }
 
+        // 앞선 적부터. Multi가 사거리 안에서 몇 기를 고를지 정할 때 쓴다
+        static readonly Comparison<EnemyInstance> ByProgressDescending
+            = (a, b) => b.Progress.CompareTo(a.Progress);
+
         readonly GridBoard board;
         readonly List<ScheduledSpawn> waveSchedule = new List<ScheduledSpawn>();
         readonly List<EnemyInstance> enemies = new List<EnemyInstance>();
+
+        // 공격 한 번이 때릴 대상. 매 공격마다 새로 할당하지 않으려고 돌려 쓴다
+        readonly List<EnemyInstance> shotTargets = new List<EnemyInstance>();
 
         // 유닛별 남은 공격 쿨타임
         readonly Dictionary<UnitInstance, float> cooldowns = new Dictionary<UnitInstance, float>();
@@ -205,7 +212,8 @@ namespace PokerDefense.Game
                     continue;
                 }
 
-                EnemyInstance target = FindTarget(slot, unit);
+                Vector2 slotPosition = GridBoard.SlotToLocalPosition(slot);
+                EnemyInstance target = FindTarget(slotPosition, unit);
 
                 if (target == null)
                 {
@@ -214,15 +222,14 @@ namespace PokerDefense.Game
                     continue;
                 }
 
-                target.TakeDamage(unit.AttackPower);
+                Fire(slotPosition, unit, target);
                 cooldowns[unit] = 1f / unit.AttacksPerSecond;
             }
         }
 
         // 사거리 안에서 가장 앞선 적을 찾기
-        EnemyInstance FindTarget(int slot, UnitInstance unit)
+        EnemyInstance FindTarget(Vector2 slotPosition, UnitInstance unit)
         {
-            Vector2 slotPosition = GridBoard.SlotToLocalPosition(slot);
             EnemyInstance best = null;
 
             for (int i = 0; i < enemies.Count; i++)
@@ -241,6 +248,99 @@ namespace PokerDefense.Game
             }
 
             return best;
+        }
+
+        /**
+         * 공격 1회 (DESIGN §10.1)
+         *
+         * 패턴이 정하는 것은 "몇 기를 때리는가"뿐이고 대상마다 공격력은 그대로 들어간다
+         * 성급 배수가 걸린 값은 UnitInstance에서, 안 걸리는 패턴 크기는 Definition에서 읽는다
+         */
+        void Fire(Vector2 slotPosition, UnitInstance unit, EnemyInstance target)
+        {
+            switch (unit.Definition.Pattern)
+            {
+                case AttackPattern.Multi:
+                    CollectMulti(slotPosition, unit);
+                    break;
+
+                case AttackPattern.Splash:
+                    CollectSplash(unit, target);
+                    break;
+
+                case AttackPattern.Pierce:
+                    CollectPierce(unit, target);
+                    break;
+
+                default:
+                    // Rapid / Heavy - 단일 타겟. 둘의 차이는 스탯 프로필이다
+                    shotTargets.Clear();
+                    shotTargets.Add(target);
+                    break;
+            }
+
+            for (int i = 0; i < shotTargets.Count; i++)
+            {
+                shotTargets[i].TakeDamage(unit.AttackPower);
+            }
+        }
+
+        // 사거리 안에서 앞선 순으로 최대 MultiTargets기
+        void CollectMulti(Vector2 slotPosition, UnitInstance unit)
+        {
+            shotTargets.Clear();
+
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                if (Vector2.Distance(slotPosition, enemies[i].Position) <= unit.Range)
+                {
+                    shotTargets.Add(enemies[i]);
+                }
+            }
+
+            shotTargets.Sort(ByProgressDescending);
+
+            int limit = Mathf.Max(1, unit.Definition.MultiTargets);
+
+            if (shotTargets.Count > limit)
+            {
+                shotTargets.RemoveRange(limit, shotTargets.Count - limit);
+            }
+        }
+
+        // 착탄 지점 반경 안. 유닛 사거리가 아니라 타겟 위치가 기준이라 사거리 밖의 적도 휘말린다
+        void CollectSplash(UnitInstance unit, EnemyInstance target)
+        {
+            shotTargets.Clear();
+
+            float radius = unit.Definition.SplashRadius;
+
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                if (Vector2.Distance(target.Position, enemies[i].Position) <= radius)
+                {
+                    shotTargets.Add(enemies[i]);
+                }
+            }
+        }
+
+        // 타겟을 지나 트랙 뒤쪽으로 관통. 뒤에 늘어선 적이 함께 맞는다
+        void CollectPierce(UnitInstance unit, EnemyInstance target)
+        {
+            shotTargets.Clear();
+
+            float length = unit.Definition.PierceLength;
+
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                // 진행도는 바퀴 수를 포함해 누적되므로 한 바퀴 뒤진 적은 자연히 걸러진다
+                float behind = (target.Progress - enemies[i].Progress) * GridBoard.TrackLength;
+
+                if (behind >= 0f && behind <= length)
+                {
+                    shotTargets.Add(enemies[i]);
+                }
+            }
         }
 
         void RemoveDead()

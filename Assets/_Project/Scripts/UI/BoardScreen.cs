@@ -24,6 +24,10 @@ namespace PokerDefense.UI
         [SerializeField] Camera boardCamera;
         [SerializeField] UnitSlotView[] slots;
         [SerializeField] TMP_Text pendingLabel;
+
+        [Tooltip("상세 정보가 떠 있을 때만 보이는 배경판")]
+        [SerializeField] GameObject detailPlate;
+
         [SerializeField] Button sellButton;
         [SerializeField] TMP_Text sellLabel;
         [SerializeField] Button supportButton;
@@ -245,31 +249,54 @@ namespace PokerDefense.UI
 
             if (pending != null)
             {
-                bool stuck = placement.IsStuck;
-
                 sellButton.gameObject.SetActive(true);
                 sellLabel.text = "소환 유닛 판매";
-                pendingLabel.text = stuck
-                    ? $"{Describe(pending)}을 놓을 자리가 없습니다 - 판매하세요"
-                    : $"{Describe(pending)} 소환 (공격력 {pending.AttackPower:0.#}) - 칸을 누르세요";
+                ShowDetail(pending, placement.IsStuck ? "놓을 자리가 없습니다 - 판매하세요" : "칸을 눌러 배치");
                 return;
             }
 
             if (selected != NoSelection)
             {
+                // 이동·머지는 고른 순간 칸이 강조되므로(§9.4) 문구로 또 설명하지 않는다
                 sellButton.gameObject.SetActive(true);
                 sellLabel.text = "판매";
-                pendingLabel.text = $"{Describe(placement.Board[selected])} 선택 - 빈 칸은 이동, 같은 유닛은 합치기";
+                ShowDetail(placement.Board[selected], string.Empty);
                 return;
             }
 
             sellButton.gameObject.SetActive(false);
-            pendingLabel.text = "족보를 확정하면 유닛이 소환됩니다";
+            ShowDetail(null, "족보를 확정하면 유닛이 소환됩니다");
         }
 
-        static string Describe(UnitInstance unit)
+        /**
+         * 유닛 상세 (DESIGN §10.3)
+         *
+         * 슬롯에는 이름과 성급만 두고 수치는 전부 여기서만 보여준다.
+         * 공격력·공격속도·DPS 셋을 다 띄우는 이유는 하나로 뭉칠 수 없어서다 - 패턴마다 배분이 크게 다르고(§10.1),
+         * DPS만 보면 오버킬 낭비가, 공격력만 보면 발사 주기가 사라진다.
+         *
+         * **모달 창이 아니다.** 전투 중에도 배치를 고치므로(§1) 보드를 덮으면 적이 안 보인다
+         */
+        void ShowDetail(UnitInstance unit, string hint)
         {
-            return unit.Definition.DisplayName + " " + new string('★', unit.Star);
+            detailPlate.SetActive(unit != null);
+
+            if (unit == null)
+            {
+                pendingLabel.text = hint;
+                return;
+            }
+
+            string suffix = string.IsNullOrEmpty(hint) ? string.Empty : "  -  " + hint;
+
+            // 둘째 줄은 참고 수치라 한 단계 작게 깐다. 안내 문구 자리를 그대로 쓰므로 가리는 것이 없다
+            pendingLabel.text =
+                $"{unit.Definition.DisplayName} {new string('★', unit.Star)}{suffix}\n" +
+                $"<size=76%>{AttackPatternNames.Of(unit.Definition.Pattern)}   " +
+                $"공격력 {unit.AttackPower:0.#}   " +
+                $"초당 {unit.AttacksPerSecond:0.#}회   " +
+                $"DPS {unit.AttackPower * unit.AttacksPerSecond:0.#}   " +
+                $"사거리 {unit.Range:0.#}</size>";
         }
     }
 }

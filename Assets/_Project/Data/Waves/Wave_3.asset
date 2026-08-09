@@ -20,7 +20,7 @@ MonoBehaviour:
     count: 6
     interval: 0.9
     startDelay: 0
-  - enemy: {fileID: 11400000, guid: 71de88334ad5ea94a9f3a351f9968735, type: 2}
-    count: 6
-    interval: 0.4
+  - enemy: {fileID: 11400000, guid: 6b1f4c07d29a4d34b8e5c0a71f3d92c8, type: 2}
+    count: 5
+    interval: 0.8
     startDelay: 6

@@ -132,27 +132,27 @@ namespace PokerDefense.UI
             }
 
             ShowPreview();
-
-            int left = controller.ExchangeableCount;
-            statusLabel.text = left == 0
-                ? "더 바꿀 카드가 없습니다 - 확정하세요"
-                : $"카드를 눌러 교체하세요 (남은 자리 {left}칸, 자리당 1회)";
         }
 
         /**
          * 지금 확정하면 어떤 족보로 어떤 유닛이 나오고 유지 보너스가 얼마인지 미리 보여준다
          * 이걸 모르면 "확정할지 더 바꿀지"를 판단할 수 없다 (DESIGN §9.1)
+         *
+         * 유닛 이름은 버튼이 아니라 안내 문구에 둔다. 정식명은 400px 버튼에 안 들어간다 (DESIGN §10.3)
          */
         void ShowPreview()
         {
             HandResult preview = controller.PreviewHand();
             UnitDefinition unit = unitTable.For(preview.Category);
             int bonus = stage.Economy.HoldBonusFor(controller.UsedExchanges);
+            int left = controller.ExchangeableCount;
 
             categoryLabel.text = HandCategoryNames.Of(preview.Category);
-            confirmLabel.text = bonus > 0
-                ? $"확정  {unit.DisplayName} +{bonus}"
-                : $"확정  {unit.DisplayName}";
+            confirmLabel.text = bonus > 0 ? $"확정 +{bonus}" : "확정";
+
+            statusLabel.text = left == 0
+                ? $"확정하면 {unit.DisplayName} 소환 - 더 바꿀 카드가 없습니다"
+                : $"확정하면 {unit.DisplayName} 소환 - 남은 교체 {left}칸 (자리당 1회)";
         }
     }
 }

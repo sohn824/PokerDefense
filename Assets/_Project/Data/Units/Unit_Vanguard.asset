@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: Unit_Vanguard
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: straight
-  displayName: "\uB79C\uC11C"
+  displayName: "\uC2A4\uD2B8\uB808\uC774\uD2B8 \uB79C\uC11C"
   placeholderColor: {r: 0.42, g: 0.45, b: 0.85, a: 1}
-  attackPower: 45
-  attacksPerSecond: 1.2
+  attackPower: 38
+  attacksPerSecond: 1
   range: 3
   starMultipliers:
   - 1
   - 2
   - 4
+  attackPattern: 4
+  multiTargets: 2
+  splashRadius: 1
+  pierceLength: 2

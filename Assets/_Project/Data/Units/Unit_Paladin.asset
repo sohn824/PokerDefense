@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: Unit_Paladin
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: straight_flush
-  displayName: "\uB808\uC77C\uAC70\uB108"
+  displayName: "\uC2A4\uD2B8\uB808\uC774\uD2B8 \uD50C\uB7EC\uC2DC \uB808\uC77C\uAC70\uB108"
   placeholderColor: {r: 0.9, g: 0.5, b: 0.2, a: 1}
-  attackPower: 130
-  attacksPerSecond: 1.4
+  attackPower: 128
+  attacksPerSecond: 1
   range: 3.5
   starMultipliers:
   - 1
   - 2
   - 4
+  attackPattern: 4
+  multiTargets: 2
+  splashRadius: 1
+  pierceLength: 3.5

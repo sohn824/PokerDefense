@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: Unit_Sovereign
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: royal_straight_flush
-  displayName: "\uC18C\uBC84\uB9B0"
+  displayName: "\uB85C\uC5F4 \uC2A4\uD2B8\uB808\uC774\uD2B8 \uD50C\uB7EC\uC2DC \uC18C\uBC84\uB9B0"
   placeholderColor: {r: 0.95, g: 0.8, b: 0.25, a: 1}
-  attackPower: 180
-  attacksPerSecond: 1.5
+  attackPower: 203
+  attacksPerSecond: 0.8
   range: 4
   starMultipliers:
   - 1
   - 2
   - 4
+  attackPattern: 3
+  multiTargets: 2
+  splashRadius: 2.2
+  pierceLength: 2

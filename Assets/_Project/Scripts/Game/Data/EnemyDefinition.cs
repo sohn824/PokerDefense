@@ -2,11 +2,23 @@ using UnityEngine;
 
 namespace PokerDefense.Game
 {
+    /**
+     * EnemyType
+     *
+     * 특수 능력은 없고 HP·이동속도·수량만 다르다 (DESIGN §10.5)
+     * 기존 에셋이 이 값을 정수로 들고 있으므로 새 값은 반드시 뒤에 붙인다
+     */
     public enum EnemyType
     {
         Normal,
         Swarm,
         Boss,
+
+        // HP↓ 속도↑
+        Runner,
+
+        // HP↑ 속도↓
+        Tank,
     }
 
     /**

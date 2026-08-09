@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: Unit_Mystic
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: flush
-  displayName: "\uBCF4\uBA38"
+  displayName: "\uD50C\uB7EC\uC2DC \uBCF4\uBA38"
   placeholderColor: {r: 0.58, g: 0.38, b: 0.82, a: 1}
-  attackPower: 55
-  attacksPerSecond: 1.2
+  attackPower: 50
+  attacksPerSecond: 0.8
   range: 3.5
   starMultipliers:
   - 1
   - 2
   - 4
+  attackPattern: 3
+  multiTargets: 2
+  splashRadius: 1
+  pierceLength: 2

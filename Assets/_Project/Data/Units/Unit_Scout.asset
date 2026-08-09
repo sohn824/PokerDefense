@@ -13,12 +13,16 @@ MonoBehaviour:
   m_Name: Unit_Scout
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: high_card
-  displayName: "\uC2A4\uCE74\uC6B0\uD2B8"
+  displayName: "\uD558\uC774\uCE74\uB4DC \uC2A4\uCE74\uC6B0\uD2B8"
   placeholderColor: {r: 0.55, g: 0.57, b: 0.62, a: 1}
-  attackPower: 10
-  attacksPerSecond: 1
+  attackPower: 5
+  attacksPerSecond: 2
   range: 2
   starMultipliers:
   - 1
   - 2
   - 4
+  attackPattern: 0
+  multiTargets: 2
+  splashRadius: 1
+  pierceLength: 2

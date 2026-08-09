@@ -24,3 +24,7 @@ MonoBehaviour:
     count: 12
     interval: 0.3
     startDelay: 10
+  - enemy: {fileID: 11400000, guid: 6b1f4c07d29a4d34b8e5c0a71f3d92c8, type: 2}
+    count: 6
+    interval: 0.5
+    startDelay: 20
