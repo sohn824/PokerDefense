@@ -37,6 +37,7 @@ namespace PokerDefense.Game
             = (a, b) => b.Progress.CompareTo(a.Progress);
 
         readonly GridBoard board;
+        readonly PerkSet perks;
         readonly List<ScheduledSpawn> waveSchedule = new List<ScheduledSpawn>();
         readonly List<EnemyInstance> enemies = new List<EnemyInstance>();
 
@@ -48,7 +49,8 @@ namespace PokerDefense.Game
 
         int nextSpawnIndex;
 
-        public CombatContext(GridBoard board, WaveDefinition wave)
+        // perks를 넘기지 않으면 특전이 없는 전투가 된다. 특전과 무관한 테스트가 쓴다
+        public CombatContext(GridBoard board, WaveDefinition wave, PerkSet perks = null)
         {
             if (board == null)
             {
@@ -61,6 +63,7 @@ namespace PokerDefense.Game
             }
 
             this.board = board;
+            this.perks = perks ?? PerkSet.Empty;
             Wave = wave;
 
             // CombatContext가 생성될 때 웨이브 스케줄을 만들어 줌
@@ -274,9 +277,11 @@ namespace PokerDefense.Game
                     break;
             }
 
+            float power = perks.AttackPowerOf(unit);
+
             for (int i = 0; i < shotTargets.Count; i++)
             {
-                shotTargets[i].TakeDamage(unit.AttackPower);
+                shotTargets[i].TakeDamage(power);
             }
         }
 

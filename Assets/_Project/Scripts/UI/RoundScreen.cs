@@ -138,7 +138,7 @@ namespace PokerDefense.UI
         {
             HandResult preview = controller.PreviewHand();
             UnitDefinition unit = unitTable.For(preview.Category);
-            int bonus = stage.Economy.HoldBonusFor(controller.UsedExchanges);
+            int bonus = stage.HoldBonusFor(controller.UsedExchanges);
             int left = controller.ExchangeableCount;
 
             categoryLabel.text = HandCategoryNames.Of(preview.Category);

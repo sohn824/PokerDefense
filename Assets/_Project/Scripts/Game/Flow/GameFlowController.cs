@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PokerDefense.Game
@@ -17,6 +18,8 @@ namespace PokerDefense.Game
      *   Result    즉시              <- 여기서 다음 라운드를 연다
      *
      * 라운드 N은 웨이브 N을 치른다. 둘은 1:1이다
+     *
+     * 보스를 잡은 웨이브만 예외로 멈춘다. 특전을 고를 때까지 다음 라운드를 열지 않는다 (DESIGN §11)
      */
     public sealed class GameFlowController : MonoBehaviour
     {
@@ -30,8 +33,18 @@ namespace PokerDefense.Game
         // 유지 보너스를 받았을 때 (인자: 받은 Chip)
         public event Action<int> HoldBonusEarned;
 
+        // 보스를 잡아 특전을 고를 차례가 됐을 때 (인자: 내놓은 선택지)
+        public event Action<IReadOnlyList<PerkId>> PerkOffered;
+
+        readonly System.Random seedSource = new System.Random();
+
+        PerkOffer perkOffer;
+
         // 지금까지 시작한 라운드 수
         public int RoundNumber { get; private set; }
+
+        // 고르기를 기다리는 특전 선택지. 기다리는 중이 아니면 null
+        public IReadOnlyList<PerkId> Offer { get; private set; }
 
         // 게임 오버나 스테이지 클리어로 루프가 멈췄는지
         public bool IsFinished { get; private set; }
@@ -45,6 +58,8 @@ namespace PokerDefense.Game
         {
             combat.CombatFinished += OnCombatFinished;
             round.Evaluated += OnEvaluated;
+
+            perkOffer = new PerkOffer(stage.PerkTable, seedSource.Next());
         }
 
         // 교체를 덜 쓸수록 Chip을 준다 (DESIGN §9.1)
@@ -53,7 +68,10 @@ namespace PokerDefense.Game
         {
             stage.Stats.RecordHand(result.Category);
 
-            int bonus = stage.Economy.HoldBonusFor(round.UsedExchanges);
+            // 교체를 쏟고도 하이카드로 끝난 판을 달래는 Chip은 유지 보너스와 반대 방향이라 따로 준다 (Insurance 특전)
+            stage.AddChip(stage.Stage.Perks.ConfirmBonusChip(result.Category, round.UsedExchanges));
+
+            int bonus = stage.HoldBonusFor(round.UsedExchanges);
 
             if (bonus <= 0)
             {
@@ -83,7 +101,51 @@ namespace PokerDefense.Game
                 return;
             }
 
+            // 방금 치른 웨이브를 봐야 한다. Stage.CurrentWave는 이미 다음 웨이브를 가리킨다
+            if (outcome == CombatOutcome.Cleared && combat.Combat.Wave.PerkReward)
+            {
+                Offer = perkOffer.Draw(stage.Stage.Perks);
+
+                if (Offer.Count > 0)
+                {
+                    PerkOffered?.Invoke(Offer);
+                    return;
+                }
+
+                Offer = null;
+            }
+
             StartNextRound();
+        }
+
+        /**
+         * 특전을 고른다. 고르기 전에는 다음 라운드가 열리지 않는다
+         *
+         * 내놓지 않은 특전은 받지 않는다 - 화면이 어긋나면 조용히 아무 특전이나 들어가는 것보다 안 들어가는 편이 낫다
+         */
+        public void ChoosePerk(PerkId id)
+        {
+            if (WasOffered(id) == false)
+            {
+                return;
+            }
+
+            stage.AddPerk(id);
+            Offer = null;
+            StartNextRound();
+        }
+
+        bool WasOffered(PerkId id)
+        {
+            for (int i = 0; Offer != null && i < Offer.Count; i++)
+            {
+                if (Offer[i] == id)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         void StartNextRound()

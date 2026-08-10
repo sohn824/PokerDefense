@@ -13,7 +13,8 @@ namespace PokerDefense.Game
     {
         readonly StageDefinition definition;
 
-        public StageContext(StageDefinition definition)
+        // perks를 넘기지 않으면 특전을 하나도 못 가지는 판이 된다. 특전과 무관한 테스트가 쓴다
+        public StageContext(StageDefinition definition, PerkTable perks = null)
         {
             if (definition == null)
             {
@@ -23,9 +24,13 @@ namespace PokerDefense.Game
             this.definition = definition;
             Life = definition.StartingLife;
             Chip = definition.StartingChip;
+            Perks = perks == null ? PerkSet.Empty : new PerkSet(perks);
         }
 
         public int Life { get; private set; }
+
+        // 이번 판에 고른 딜러 특전. 특전이 바꾸는 값은 전부 여기에 묻는다 (DESIGN §11)
+        public PerkSet Perks { get; }
 
         // 스테이지 안에서만 쓰는 재화 (DESIGN §9.2)
         public int Chip { get; private set; }
@@ -74,6 +79,9 @@ namespace PokerDefense.Game
             {
                 Jokers += CurrentWave.JokerReward;
             }
+
+            // 이자는 웨이브가 끝나면 받는다. 클리어했는지는 보지 않는다 (Interest 특전)
+            Chip += Perks.WaveEndChip(Chip);
 
             WaveIndex++;
         }

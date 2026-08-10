@@ -56,7 +56,7 @@
 | `Evaluate` → `Place` | 자동 (판정 즉시 소환) |
 | `Place` → `Combat` | **플레이어** — 전투 시작 버튼 |
 | `Combat` → `Result` | 자동 (전멸 or 시간 초과) |
-| `Result` → 다음 `Draw` | 자동 |
+| `Result` → 다음 `Draw` | 자동 — 단 보스를 잡았으면 **플레이어**가 특전을 고를 때까지 멈춘다 (§11.2) |
 
 **`Combat`으로 넘어가려면 두 조건을 모두 만족해야 한다.**
 
@@ -128,12 +128,13 @@ Assets/_Project/
     │   ├── Flow/       RoundPhase, RoundContext, RoundController,
     │   │               CombatContext, CombatController, StageContext,
     │   │               StageController, SupportSummon, RunStats,
-    │   │               GameFlowController
+    │   │               GameFlowController, PerkSet, PerkOffer
     │   ├── Board/      GridBoard, PlacementController
     │   ├── Units/      UnitInstance
     │   ├── Enemies/    EnemyInstance
     │   └── Data/       UnitDefinition, HandUnitTable, EnemyDefinition,
-    │                   WaveDefinition, StageDefinition, EconomyDefinition
+    │                   WaveDefinition, StageDefinition, EconomyDefinition,
+    │                   PerkTable
     ├── UI/             namespace PokerDefense.UI
     └── Tests/Editor/   → Assembly-CSharp-Editor (폴더명이 Editor여야 함)
 ```
@@ -225,9 +226,10 @@ public static class HandEvaluator
 | `UnitDefinition` | id, 표시명, 플레이스홀더 색, 공격력, 공격속도, 사거리, 성급 배수(★1/★2/★3), 공격 패턴 + 패턴 수치(Multi 타겟 수 / Splash 반경 / Pierce 관통 길이) |
 | `HandUnitTable` | `HandCategory → UnitDefinition` 매핑 1개 (에셋 1개, 전역) |
 | `EnemyDefinition` | id, 표시명, 플레이스홀더 색, 최대HP, 이동속도, 타입 |
-| `WaveDefinition` | 스폰 엔트리 리스트(적, 수량, 간격, 시작 지연), 제한시간, 웨이브 번호, Joker 보상 |
+| `WaveDefinition` | 스폰 엔트리 리스트(적, 수량, 간격, 시작 지연), 제한시간, 웨이브 번호, Joker 보상, 특전 보상 여부 |
 | `StageDefinition` | `WaveDefinition` 순서 리스트, 시작 라이프, 시작 Chip, 웨이브당 라이프 피해 상한 |
 | `EconomyDefinition` | 유지 보너스 상한, 지원 소환 비용·확률·횟수, 판매 가격 |
+| `PerkTable` | 딜러 특전 전체 목록 (에셋 1개, 전역). 행마다 id, 이름, 설명, 계열, 수치 2개 |
 
 **아직 넣지 않은 필드가 있다.** 쓰이지 않는 필드를 미리 두면 추측 코드가 된다.
 
@@ -360,26 +362,15 @@ public sealed class CombatContext          // 순수 C#. MonoBehaviour가 아니
 
 ## 8. 남은 마일스톤
 
-각 단계는 **검증 조건을 통과해야** 다음으로 넘어간다. M0~M8(포커 코어 → 그리드·머지 → 전투 → 라운드 루프 → Chip 경제 → 15웨이브·보스·Joker → 유닛 역할·적 타입)은 완료했다. 각 단계에서 무엇을 정했는지는 [HISTORY.md](HISTORY.md)에 있다.
+각 단계는 **검증 조건을 통과해야** 다음으로 넘어간다. M0~M9(포커 코어 → 그리드·머지 → 전투 → 라운드 루프 → Chip 경제 → 15웨이브·보스·Joker → 유닛 역할·적 타입 → 딜러 특전)는 완료했다. 각 단계에서 무엇을 정했는지는 [HISTORY.md](HISTORY.md)에 있다.
 
 | # | 내용 | 검증 조건 |
 |---|---|---|
-| M9 | **Dealer Perk** (§11) | 보스마다 3중 택1, 런마다 플레이 방식이 달라짐 |
 | M10 | 아트 교체 + 밸런싱 데이터 채우기 | 플레이스홀더 스프라이트가 전부 대체됨 |
 
-M9까지는 **플레이스홀더 도형/색상 스프라이트**로 진행한다. 생성형 AI 이미지는 M10에서 한꺼번에 교체하며, 필요 목록은 [ART_REQUEST.md](ART_REQUEST.md)에 정리해 두었다.
+M9까지는 **플레이스홀더 도형/색상 스프라이트**로 진행했다. 생성형 AI 이미지는 M10에서 한꺼번에 교체하며, 필요 목록은 [ART_REQUEST.md](ART_REQUEST.md)에 정리해 두었다.
 
-### M9가 마지막인 이유
-
-Perk는 `RoundContext`·`GridBoard`·`CombatContext`를 가로질러 규칙을 바꾼다. 수정자를 어디에 두는지 정하지 않고 첫 Perk를 짜면 곳곳에 `if`가 흩어진다. 착수 시 이 구조를 먼저 정한다.
-
-### 코드를 실제로 건드리는 지점
-
-기획 대부분은 데이터·UI지만 아래는 기존 코드를 고친다.
-
-| 항목 | 현재 | 필요 | 시점 |
-|---|---|---|---|
-| Perk 수정자 | 없음 | 여러 클래스를 가로지르는 수정자를 어디에 둘지 **먼저 정한다** | M9 |
+Perk 수정자를 어디에 둘지가 M9의 첫 결정이었다. 답은 §11.1의 `PerkSet`이다.
 
 ---
 
@@ -413,7 +404,7 @@ Perk는 `RoundContext`·`GridBoard`·`CombatContext`를 가로질러 규칙을 �
 |---|---|
 | 유지 보너스 | **지원 소환 6 Chip** |
 | 유닛 판매 (★1/★2/★3 = 1/2/4) | |
-| 일부 Dealer Perk · 보스 보상 | |
+| 일부 딜러 특전 · 보스 보상 | |
 
 **적 처치로는 Chip을 주지 않는다.** 처치 하나하나가 경제와 엮이면 웨이브 구성만 바꿔도 경제가 흔들려 밸런싱이 급격히 어려워진다. 덕분에 `EnemyDefinition`에 보상 필드를 추가할 필요도 없다.
 
@@ -453,9 +444,9 @@ Perk는 `RoundContext`·`GridBoard`·`CombatContext`를 가로질러 규칙을 �
 | Act | 웨이브 | 구성 | 의도 |
 |---|---|---|---|
 | 1 | 1~4 | Normal → Runner 혼합 | 흐름 학습. 엉성해도 통과 |
-| | **5 보스** | Boss + Normal ×3 | 머지를 한 번도 안 했으면 힘들다. **Joker ×1 + Perk 선택** |
+| | **5 보스** | Boss + Normal ×3 | 머지를 한 번도 안 했으면 힘들다. **Joker ×1 + 특전 선택** |
 | 2 | 6~9 | Swarm / Tank 혼합 | 단일 유닛만 모았으면 약점이 드러난다 |
-| | **10 보스** | Boss + Tank ×2 | 첫 실패 가능 구간. **Joker ×1 + Perk 선택** |
+| | **10 보스** | Boss + Tank ×2 | 첫 실패 가능 구간. **Joker ×1 + 특전 선택** |
 | 3 | 11~14 | Runner·Swarm·Tank 복합 | Perk·머지·Chip 운영이 난이도에 반영된다 |
 | | **15 최종 보스** | Final Boss + 소량 | 클리어. 라이프 3~10 남기는 것이 목표 |
 
@@ -581,9 +572,11 @@ Slow·Poison·Stun 같은 상태이상은 넣지 않는다.
 
 ---
 
-## 11. Dealer Perk (M9)
+## 11. 딜러 특전 (M9)
 
 Wave 5·10 보스를 잡으면 3개 중 하나를 고른다. 스테이지 끝까지 유지되며 **한 게임에 총 2개**다.
+
+**화면에는 `딜러 특전`으로 나온다.** 코드의 타입·필드 이름(`PerkSet`, `PerkTable`, `PerkId`, `perkReward`)은 영문 `Perk`를 그대로 쓴다 — 식별자와 표기가 같아야 할 이유가 없고, 이 문서에서 `Perk`라고만 쓴 곳은 전부 이 시스템을 가리킨다.
 
 목적은 규칙을 뒤엎는 것이 아니라 **이번 런에서 어떤 플레이를 더 가치 있게 만들지**를 정하는 것이다.
 
@@ -591,18 +584,55 @@ Wave 5·10 보스를 잡으면 3개 중 하나를 고른다. 스테이지 끝까
 
 **먼저 6개만 만들어 "고르는 것 자체가 재미있는가"를 검증한다.** 재미가 확인되면 늘린다.
 
+**이름은 한글 하나뿐이다** (§10.3의 유닛 이름과 같은 이유). 괄호 안은 코드의 `PerkId`이고 화면에는 나오지 않는다.
+
 | 계열 | Perk | 효과 |
 |---|---|---|
-| 포커 | Patience | 교체 0장이면 유지 보너스 +4 → +6 |
-| 포커 | Insurance | 3장 이상 교체했는데 하이카드로 끝나면 +3 Chip |
-| 경제 | Bargain | 지원 소환 6 → 5 Chip |
-| 경제 | Interest | 웨이브 종료 시 보유 Chip 10당 +1 (최대 +2) |
-| 머지 | Rookie Training | ★1 공격력 +20% |
-| 머지 | Veteran | ★2 이상 공격력 +15% |
+| 포커 | 뚝심 (`Patience`) | 교체 0장이면 유지 보너스 +4 → +6 |
+| 포커 | 위로금 (`Insurance`) | 3장 이상 교체했는데 하이카드로 끝나면 +3 Chip |
+| 경제 | 흥정 (`Bargain`) | 지원 소환 6 → 5 Chip |
+| 경제 | 이자 (`Interest`) | 웨이브 종료 시 보유 Chip 10당 +1 (최대 +2) |
+| 머지 | 신병 훈련 (`RookieTraining`) | ★1 공격력 +20% |
+| 머지 | 고참 (`Veteran`) | ★2 이상 공격력 +15% |
 
 확장 후보: Second Chance(교체한 자리 재교체) / Pair Collector(원페어 종료 시 Chip) / Recycler(★1 판매가 인상) / Reinforcement(지원 소환 확률 상향) / Perfect Merge(★3 공격속도) / Full Board(10기 이상 시 전체 공격속도) / High Roller(스트레이트 이상 공격력) / Premium Hand(풀하우스 이상 공격속도) / Wild Joker(Joker 사용 유닛 공격력).
 
-> **구조 주의:** Perk는 `RoundContext`(Second Chance)·`GridBoard`(Full Board)·`CombatContext`(공격력 배수)를 가로질러 규칙을 바꾼다. **수정자를 어디에 두는지 정하지 않고 첫 Perk를 짜면 곳곳에 `if`가 흩어진다.** M9 착수 시 이 구조를 먼저 정한다.
+### 11.1 수정자를 두는 곳 — `PerkSet`
+
+특전은 `RoundContext`·`GridBoard`·`CombatContext`를 가로질러 규칙을 바꾼다. **호출부마다 "이 특전이 있으면"을 물으면 `if`가 곳곳에 흩어진다.** 그래서 **묻는 창구를 하나로 고정한다.**
+
+`PerkSet`은 `StageContext`가 소유한다 — 수명이 스테이지와 정확히 같고, `RunStats`와 달리 **규칙을 바꾸므로** 따로 떼지 않는다.
+
+| 창구 | 답하는 값 | 부르는 곳 |
+|---|---|---|
+| `HoldBonus(base, used)` | 유지 보너스 | `StageController.HoldBonusFor` |
+| `ConfirmBonusChip(category, used)` | 확정 시 별도 Chip | `GameFlowController` |
+| `SupportSummonCost(base)` | 지원 소환 비용 | `PlacementController` |
+| `WaveEndChip(chip)` | 웨이브 종료 이자 | `StageContext.ApplyResult` |
+| `AttackPowerOf(unit)` | 특전이 붙은 공격력 | `CombatContext.Fire`, `BoardScreen` |
+
+- **호출부는 어떤 특전이 걸렸는지 모른다.** "지금 값이 얼마인가"만 묻는다. 특전을 늘릴 때 손대는 곳은 `PerkTable`(수치)과 `PerkSet`(조건) 둘뿐이다.
+- **`AttackPowerOf`가 `UnitInstance`에 없는 이유:** 유닛은 스테이지를 모르는 불변 객체다. 그런데 전투가 실제로 넣는 피해와 상세 블록의 표기는 **반드시 같은 수**여야 하므로(§10.3), 두 곳이 같은 함수를 부른다.
+- **유지 보너스만 `StageController`가 한 번 더 감싼다.** 지급하는 쪽과 미리 보여주는 쪽(§9.1의 전제조건)이 각자 조합하면 언젠가 어긋난다.
+
+### 11.2 언제 고르는가
+
+`WaveDefinition.perkReward`가 켜진 웨이브를 **클리어**하면 `GameFlowController`가 다음 라운드를 열지 않고 3칸을 내놓는다. 고르면 그때 라운드가 열린다.
+
+- **Joker 보상과 별도 필드다.** 지금은 둘 다 5·10에만 켜져 있지만, 한쪽만 주는 웨이브가 생겨도 데이터로 끝난다.
+- **최종 보스(15)는 특전을 주지 않는다.** 받아도 쓸 라운드가 없다.
+- **이것이 §1의 "플레이어 입력이 필요한 지점"에 셋째를 더한다.** 한 판에 두 번뿐이고, 고르기 전에 라운드가 열리면 선택이 무의미해진다.
+- 전면 패널로 띄운다. 웨이브 사이라 보드에 볼 것이 없고, 화면을 덮는 판이 보드 클릭까지 함께 막아 준다.
+
+### 11.3 고른 특전은 어디에 남는가
+
+**상단 줄의 라이프·Chip과 라운드 사이에 이름만 띄운다.** 특전은 라이프·Chip과 같은 "판이 끝날 때까지 유지되는 상태"라 같은 줄이 맞다.
+
+효과 자체는 이미 다른 숫자에 드러난다 — `확정 +6`, `지원 소환 5`, 상세 블록의 공격력. **하지만 그것이 무엇 때문인지는 이 줄에서만 알 수 있다.** 이자만은 웨이브가 끝나는 순간에만 보인다.
+
+**빈 자리는 rect가 아니라 실제로 그려지는 폭으로 재야 한다.** 좌우 라벨의 rect는 380px씩이지만 라운드 표기는 150px밖에 안 써서 가운데가 400px 넘게 비어 있었다. 한 판에 특전은 최대 2개라 이름만 늘어놓아도 최악값이 263px이다.
+
+> 이 자리를 재면서 **조커를 들고 있으면 라이프 줄이 rect를 넘겨 개행되던 것**을 찾아 고쳤다(폭 380 → 500). 좌측 끝은 x=-520 그대로 두고 폭만 넓힌다.
 
 ---
 

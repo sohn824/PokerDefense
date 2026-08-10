@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 855d58b71e08fb64c83b43ea03f2fbb4, type: 3}
+  m_Name: PerkTable
+  m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.PerkTable
+  entries:
+  - id: 0
+    displayName: "\uB69D\uC2EC"
+    description: "\uAD50\uCCB4\uB97C \uD55C \uC7A5\uB3C4 \uC4F0\uC9C0 \uC54A\uC73C\uBA74
+      \uC720\uC9C0 \uBCF4\uB108\uC2A4\uAC00 4\uC5D0\uC11C 6\uC73C\uB85C"
+    category: 0
+    amount: 2
+    limit: 0
+  - id: 1
+    displayName: "\uC704\uB85C\uAE08"
+    description: "3\uC7A5 \uC774\uC0C1 \uAD50\uCCB4\uD558\uACE0\uB3C4 \uD558\uC774\uCE74\uB4DC\uB85C
+      \uB05D\uB098\uBA74 3 Chip"
+    category: 0
+    amount: 3
+    limit: 3
+  - id: 2
+    displayName: "\uD765\uC815"
+    description: "\uC9C0\uC6D0 \uC18C\uD658 \uBE44\uC6A9\uC774 6\uC5D0\uC11C 5\uB85C"
+    category: 1
+    amount: 1
+    limit: 0
+  - id: 3
+    displayName: "\uC774\uC790"
+    description: "\uC6E8\uC774\uBE0C\uAC00 \uB05D\uB0A0 \uB54C \uBCF4\uC720 Chip
+      10\uB2F9 1 (\uCD5C\uB300 2)"
+    category: 1
+    amount: 10
+    limit: 2
+  - id: 4
+    displayName: "\uC2E0\uBCD1 \uD6C8\uB828"
+    description: "\u26051 \uC720\uB2DB\uC758 \uACF5\uACA9\uB825 +20%"
+    category: 3
+    amount: 0.2
+    limit: 0
+  - id: 5
+    displayName: "\uACE0\uCC38"
+    description: "\u26052 \uC774\uC0C1 \uC720\uB2DB\uC758 \uACF5\uACA9\uB825 +15%"
+    category: 3
+    amount: 0.15
+    limit: 0

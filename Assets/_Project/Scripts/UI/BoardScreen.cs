@@ -35,6 +35,9 @@ namespace PokerDefense.UI
         [SerializeField] Button jokerButton;
         [SerializeField] TMP_Text jokerLabel;
 
+        [Tooltip("고른 딜러 특전. 상단 줄 라이프·라운드 사이에 둔다")]
+        [SerializeField] TMP_Text perkLabel;
+
         int selected = NoSelection;
 
         void Awake()
@@ -237,6 +240,8 @@ namespace PokerDefense.UI
             supportButton.interactable = placement.CanSupportSummon;
             supportLabel.text = $"지원 소환 {placement.SupportSummonCost}";
 
+            ShowPerks();
+
             // 조커는 고른 유닛에만 쓴다. 고르기 전에는 대상이 없어 버튼을 띄울 이유가 없다
             bool jokerOffered = pending == null && selected != NoSelection;
             jokerButton.gameObject.SetActive(jokerOffered);
@@ -269,6 +274,34 @@ namespace PokerDefense.UI
         }
 
         /**
+         * 고른 특전 표시
+         *
+         * 특전은 한 판 내내 규칙을 바꾸므로 라이프·Chip과 같은 "판이 끝날 때까지 유지되는 상태"다
+         * 효과 자체는 이미 다른 숫자에 드러나지만(확정 +6 / 지원 소환 5 / 공격력) 무엇 때문인지는 여기서만 알 수 있다
+         *
+         * 한 판에 최대 2개라 이름만 늘어놓아도 최악값 263px이다 (상단 줄 빈 폭 409px)
+         */
+        void ShowPerks()
+        {
+            var owned = stage.Stage.Perks.Owned;
+
+            if (owned.Count == 0)
+            {
+                perkLabel.text = string.Empty;
+                return;
+            }
+
+            string names = stage.PerkTable.For(owned[0]).displayName;
+
+            for (int i = 1; i < owned.Count; i++)
+            {
+                names += " · " + stage.PerkTable.For(owned[i]).displayName;
+            }
+
+            perkLabel.text = "특전  " + names;
+        }
+
+        /**
          * 유닛 상세 정보 표시
          *
          * 슬롯에는 Sprite와 성급만 표시하고 이름, 공격력 등의 상세 정보는 전부 여기서 표시
@@ -285,12 +318,15 @@ namespace PokerDefense.UI
 
             string suffix = string.IsNullOrEmpty(hint) ? string.Empty : "  -  " + hint;
 
+            // 특전이 붙은 공격력을 띄운다. 전투에서 실제로 나가는 수와 같아야 비교가 성립한다
+            float power = stage.Stage.Perks.AttackPowerOf(unit);
+
             pendingLabel.text =
                 $"{unit.Definition.DisplayName} {new string('★', unit.Star)}{suffix}\n" +
                 $"<size=76%>{AttackPatternNames.Of(unit.Definition.Pattern)}   " +
-                $"공격력 {unit.AttackPower:0.#}   " +
+                $"공격력 {power:0.#}   " +
                 $"초당 {unit.AttacksPerSecond:0.#}회   " +
-                $"DPS {unit.AttackPower * unit.AttacksPerSecond:0.#}   " +
+                $"DPS {power * unit.AttacksPerSecond:0.#}   " +
                 $"사거리 {unit.Range:0.#}</size>";
         }
     }
