@@ -50,7 +50,6 @@ namespace PokerDefense.UI
             background.color = unit.Definition.PlaceholderColor;
             starLabel.text = new string('★', unit.Star);
 
-            // 한글은 아무 자리에서나 개행돼 "로열 스트레이/트 플러시 소버/린"처럼 잘린다
             // 띄어쓰기를 개행으로 바꿔 단어 단위로만 끊는다
             nameLabel.text = unit.Definition.DisplayName.Replace(' ', '\n');
         }

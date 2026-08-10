@@ -5,26 +5,24 @@ namespace PokerDefense.Game
     /**
      * AttackPattern
      *
-     * 유닛 13종이 나눠 쓰는 공격 방식 5종 (DESIGN §10.1)
+     * 유닛 13종이 나눠 쓰는 공격 방식 5종
      *
-     * Rapid와 Heavy는 둘 다 단일 타겟이고 스탯 프로필로만 갈린다 - 빠르고 약한가, 느리고 강한가
-     * 대상을 고르는 방식이 실제로 다른 것은 Multi/Splash/Pierce 셋이다
      */
     public enum AttackPattern
     {
-        // 빠른 단일
+        // 빠른 단일 공격
         Rapid,
 
-        // 느리고 강한 단일
+        // 느리고 강한 단일 공격
         Heavy,
 
-        // 사거리 안에서 앞선 순으로 여러 적을 동시에
+        // 다중 공격 (사거리 안에서 앞선 적 우선으로)
         Multi,
 
-        // 착탄 지점 주변까지
+        // 착탄 지점 주변 스플래쉬
         Splash,
 
-        // 타겟 뒤로 트랙을 따라 관통
+        // 타겟 뒤로 관통
         Pierce,
     }
 

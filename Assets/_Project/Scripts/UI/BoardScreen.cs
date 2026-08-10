@@ -269,13 +269,9 @@ namespace PokerDefense.UI
         }
 
         /**
-         * 유닛 상세 (DESIGN §10.3)
+         * 유닛 상세 정보 표시
          *
-         * 슬롯에는 이름과 성급만 두고 수치는 전부 여기서만 보여준다.
-         * 공격력·공격속도·DPS 셋을 다 띄우는 이유는 하나로 뭉칠 수 없어서다 - 패턴마다 배분이 크게 다르고(§10.1),
-         * DPS만 보면 오버킬 낭비가, 공격력만 보면 발사 주기가 사라진다.
-         *
-         * **모달 창이 아니다.** 전투 중에도 배치를 고치므로(§1) 보드를 덮으면 적이 안 보인다
+         * 슬롯에는 Sprite와 성급만 표시하고 이름, 공격력 등의 상세 정보는 전부 여기서 표시
          */
         void ShowDetail(UnitInstance unit, string hint)
         {
@@ -289,7 +285,6 @@ namespace PokerDefense.UI
 
             string suffix = string.IsNullOrEmpty(hint) ? string.Empty : "  -  " + hint;
 
-            // 둘째 줄은 참고 수치라 한 단계 작게 깐다. 안내 문구 자리를 그대로 쓰므로 가리는 것이 없다
             pendingLabel.text =
                 $"{unit.Definition.DisplayName} {new string('★', unit.Star)}{suffix}\n" +
                 $"<size=76%>{AttackPatternNames.Of(unit.Definition.Pattern)}   " +

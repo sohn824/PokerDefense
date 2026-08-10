@@ -250,12 +250,7 @@ namespace PokerDefense.Game
             return best;
         }
 
-        /**
-         * 공격 1회 (DESIGN §10.1)
-         *
-         * 패턴이 정하는 것은 "몇 기를 때리는가"뿐이고 대상마다 공격력은 그대로 들어간다
-         * 성급 배수가 걸린 값은 UnitInstance에서, 안 걸리는 패턴 크기는 Definition에서 읽는다
-         */
+        // 유닛 공격 종류별 공격 1회 처리
         void Fire(Vector2 slotPosition, UnitInstance unit, EnemyInstance target)
         {
             switch (unit.Definition.Pattern)
@@ -273,7 +268,7 @@ namespace PokerDefense.Game
                     break;
 
                 default:
-                    // Rapid / Heavy - 단일 타겟. 둘의 차이는 스탯 프로필이다
+                    // Rapid / Heavy = 단일 타겟
                     shotTargets.Clear();
                     shotTargets.Add(target);
                     break;
@@ -285,7 +280,8 @@ namespace PokerDefense.Game
             }
         }
 
-        // 사거리 안에서 앞선 순으로 최대 MultiTargets기
+        // 사거리 안에서 앞선 순으로 최대 MultiTargets기 탐색
+        // 사거리 안에서 앞선 적 우선 탐색 (unitDefinition의 MultiTargets 수만큼)
         void CollectMulti(Vector2 slotPosition, UnitInstance unit)
         {
             shotTargets.Clear();
@@ -308,7 +304,7 @@ namespace PokerDefense.Game
             }
         }
 
-        // 착탄 지점 반경 안. 유닛 사거리가 아니라 타겟 위치가 기준이라 사거리 밖의 적도 휘말린다
+        // 착탄 지점에서 unitDefinition의 SplashRadius 반경 안에 있는 적을 모두 탐색
         void CollectSplash(UnitInstance unit, EnemyInstance target)
         {
             shotTargets.Clear();
@@ -324,7 +320,7 @@ namespace PokerDefense.Game
             }
         }
 
-        // 타겟을 지나 트랙 뒤쪽으로 관통. 뒤에 늘어선 적이 함께 맞는다
+        // 타겟을 지나 뒤쪽으로 관통할 타겟들 탐색
         void CollectPierce(UnitInstance unit, EnemyInstance target)
         {
             shotTargets.Clear();
@@ -333,7 +329,6 @@ namespace PokerDefense.Game
 
             for (int i = 0; i < enemies.Count; i++)
             {
-                // 진행도는 바퀴 수를 포함해 누적되므로 한 바퀴 뒤진 적은 자연히 걸러진다
                 float behind = (target.Progress - enemies[i].Progress) * GridBoard.TrackLength;
 
                 if (behind >= 0f && behind <= length)
