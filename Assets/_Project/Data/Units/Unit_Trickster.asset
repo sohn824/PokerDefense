@@ -20,8 +20,8 @@ MonoBehaviour:
   range: 2.5
   starMultipliers:
   - 1
-  - 2
-  - 4
+  - 1.6
+  - 2.25
   attackPattern: 0
   multiTargets: 2
   splashRadius: 1

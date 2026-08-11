@@ -15,6 +15,6 @@ MonoBehaviour:
   id: boss
   displayName: Boss
   placeholderColor: {r: 0.95, g: 0.75, b: 0.2, a: 1}
-  maxHp: 900
+  maxHp: 1300
   moveSpeed: 1
   type: 2

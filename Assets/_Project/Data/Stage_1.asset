@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0006daa59742da843837685b86fd35a6, type: 3}
   m_Name: Stage_1
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.StageDefinition
-  startingLife: 15
+  startingLife: 12
   startingChip: 0
   maxLifeDamagePerWave: 5
   waves:
@@ -31,3 +31,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ef4bbc6b6fee6e24eb58cf8e2d601c12, type: 2}
   - {fileID: 11400000, guid: 11f8108b2eb03464499c49a4666abc53, type: 2}
   - {fileID: 11400000, guid: 32eb8f383b839de4a93dca9da1a03338, type: 2}
+  - {fileID: 11400000, guid: 4af6cb2065afea844807d2d4a9b377b3, type: 2}
+  - {fileID: 11400000, guid: 0a31861c3f6f4b9478f4237d271b7b80, type: 2}
+  - {fileID: 11400000, guid: 21368852d467aac4ab50ad04d040597d, type: 2}
+  - {fileID: 11400000, guid: 6b18b6569a212e6418dd266ec1d04ce0, type: 2}
+  - {fileID: 11400000, guid: de314343eccceb4468ecf35188b6858c, type: 2}

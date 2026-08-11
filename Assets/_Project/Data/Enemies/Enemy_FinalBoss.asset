@@ -15,6 +15,6 @@ MonoBehaviour:
   id: final_boss
   displayName: Final Boss
   placeholderColor: {r: 0.95, g: 0.25, b: 0.15, a: 1}
-  maxHp: 2600
+  maxHp: 4200
   moveSpeed: 0.9
   type: 2

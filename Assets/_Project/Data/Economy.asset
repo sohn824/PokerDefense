@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d08e255e7fa18746950f783d3ecf507, type: 3}
   m_Name: Economy
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.EconomyDefinition
-  holdBonusMax: 4
+  holdBonusMax: 3
   supportSummonCost: 6
-  supportSummonsPerRound: 2
+  supportSummonsPerRound: 1
   supportPool:
   - category: 0
     weight: 40

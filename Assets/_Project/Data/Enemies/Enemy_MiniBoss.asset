@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38b0e06aed4fbf34e80243172e414d82, type: 3}
-  m_Name: Enemy_Swarm
+  m_Name: Enemy_MiniBoss
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.EnemyDefinition
-  id: swarm
-  displayName: Swarm
-  placeholderColor: {r: 0.95, g: 0.62, b: 0.25, a: 1}
-  maxHp: 50
-  moveSpeed: 3.4
-  type: 1
+  id: mini_boss
+  displayName: Mini Boss
+  placeholderColor: {r: 0.75, g: 0.35, b: 0.75, a: 1}
+  maxHp: 550
+  moveSpeed: 1.1
+  type: 2

@@ -17,7 +17,7 @@ MonoBehaviour:
   jokerReward: 1
   perkReward: 1
   entries:
-  - enemy: {fileID: 11400000, guid: 2356a5926ab04104ab2359b8e906d1ad, type: 2}
+  - enemy: {fileID: 11400000, guid: d79fd7306943450439e48be1a4f50298, type: 2}
     count: 1
     interval: 0
     startDelay: 2

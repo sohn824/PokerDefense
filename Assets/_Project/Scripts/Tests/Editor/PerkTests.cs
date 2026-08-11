@@ -333,7 +333,7 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 특전_보상은_5번과_10번_웨이브에만_있다()
+        public void 특전_보상은_보스_웨이브에만_있다()
         {
             // 기존 에셋에 [SerializeField]를 새로 넣으면 YAML에 키가 없어 전부 false가 된다
             var rewarded = new List<int>();
@@ -349,7 +349,8 @@ namespace PokerDefense.Tests
             }
 
             rewarded.Sort();
-            CollectionAssert.AreEqual(new[] { 5, 10 }, rewarded);
+            // 최종 보스(20)는 받아도 쓸 라운드가 없어 빠진다
+            CollectionAssert.AreEqual(new[] { 5, 10, 15 }, rewarded);
         }
 
         static PerkTable LoadTable()
