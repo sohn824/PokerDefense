@@ -12,8 +12,6 @@ namespace PokerDefense.Game
     public sealed class StageContext
     {
         readonly StageDefinition definition;
-
-        // perks를 넘기지 않으면 특전을 하나도 못 가지는 판이 된다. 특전과 무관한 테스트가 쓴다
         public StageContext(StageDefinition definition, PerkTable perks = null)
         {
             if (definition == null)
@@ -29,16 +27,15 @@ namespace PokerDefense.Game
 
         public int Life { get; private set; }
 
-        // 이번 판에 고른 딜러 특전. 특전이 바꾸는 값은 전부 여기에 묻는다 (DESIGN §11)
+        // 이번 판에 고른 딜러 특전 (특전이 바꾸는 값들은 전부 여기를 거쳐서 계산)
         public PerkSet Perks { get; }
 
-        // 스테이지 안에서만 쓰는 재화 (DESIGN §9.2)
+        // 스테이지 안에서만 쓰는 보너스 재화
         public int Chip { get; private set; }
 
-        // 아무 유닛의 성급을 한 단계 올린다. 보스 웨이브를 클리어할 때만 들어온다 (DESIGN §5.2.1)
+        // 조커를 사용하면 아무 유닛의 성급을 한 단계 올릴 수 있음 (보스 웨이브를 클리어로 지급)
         public int Jokers { get; private set; }
 
-        // 결말이 난 웨이브 수. 클리어든 시간 초과든 다음으로 넘어간다
         public int WaveIndex { get; private set; }
 
         public int TotalWaves => definition.Waves.Count;
@@ -86,17 +83,7 @@ namespace PokerDefense.Game
             WaveIndex++;
         }
 
-        /**
-         * 잔여 적이 실제로 깎는 라이프
-         *
-         * 상한이 없으면 Swarm 웨이브(적 10기 이상)를 한 번 놓치는 순간 게임이 끝나고,
-         * 실수 한 번이 곧 패배가 되면 보드를 실험해 볼 여지가 사라진다 (DESIGN §5.4)
-         *
-         * 반대로 보스를 놓치면 잔여가 한 기뿐이라도 상한만큼 친다.
-         * 보스 웨이브를 실패하고 라이프 1만 잃으면 보스가 벽으로 기능하지 못한다
-         *
-         * ApplyResult와 화면 표기가 같은 답을 내도록 규칙을 여기 한 곳에 둔다
-         */
+        // 잔여 적이 깎는 라이프 계산
         public int LifeDamageFor(int unresolvedEnemies, int unresolvedBosses)
         {
             if (unresolvedBosses > 0)
@@ -107,7 +94,7 @@ namespace PokerDefense.Game
             return Math.Min(unresolvedEnemies, definition.MaxLifeDamagePerWave);
         }
 
-        /// <summary>Joker를 한 개 쓴다. 없으면 false를 돌려주고 아무것도 바뀌지 않는다.</summary>
+        // Joker를 한 개 사용함 (없으면 false를 반환하고 실패 처리)
         public bool TryUseJoker()
         {
             if (Jokers <= 0)

@@ -33,7 +33,7 @@ namespace PokerDefense.Game
         [Tooltip("이 웨이브를 클리어하면 받는 Joker 수 (보스 웨이브 전용)")]
         [SerializeField] int jokerReward;
 
-        [Tooltip("이 웨이브를 클리어하면 딜러 특전을 고른다 (5·10 보스 전용, 최종 보스는 제외)")]
+        [Tooltip("이 웨이브를 클리어하면 딜러 특전을 고른다 (보스 웨이브 전용)")]
         [SerializeField] bool perkReward;
 
         [SerializeField] SpawnEntry[] entries;

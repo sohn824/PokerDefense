@@ -62,7 +62,7 @@ namespace PokerDefense.Game
         void OnEvaluated(HandResult result)
         {
             SupportSummonsUsed = 0;
-            Pending = new UnitInstance(unitTable.For(result.Category));
+            Pending = new UnitInstance(unitTable.GetDefinition(result.Category));
             stage.Stats.RecordSummon(Pending);
             PendingChanged?.Invoke(Pending);
         }

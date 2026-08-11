@@ -6,12 +6,11 @@ namespace PokerDefense.Game
     /**
      * PerkOffer
      *
-     * 보스를 잡았을 때 내놓을 3칸을 뽑는다 (DESIGN §11)
+     * 보스를 잡았을 때 내놓을 특전 3칸을 뽑는 역할
      *
-     * 계열을 섞어 뽑는다 - 포커/경제에서 1, 유닛/머지에서 1, 나머지에서 1
-     * 셋을 그냥 랜덤으로 뽑으면 비슷한 것만 셋 나오는 판이 생긴다
-     *
-     * System.Random을 주입받아 테스트에서 결과를 재현할 수 있다 - Deck·SupportSummon과 같은 방식이다
+     * 계열을 섞어 뽑음
+     * (포커/경제에서 1, 유닛/머지에서 1, 올랜덤 1)
+     * 같은 계열이 셋 나오는 판이 생기지 않도록 함
      */
     public sealed class PerkOffer
     {
@@ -34,12 +33,12 @@ namespace PokerDefense.Game
         }
 
         /**
-         * 이번에 내놓을 특전. 이미 가진 특전과 이번에 뽑힌 특전은 다시 나오지 않는다
+         * 특전 리스트 뽑기
+         * 이미 가진 특전과 이번에 뽑힌 특전은 다시 나오지 않음
          *
-         * 남은 특전이 3개보다 적으면 그만큼만 돌려준다.
-         * 특전 6종에 한 판 2개라 지금은 닿지 않지만, 표를 줄여도 뽑기가 터지지는 않아야 한다
+         * 남은 특전이 3개보다 적으면 그만큼만 반환함
          */
-        public IReadOnlyList<PerkId> Draw(PerkSet owned)
+        public IReadOnlyList<PerkId> DrawPerks(PerkSet owned)
         {
             if (owned == null)
             {
@@ -52,11 +51,11 @@ namespace PokerDefense.Game
             TakeOne(owned, PerkCategory.Unit, PerkCategory.Merge);
             TakeOne(owned);
 
-            // offered는 다음 뽑기에서 비운다. 호출부가 들고 있어도 되도록 복사해 넘긴다
             return new List<PerkId>(offered);
         }
 
-        // 두 계열에서 하나. 그 계열이 바닥났으면 남은 아무 특전이나 채운다
+        // 두 계열 중 하나로 후보를 뽑음
+        // (계열에 있는 특전이 바닥났으면 남은 아무 특전이나 후보로 채움)
         void TakeOne(PerkSet owned, PerkCategory a, PerkCategory b)
         {
             Collect(owned, true, a, b);
@@ -71,11 +70,12 @@ namespace PokerDefense.Game
 
         void TakeOne(PerkSet owned)
         {
+            // byCategory가 false면 뒤의 두 인자는 의미 없음
             Collect(owned, false, default, default);
             TakeRandom();
         }
 
-        // byCategory가 false면 계열을 보지 않는다
+        // byCategory가 false면 계열을 보지 않고 모든 특전 중에 후보를 뽑음
         void Collect(PerkSet owned, bool byCategory, PerkCategory a, PerkCategory b)
         {
             candidates.Clear();

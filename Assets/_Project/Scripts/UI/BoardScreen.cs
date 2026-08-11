@@ -291,11 +291,11 @@ namespace PokerDefense.UI
                 return;
             }
 
-            string names = stage.PerkTable.For(owned[0]).displayName;
+            string names = stage.PerkTable.GetEntry(owned[0]).displayName;
 
             for (int i = 1; i < owned.Count; i++)
             {
-                names += " · " + stage.PerkTable.For(owned[i]).displayName;
+                names += " · " + stage.PerkTable.GetEntry(owned[i]).displayName;
             }
 
             perkLabel.text = "특전  " + names;

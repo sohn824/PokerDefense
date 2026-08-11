@@ -137,7 +137,7 @@ namespace PokerDefense.UI
         void ShowPreview()
         {
             HandResult preview = controller.PreviewHand();
-            UnitDefinition unit = unitTable.For(preview.Category);
+            UnitDefinition unit = unitTable.GetDefinition(preview.Category);
             int bonus = stage.HoldBonusFor(controller.UsedExchanges);
             int left = controller.ExchangeableCount;
 

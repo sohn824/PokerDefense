@@ -38,7 +38,7 @@ namespace PokerDefense.Game
         public PerkTable PerkTable => perkTable;
 
         /**
-         * 특전까지 반영한 유지 보너스 (DESIGN §9.1 + §11)
+         * 특전까지 반영한 유지 보너스
          *
          * 지급하는 쪽(GameFlowController)과 미리 보여주는 쪽(RoundScreen)이
          * 반드시 같은 수를 내야 하므로 조합을 여기 한 곳에 둔다

@@ -243,7 +243,7 @@ namespace PokerDefense.Tests
 
             for (int seed = 0; seed < 20; seed++)
             {
-                IReadOnlyList<PerkId> drawn = new PerkOffer(MakeTable(), seed).Draw(MakeSet());
+                IReadOnlyList<PerkId> drawn = new PerkOffer(MakeTable(), seed).DrawPerks(MakeSet());
 
                 Assert.AreEqual(PerkOffer.OfferCount, drawn.Count);
                 CollectionAssert.AllItemsAreUnique(drawn);
@@ -257,10 +257,10 @@ namespace PokerDefense.Tests
 
             for (int seed = 0; seed < 20; seed++)
             {
-                IReadOnlyList<PerkId> drawn = new PerkOffer(table, seed).Draw(MakeSet());
+                IReadOnlyList<PerkId> drawn = new PerkOffer(table, seed).DrawPerks(MakeSet());
 
-                PerkCategory first = table.For(drawn[0]).category;
-                PerkCategory second = table.For(drawn[1]).category;
+                PerkCategory first = table.GetEntry(drawn[0]).category;
+                PerkCategory second = table.GetEntry(drawn[1]).category;
 
                 Assert.IsTrue(first == PerkCategory.Poker || first == PerkCategory.Economy,
                     $"첫 칸이 포커/경제가 아니다: {first}");
@@ -276,7 +276,7 @@ namespace PokerDefense.Tests
 
             for (int seed = 0; seed < 20; seed++)
             {
-                IReadOnlyList<PerkId> drawn = new PerkOffer(MakeTable(), seed).Draw(owned);
+                IReadOnlyList<PerkId> drawn = new PerkOffer(MakeTable(), seed).DrawPerks(owned);
 
                 CollectionAssert.DoesNotContain(drawn, PerkId.Veteran);
                 CollectionAssert.DoesNotContain(drawn, PerkId.Bargain);
@@ -289,8 +289,8 @@ namespace PokerDefense.Tests
             PerkTable table = MakeTable();
 
             CollectionAssert.AreEqual(
-                new PerkOffer(table, 7).Draw(MakeSet()),
-                new PerkOffer(table, 7).Draw(MakeSet()));
+                new PerkOffer(table, 7).DrawPerks(MakeSet()),
+                new PerkOffer(table, 7).DrawPerks(MakeSet()));
         }
 
         [Test]
@@ -298,7 +298,7 @@ namespace PokerDefense.Tests
         {
             var owned = MakeSet(PerkId.Patience, PerkId.Insurance, PerkId.Bargain, PerkId.Interest);
 
-            IReadOnlyList<PerkId> drawn = new PerkOffer(MakeTable(), 1).Draw(owned);
+            IReadOnlyList<PerkId> drawn = new PerkOffer(MakeTable(), 1).DrawPerks(owned);
 
             Assert.AreEqual(2, drawn.Count);
             CollectionAssert.AllItemsAreUnique(drawn);
@@ -313,7 +313,7 @@ namespace PokerDefense.Tests
 
             foreach (PerkId id in Enum.GetValues(typeof(PerkId)))
             {
-                Assert.DoesNotThrow(() => table.For(id), $"{id} 행이 없다");
+                Assert.DoesNotThrow(() => table.GetEntry(id), $"{id} 행이 없다");
             }
 
             Assert.AreEqual(Enum.GetValues(typeof(PerkId)).Length, table.Entries.Count);

@@ -67,7 +67,7 @@ namespace PokerDefense.Game
 
                 if (roll < 0)
                 {
-                    return table.For(pool[i].category);
+                    return table.GetDefinition(pool[i].category);
                 }
             }
 

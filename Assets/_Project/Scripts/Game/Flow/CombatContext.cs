@@ -37,11 +37,11 @@ namespace PokerDefense.Game
             = (a, b) => b.Progress.CompareTo(a.Progress);
 
         readonly GridBoard board;
-        readonly PerkSet perks;
+        readonly PerkSet perks; // 적용된 특전들
         readonly List<ScheduledSpawn> waveSchedule = new List<ScheduledSpawn>();
         readonly List<EnemyInstance> enemies = new List<EnemyInstance>();
 
-        // 공격 한 번이 때릴 대상. 매 공격마다 새로 할당하지 않으려고 돌려 쓴다
+        // 공격 한 번이 때릴 대상 리스트
         readonly List<EnemyInstance> shotTargets = new List<EnemyInstance>();
 
         // 유닛별 남은 공격 쿨타임
@@ -49,7 +49,6 @@ namespace PokerDefense.Game
 
         int nextSpawnIndex;
 
-        // perks를 넘기지 않으면 특전이 없는 전투가 된다. 특전과 무관한 테스트가 쓴다
         public CombatContext(GridBoard board, WaveDefinition wave, PerkSet perks = null)
         {
             if (board == null)
@@ -277,6 +276,7 @@ namespace PokerDefense.Game
                     break;
             }
 
+            // 특전 반영 (공격력에 관여하는 특전이 있으면 반영된 공격력을 가져오고, 없으면 유닛 공격력 그대로 가져옴)
             float power = perks.AttackPowerOf(unit);
 
             for (int i = 0; i < shotTargets.Count; i++)

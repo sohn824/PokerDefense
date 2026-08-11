@@ -53,7 +53,7 @@ namespace PokerDefense.UI
 
                 if (filled)
                 {
-                    optionLabels[i].text = Describe(stage.PerkTable.For(offered[i]));
+                    optionLabels[i].text = Describe(stage.PerkTable.GetEntry(offered[i]));
                 }
             }
         }
@@ -96,7 +96,7 @@ namespace PokerDefense.UI
                     text.Append("   ·   ");
                 }
 
-                text.Append(stage.PerkTable.For(owned[i]).displayName);
+                text.Append(stage.PerkTable.GetEntry(owned[i]).displayName);
             }
 
             return text.ToString();

@@ -23,7 +23,7 @@ namespace PokerDefense.Game
 
         [SerializeField] Entry[] entries;
 
-        public UnitDefinition For(HandCategory category)
+        public UnitDefinition GetDefinition(HandCategory category)
         {
             for (int i = 0; i < entries.Length; i++)
             {
