@@ -11,10 +11,33 @@ namespace PokerDefense.UI
      *
      * 전투 표현. 적 스프라이트를 CombatContext의 적 목록에 맞춰 만들고 지운다
      * 적 좌표는 보드 로컬이라 boardRoot 아래에 붙인다
-     * HP는 별도 게이지 없이 색을 어둡게 해서 보여준다 - 플레이스홀더다
+     * 남은 HP는 체력 바 길이로 보여준다 (DESIGN §10.5)
      */
     public sealed class CombatScreen : MonoBehaviour
     {
+        /**
+         * 적 하나의 표현 - 몸통과 체력 바
+         *
+         * 루트는 스케일 1로 두고 몸통만 줄인다. 그래야 바 수치를 월드 단위 그대로 쓸 수 있다
+         */
+        sealed class EnemyView
+        {
+            public Transform Root;
+            public SpriteRenderer BarBack;
+            public SpriteRenderer BarFill;
+        }
+
+        // 적은 슬롯의 절반 크기다 (화면 73px)
+        const float BodyScale = 0.5f;
+
+        const float BarWidth = 0.5f;
+        const float BarHeight = 0.07f;
+        const float BarBorder = 0.04f;
+        const float BarOffsetY = 0.36f;
+
+        static readonly Color BarBackColor = new Color(0.06f, 0.06f, 0.08f, 0.9f);
+        static readonly Color BarFillColor = new Color(0.40f, 0.85f, 0.35f);
+
         [SerializeField] CombatController controller;
         [SerializeField] Transform boardRoot;
         [SerializeField] Sprite enemySprite;
@@ -24,7 +47,7 @@ namespace PokerDefense.UI
         [SerializeField] Button startButton;
         [SerializeField] TMP_Text startLabel;
 
-        readonly Dictionary<EnemyInstance, SpriteRenderer> views = new Dictionary<EnemyInstance, SpriteRenderer>();
+        readonly Dictionary<EnemyInstance, EnemyView> views = new Dictionary<EnemyInstance, EnemyView>();
         readonly List<EnemyInstance> gone = new List<EnemyInstance>();
 
         string lastOutcome = string.Empty;
@@ -81,25 +104,23 @@ namespace PokerDefense.UI
             {
                 EnemyInstance enemy = enemies[i];
 
-                if (views.TryGetValue(enemy, out SpriteRenderer view) == false)
+                if (views.TryGetValue(enemy, out EnemyView view) == false)
                 {
                     view = CreateView(enemy);
                     views.Add(enemy, view);
                 }
 
                 Vector2 local = enemy.Position;
-                view.transform.localPosition = new Vector3(local.x, local.y, 0f);
+                view.Root.localPosition = new Vector3(local.x, local.y, 0f);
 
-                // 남은 HP 비율만큼 밝기를 준다
                 float ratio = Mathf.Clamp01(enemy.Hp / enemy.Definition.MaxHp);
-                Color full = enemy.Definition.PlaceholderColor;
-                view.color = Color.Lerp(full * 0.25f, full, ratio);
+                SetBar(view, ratio);
             }
 
             // 죽어서 목록에서 빠진 적의 스프라이트를 지운다
             gone.Clear();
 
-            foreach (KeyValuePair<EnemyInstance, SpriteRenderer> pair in views)
+            foreach (KeyValuePair<EnemyInstance, EnemyView> pair in views)
             {
                 if (pair.Key.IsAlive == false || Contains(enemies, pair.Key) == false)
                 {
@@ -109,7 +130,7 @@ namespace PokerDefense.UI
 
             for (int i = 0; i < gone.Count; i++)
             {
-                Destroy(views[gone[i]].gameObject);
+                Destroy(views[gone[i]].Root.gameObject);
                 views.Remove(gone[i]);
             }
         }
@@ -127,24 +148,61 @@ namespace PokerDefense.UI
             return false;
         }
 
-        SpriteRenderer CreateView(EnemyInstance enemy)
+        // 성한 적까지 바를 띄우면 잔챙이 웨이브에서 화면이 뒤덮인다 - 한 웨이브에 최대 68기다
+        static void SetBar(EnemyView view, float ratio)
         {
-            var go = new GameObject("Enemy_" + enemy.Definition.Id);
-            go.transform.SetParent(boardRoot, false);
-            go.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
+            bool damaged = ratio < 1f;
 
-            var renderer = go.AddComponent<SpriteRenderer>();
-            renderer.sprite = enemySprite;
-            renderer.color = enemy.Definition.PlaceholderColor;
-            renderer.sortingOrder = 5;
-            return renderer;
+            view.BarBack.enabled = damaged;
+            view.BarFill.enabled = damaged;
+
+            if (damaged == false)
+            {
+                return;
+            }
+
+            // Square 스프라이트는 피벗이 가운데라 왼쪽 끝을 고정하려면 위치를 함께 밀어야 한다
+            view.BarFill.transform.localScale = new Vector3(BarWidth * ratio, BarHeight, 1f);
+            view.BarFill.transform.localPosition = new Vector3(-BarWidth * (1f - ratio) * 0.5f, BarOffsetY, 0f);
+        }
+
+        // 바도 같은 사각 스프라이트를 늘려서 쓴다 - 별도 에셋을 만들지 않는다
+        EnemyView CreateView(EnemyInstance enemy)
+        {
+            var root = new GameObject("Enemy_" + enemy.Definition.Id);
+            root.transform.SetParent(boardRoot, false);
+
+            var body = new GameObject("Body").AddComponent<SpriteRenderer>();
+            body.transform.SetParent(root.transform, false);
+            body.transform.localScale = new Vector3(BodyScale, BodyScale, 1f);
+            body.sprite = enemySprite;
+            body.color = enemy.Definition.PlaceholderColor;
+            body.sortingOrder = 5;
+
+            var back = new GameObject("BarBack").AddComponent<SpriteRenderer>();
+            back.transform.SetParent(root.transform, false);
+            back.transform.localScale = new Vector3(BarWidth + BarBorder, BarHeight + BarBorder, 1f);
+            back.transform.localPosition = new Vector3(0f, BarOffsetY, 0f);
+            back.sprite = enemySprite;
+            back.color = BarBackColor;
+            back.sortingOrder = 6;
+
+            var fill = new GameObject("BarFill").AddComponent<SpriteRenderer>();
+            fill.transform.SetParent(root.transform, false);
+            fill.sprite = enemySprite;
+            fill.color = BarFillColor;
+            fill.sortingOrder = 7;
+
+            var view = new EnemyView { Root = root.transform, BarBack = back, BarFill = fill };
+            SetBar(view, 1f);
+            return view;
         }
 
         void ClearViews()
         {
-            foreach (KeyValuePair<EnemyInstance, SpriteRenderer> pair in views)
+            foreach (KeyValuePair<EnemyInstance, EnemyView> pair in views)
             {
-                Destroy(pair.Value.gameObject);
+                Destroy(pair.Value.Root.gameObject);
             }
 
             views.Clear();
