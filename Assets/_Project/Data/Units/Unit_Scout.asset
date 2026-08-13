@@ -26,3 +26,8 @@ MonoBehaviour:
   multiTargets: 2
   splashRadius: 1
   pierceLength: 2
+  artDown: {fileID: 21300000, guid: a8ed462c49416e64f91a102b33768006, type: 3}
+  artUp: {fileID: 21300000, guid: 731425082090e0440be946e51a8f0223, type: 3}
+  artLeft: {fileID: 21300000, guid: 0bec2aa061a4d1946a48d2d5478e7f5b, type: 3}
+  artRight: {fileID: 21300000, guid: 6f30387fd0082a740bea5ed576ce43fa, type: 3}
+  muzzleOffset: {x: 0.24, y: 0.26}

@@ -38,6 +38,9 @@ namespace PokerDefense.UI
         [Tooltip("고른 딜러 특전. 상단 줄 라이프·라운드 사이에 둔다")]
         [SerializeField] TMP_Text perkLabel;
 
+        [Tooltip("유닛 아트의 조준 방향·반동을 얻는 곳. 전투 중이 아니면 정면으로 둔다")]
+        [SerializeField] CombatController combat;
+
         int selected = NoSelection;
 
         void Awake()
@@ -78,6 +81,8 @@ namespace PokerDefense.UI
         // 마우스 클릭을 직접 검사해줘야 함
         void Update()
         {
+            UpdateSlotArt();
+
             if (Pointer.current == null || Pointer.current.press.wasPressedThisFrame == false)
             {
                 return;
@@ -123,6 +128,36 @@ namespace PokerDefense.UI
         }
 
         // 그리드 슬롯을 클릭했을 때 호출
+        /**
+         * 유닛 아트의 방향과 반동을 매 프레임 갱신한다
+         *
+         * 조준 방향은 전투가 들고 있다 - UI는 "지금 어디를 보는가"만 묻는다 (DESIGN §11.1과 같은 방식)
+         * 전투 중이 아니면 정면으로 세워 둔다. 배치 단계에서도 호흡은 돈다
+         */
+        void UpdateSlotArt()
+        {
+            GridBoard board = placement.Board;
+            CombatContext fight = combat.IsFighting ? combat.Combat : null;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                UnitInstance unit = board[i];
+
+                if (unit == null)
+                {
+                    continue;
+                }
+
+                if (fight == null)
+                {
+                    slots[i].SetAim(AimDirection.Down, -1f, unit.AttacksPerSecond);
+                    continue;
+                }
+
+                slots[i].SetAim(fight.AimOf(unit), fight.SecondsSinceShot(unit), unit.AttacksPerSecond);
+            }
+        }
+
         void OnSlotClicked(UnitSlotView slot)
         {
             // 배치 대기 중인 유닛이 있으면 배치 시도

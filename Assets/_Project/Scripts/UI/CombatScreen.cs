@@ -30,6 +30,19 @@ namespace PokerDefense.UI
         // 적은 슬롯의 절반 크기다 (화면 73px)
         const float BodyScale = 0.5f;
 
+        /**
+         * 타격 이펙트는 고정 풀로 돌린다
+         *
+         * Splash 한 발이 여러 기를 때리므로 매번 만들면 초당 수백 개가 된다.
+         * 풀을 다 쓰면 가장 오래된 것부터 덮어쓴다 - 어차피 짧게 사라진다
+         */
+        const int HitPoolSize = 24;
+
+        // 이펙트는 맞은 지점에 남고 적은 계속 움직인다. 길게 두면 Runner(속도 4.2)가
+        // 한 몸 길이만큼 앞서 나가 이펙트가 떨어져 보인다
+        const float HitSeconds = 0.12f;
+        const float HitScale = 0.55f;
+
         const float BarWidth = 0.5f;
         const float BarHeight = 0.07f;
         const float BarBorder = 0.04f;
@@ -41,6 +54,9 @@ namespace PokerDefense.UI
         [SerializeField] CombatController controller;
         [SerializeField] Transform boardRoot;
         [SerializeField] Sprite enemySprite;
+
+        [Tooltip("타격 이펙트. 방사 대칭이라 회전 없이 쓴다")]
+        [SerializeField] Sprite hitSprite;
         [SerializeField] TMP_Text lifeLabel;
         [SerializeField] TMP_Text waveLabel;
         [SerializeField] TMP_Text combatLabel;
@@ -50,6 +66,14 @@ namespace PokerDefense.UI
         readonly Dictionary<EnemyInstance, EnemyView> views = new Dictionary<EnemyInstance, EnemyView>();
         readonly List<EnemyInstance> gone = new List<EnemyInstance>();
 
+        SpriteRenderer[] hitPool;
+        float[] hitBornAt;
+        int hitCursor;
+
+        // 이 시각보다 나중에 생긴 피격만 새로 띄운다. 프레임이 아니라 시간으로 재야
+        // CombatController와 CombatScreen의 실행 순서에 안 걸린다
+        float lastHitSeen;
+
         string lastOutcome = string.Empty;
 
         void Awake()
@@ -57,11 +81,40 @@ namespace PokerDefense.UI
             startButton.onClick.AddListener(controller.StartCombat);
             controller.CombatStarted += OnCombatStarted;
             controller.CombatFinished += OnCombatFinished;
+            BuildHitPool();
+        }
+
+        void BuildHitPool()
+        {
+            hitPool = new SpriteRenderer[HitPoolSize];
+            hitBornAt = new float[HitPoolSize];
+
+            for (int i = 0; i < HitPoolSize; i++)
+            {
+                var go = new GameObject("HitEffect");
+                go.transform.SetParent(boardRoot, false);
+
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = hitSprite;
+                sr.sortingOrder = 9;   // 적(5)·체력 바(6,7)보다 위
+                sr.enabled = false;
+
+                hitPool[i] = sr;
+                hitBornAt[i] = float.NegativeInfinity;
+            }
         }
 
         void OnCombatStarted(CombatContext combat)
         {
             lastOutcome = string.Empty;
+
+            // 웨이브가 바뀌면 ElapsedTime이 0부터 다시 흐른다
+            lastHitSeen = -1f;
+
+            for (int i = 0; i < hitPool.Length; i++)
+            {
+                hitPool[i].enabled = false;
+            }
         }
 
         void OnCombatFinished(CombatOutcome outcome, int unresolved)
@@ -86,7 +139,68 @@ namespace PokerDefense.UI
         void Update()
         {
             SyncEnemies();
+            SyncHitEffects();
             UpdateLabels();
+        }
+
+        void SyncHitEffects()
+        {
+            CombatContext combat = controller.Combat;
+
+            if (combat != null)
+            {
+                IReadOnlyList<CombatContext.HitEvent> recent = combat.RecentHits;
+
+                for (int i = 0; i < recent.Count; i++)
+                {
+                    if (recent[i].Time <= lastHitSeen)
+                    {
+                        continue;
+                    }
+
+                    Spawn(recent[i].Position);
+                }
+
+                lastHitSeen = combat.ElapsedTime;
+            }
+
+            // 수명이 지난 것을 끄고 살아 있는 것은 커지며 사라지게 한다
+            for (int i = 0; i < hitPool.Length; i++)
+            {
+                if (hitPool[i].enabled == false)
+                {
+                    continue;
+                }
+
+                float age = Time.time - hitBornAt[i];
+
+                if (age >= HitSeconds)
+                {
+                    hitPool[i].enabled = false;
+                    continue;
+                }
+
+                float t = age / HitSeconds;
+                float scale = HitScale * (0.6f + 0.7f * t);
+                hitPool[i].transform.localScale = new Vector3(scale, scale, 1f);
+
+                Color c = hitPool[i].color;
+                c.a = 1f - t * t;
+                hitPool[i].color = c;
+            }
+        }
+
+        void Spawn(Vector2 position)
+        {
+            int index = hitCursor;
+            hitCursor = (hitCursor + 1) % hitPool.Length;
+
+            SpriteRenderer sr = hitPool[index];
+            sr.transform.localPosition = new Vector3(position.x, position.y, 0f);
+            sr.transform.localScale = Vector3.zero;
+            sr.color = Color.white;
+            sr.enabled = true;
+            hitBornAt[index] = Time.time;
         }
 
         void SyncEnemies()

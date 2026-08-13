@@ -32,6 +32,27 @@ namespace PokerDefense.Game
             public EnemyDefinition Enemy;
         }
 
+        struct AimState
+        {
+            public AimDirection Direction;
+            public float LastShotTime;
+        }
+
+        /**
+         * 한 발이 실제로 때린 지점
+         *
+         * 표시 전용이다. UI가 타격 이펙트를 어디에 띄울지 알려면 이것 말고는 방법이 없다 -
+         * Fire가 대상에 피해만 주고 끝나면 누가 맞았는지 밖에서 알 수 없다
+         */
+        public struct HitEvent
+        {
+            public Vector2 Position;
+            public float Time;
+        }
+
+        // 피격 기록을 들고 있는 시간. 타격 이펙트 수명보다 넉넉하면 된다
+        const float HitMemorySeconds = 0.5f;
+
         // 앞선 적부터. Multi가 사거리 안에서 몇 기를 고를지 정할 때 쓴다
         static readonly Comparison<EnemyInstance> ByProgressDescending
             = (a, b) => b.Progress.CompareTo(a.Progress);
@@ -46,6 +67,14 @@ namespace PokerDefense.Game
 
         // 유닛별 남은 공격 쿨타임
         readonly Dictionary<UnitInstance, float> cooldowns = new Dictionary<UnitInstance, float>();
+
+        // 유닛별 마지막으로 겨눈 방향과 쏜 시각. 표시 전용이라 규칙에는 관여하지 않는다
+        // 쿨다운과 같은 이유로 슬롯이 아니라 유닛을 키로 든다 - 전투 중 이동해도 어긋나면 안 된다
+        readonly Dictionary<UnitInstance, AimState> aims = new Dictionary<UnitInstance, AimState>();
+
+        // 최근 피격 지점. 오래된 것은 Tick에서 버린다
+        // UI가 아직 안 읽었을 수 있으므로 프레임이 아니라 시간으로 재야 스크립트 실행 순서에 안 걸린다
+        readonly List<HitEvent> hits = new List<HitEvent>();
 
         int nextSpawnIndex;
 
@@ -130,6 +159,8 @@ namespace PokerDefense.Game
             }
 
             ElapsedTime += deltaTime;
+
+            PruneHits();
 
             // 웨이브 스케줄에 따라 적 스폰 처리
             Spawn();
@@ -224,9 +255,44 @@ namespace PokerDefense.Game
                     continue;
                 }
 
+                aims[unit] = new AimState
+                {
+                    Direction = DirectionTo(slotPosition, target.Position),
+                    LastShotTime = ElapsedTime,
+                };
+
                 Fire(slotPosition, unit, target);
                 cooldowns[unit] = 1f / unit.AttacksPerSecond;
             }
+        }
+
+        public IReadOnlyList<HitEvent> RecentHits => hits;
+
+        // 유닛이 마지막으로 겨눈 방향. 한 번도 못 쏜 유닛은 정면을 본다
+        public AimDirection AimOf(UnitInstance unit)
+        {
+            AimState state;
+            return aims.TryGetValue(unit, out state) ? state.Direction : AimDirection.Down;
+        }
+
+        // 마지막 발사로부터 지난 시간. 한 번도 못 쐈으면 -1
+        public float SecondsSinceShot(UnitInstance unit)
+        {
+            AimState state;
+            return aims.TryGetValue(unit, out state) ? ElapsedTime - state.LastShotTime : -1f;
+        }
+
+        // 화면 기준 4분할. 가로 성분이 더 크면 좌우, 아니면 상하로 본다
+        static AimDirection DirectionTo(Vector2 from, Vector2 to)
+        {
+            Vector2 delta = to - from;
+
+            if (Mathf.Abs(delta.x) >= Mathf.Abs(delta.y))
+            {
+                return delta.x >= 0f ? AimDirection.Right : AimDirection.Left;
+            }
+
+            return delta.y >= 0f ? AimDirection.Up : AimDirection.Down;
         }
 
         // 사거리 안에서 가장 앞선 적을 찾기
@@ -282,7 +348,26 @@ namespace PokerDefense.Game
             for (int i = 0; i < shotTargets.Count; i++)
             {
                 shotTargets[i].TakeDamage(power);
+                hits.Add(new HitEvent { Position = shotTargets[i].Position, Time = ElapsedTime });
             }
+        }
+
+        // 이펙트가 살아 있을 시간보다 조금 길게만 들고 있는다
+        void PruneHits()
+        {
+            float cutoff = ElapsedTime - HitMemorySeconds;
+            int keep = 0;
+
+            for (int i = 0; i < hits.Count; i++)
+            {
+                if (hits[i].Time >= cutoff)
+                {
+                    hits[keep] = hits[i];
+                    keep++;
+                }
+            }
+
+            hits.RemoveRange(keep, hits.Count - keep);
         }
 
         // 사거리 안에서 앞선 순으로 최대 MultiTargets기 탐색

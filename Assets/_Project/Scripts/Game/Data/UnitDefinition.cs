@@ -27,6 +27,22 @@ namespace PokerDefense.Game
     }
 
     /**
+     * AimDirection
+     *
+     * 유닛이 겨누는 방향
+     *
+     * 적은 트랙을 360도로 돌지만 유닛은 회전하지 않는다 (DESIGN §5.3)
+     * 그래서 방향별 스프라이트를 바꿔 끼워 표현한다
+     */
+    public enum AimDirection
+    {
+        Down,
+        Up,
+        Left,
+        Right,
+    }
+
+    /**
      * UnitDefinition
      *
      * 유닛 종류 하나의 정의
@@ -62,6 +78,16 @@ namespace PokerDefense.Game
         [Tooltip("Pierce 전용. 타겟 뒤로 관통하는 트랙 길이(월드 단위)")]
         [SerializeField] float pierceLength = 2f;
 
+        [Header("M11 아트. 네 방향을 다 채워야 아트로 그린다")]
+        [SerializeField] Sprite artDown;
+        [SerializeField] Sprite artUp;
+        [SerializeField] Sprite artLeft;
+        [SerializeField] Sprite artRight;
+
+        [Tooltip("총구 화염 위치. x = 좌우로 미는 거리, y = 총구 높이 (슬롯 로컬 좌표)\n" +
+                 "스프라이트에서 직접 재서 넣는다. 눈대중으로 잡으면 총구를 벗어난다")]
+        [SerializeField] Vector2 muzzleOffset = new Vector2(0.24f, 0.26f);
+
         public string Id => id;
         public string DisplayName => displayName;
         public Color PlaceholderColor => placeholderColor;
@@ -72,6 +98,36 @@ namespace PokerDefense.Game
         public int MultiTargets => multiTargets;
         public float SplashRadius => splashRadius;
         public float PierceLength => pierceLength;
+
+        /**
+         * 총구 화염을 띄울 위치
+         *
+         * 좌우는 대칭으로 묶는다 - 실측에서 좌우 차이가 3.6px이라 나눌 값어치가 없다.
+         * 방향별로 따로 두면 13종 x 4방향 = 52개 좌표가 된다
+         */
+        public Vector2 MuzzleOffset => muzzleOffset;
+
+        // 한 방향이라도 비면 플레이스홀더 색 사각형으로 떨어진다.
+        // M11이 13종을 한 번에 채우지 않으므로 아트가 있는 유닛과 없는 유닛이 섞인다
+        public bool HasArt => artDown != null && artUp != null && artLeft != null && artRight != null;
+
+        public Sprite ArtFor(AimDirection direction)
+        {
+            switch (direction)
+            {
+                case AimDirection.Up:
+                    return artUp;
+
+                case AimDirection.Left:
+                    return artLeft;
+
+                case AimDirection.Right:
+                    return artRight;
+
+                default:
+                    return artDown;
+            }
+        }
 
         public float MultiplierFor(int star)
         {
