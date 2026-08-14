@@ -145,11 +145,13 @@ namespace PokerDefense.UI
                 }
             }
 
-            ApplyArtTransform(punch);
-            ApplyMuzzle(direction, secondsSinceShot, shotCount);
+            // 반동으로 커진 만큼 화염도 밀어야 총구에 붙어 있는다
+            float artScale = ApplyArtTransform(punch);
+
+            ApplyMuzzle(direction, secondsSinceShot, shotCount, artScale / ArtScale);
         }
 
-        void ApplyMuzzle(AimDirection direction, float secondsSinceShot, int shotCount)
+        void ApplyMuzzle(AimDirection direction, float secondsSinceShot, int shotCount, float artGrowth)
         {
             if (secondsSinceShot < 0f || secondsSinceShot >= MuzzleSeconds)
             {
@@ -166,15 +168,15 @@ namespace PokerDefense.UI
             if (definition.HasSecondMuzzle && definition.MuzzlesFireTogether)
             {
                 // 적 둘을 동시에 때리는 유닛은 두 총구가 함께 터져야 함
-                Flash(muzzle, MuzzleOffsetFor(definition, direction, second: false), order, t);
-                Flash(SecondMuzzle(), MuzzleOffsetFor(definition, direction, second: true), order, t);
+                Flash(muzzle, Recoiled(MuzzleOffsetFor(definition, direction, false), artGrowth), order, t);
+                Flash(SecondMuzzle(), Recoiled(MuzzleOffsetFor(definition, direction, true), artGrowth), order, t);
                 return;
             }
 
             // 나머지는 한 발씩 번갈아 사격
             bool otherHand = definition.HasSecondMuzzle && (shotCount & 1) == 0;
 
-            Flash(muzzle, MuzzleOffsetFor(definition, direction, otherHand), order, t);
+            Flash(muzzle, Recoiled(MuzzleOffsetFor(definition, direction, otherHand), artGrowth), order, t);
 
             if (muzzleSecond != null)
             {
@@ -182,22 +184,44 @@ namespace PokerDefense.UI
             }
         }
 
+        /**
+         * 반동으로 커진 아트에 맞춰 화염 위치를 밀어 준다
+         *
+         * 아트는 발끝(ArtBottomY)을 피벗으로 커지는데 화염 좌표는 슬롯 로컬 고정이라,
+         * 그냥 두면 **화염이 보이는 0.06초가 정확히 반동이 가장 큰 구간이라** 늘 어긋나 보인다.
+         * 총구가 높을수록 더 벌어진다 - 마크스맨(y 0.29)에서 7.6px이었다
+         */
+        static Vector2 Recoiled(Vector2 offset, float artGrowth)
+        {
+            return new Vector2(offset.x * artGrowth,
+                               ArtBottomY + (offset.y - ArtBottomY) * artGrowth);
+        }
+
         static Vector2 MuzzleOffsetFor(UnitDefinition definition, AimDirection direction, bool second)
         {
-            Vector2 main = definition.MuzzleOffset;
-
-            if (definition.HasSecondMuzzle == false)
-            {
-                return new Vector2(0f, main.y + (direction == AimDirection.Up ? MuzzleBackExtraY : 0f));
-            }
+            Vector2 side = definition.MuzzleOffset;
 
             if (direction == AimDirection.Left || direction == AimDirection.Right)
             {
-                Vector2 gun = second ? definition.MuzzleOffsetSecond : main;
+                // 측면은 좌우 대칭으로 묶는다 - 실측 차이가 1.7~3.6px이라 나눌 값어치가 없다
+                Vector2 gun = second ? definition.MuzzleOffsetSecond : side;
                 return new Vector2(direction == AimDirection.Left ? -gun.x : gun.x, gun.y);
             }
 
-            return new Vector2(second ? -main.x : main.x, main.y);
+            bool back = direction == AimDirection.Up;
+            Vector2 facing = back ? definition.MuzzleOffsetBack : definition.MuzzleOffsetFacing;
+
+            if (facing == Vector2.zero)
+            {
+                // 아직 안 잰 유닛은 예전 규칙으로 떨어진다 - 몸 중앙, 후면만 조금 올림
+                float y = side.y + (back ? MuzzleBackExtraY : 0f);
+                facing = definition.HasSecondMuzzle ? new Vector2(side.x, y) : new Vector2(0f, y);
+            }
+
+            // 무기가 둘이면 좌우 대칭이라 부호를 갈라 쓰고, 하나면 잰 자리를 그대로 쓴다
+            return definition.HasSecondMuzzle
+                ? new Vector2(second ? -Mathf.Abs(facing.x) : Mathf.Abs(facing.x), facing.y)
+                : facing;
         }
 
         static void Flash(SpriteRenderer renderer, Vector2 offset, int sortingOrder, float t)
@@ -236,13 +260,16 @@ namespace PokerDefense.UI
             return muzzleSecond;
         }
 
-        void ApplyArtTransform(float punch)
+        // 적용한 스케일을 돌려준다 - 화염이 같은 값으로 따라와야 총구에 붙어 있는다
+        float ApplyArtTransform(float punch)
         {
             float breath = Mathf.Sin(Time.time * BreathSpeed) * BreathAmount;
             float scale = ArtScale * (1f + punch + breath);
 
             art.transform.localPosition = new Vector3(0f, ArtBottomY, 0f);
             art.transform.localScale = new Vector3(scale, scale, 1f);
+
+            return scale;
         }
 
         // 머지 상대로 고른 칸은 노랑, 그냥 놓을 수 있는 칸은 흰색

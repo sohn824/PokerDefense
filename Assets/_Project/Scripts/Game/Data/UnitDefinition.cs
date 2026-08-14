@@ -95,6 +95,14 @@ namespace PokerDefense.Game
                  "적을 여럿 동시에 때리는 유닛만 켠다 (AttackPattern.Multi)")]
         [SerializeField] bool muzzlesFireTogether;
 
+        [Tooltip("정면(아래)을 볼 때의 총구 위치. 비워 두면 예전 규칙(몸 중앙 높이)으로 떨어진다\n" +
+                 "무기가 하나면 잰 자리를 부호 그대로, 둘이면 좌우 대칭이므로 양수로 넣는다")]
+        [SerializeField] Vector2 muzzleOffsetFacing;
+
+        [Tooltip("후면(위)을 볼 때의 총구 위치. 비워 두면 예전 규칙으로 떨어진다\n" +
+                 "총을 어깨에 메는 유닛은 정면과 자리가 크게 다르므로 따로 잰다")]
+        [SerializeField] Vector2 muzzleOffsetBack;
+
         public string Id => id;
         public string DisplayName => displayName;
         public Color PlaceholderColor => placeholderColor;
@@ -122,6 +130,19 @@ namespace PokerDefense.Game
         public bool HasSecondMuzzle => muzzleOffsetSecond != Vector2.zero;
 
         public bool MuzzlesFireTogether => muzzlesFireTogether;
+
+        /**
+         * 정면·후면에서의 총구 위치. 비어 있으면 예전 규칙으로 떨어진다
+         *
+         * **좌표를 방향마다 두는 대신 셋으로 묶는다** - 측면 / 정면 / 후면.
+         * 좌우는 실측 차이가 1.7~3.6px이라 대칭으로 묶어도 되지만,
+         * 정면·후면은 무기가 아예 다른 자리에 온다. 마크스맨은 총을 어깨에 메서
+         * 후면 총구가 등 한가운데가 아니라 왼쪽 어깨 위에 있고(21.6px), 스카우트도
+         * 후면 권총이 오른쪽으로 벗어나 있었다(23px). 하나로 묶으면 이게 안 잡힌다
+         */
+        public Vector2 MuzzleOffsetFacing => muzzleOffsetFacing;
+
+        public Vector2 MuzzleOffsetBack => muzzleOffsetBack;
 
         // 한 방향이라도 비면 플레이스홀더 색 사각형으로 폴백 (폴백하지 않으려면 아트 리소스 필수)
         public bool HasArt => artDown != null && artUp != null && artLeft != null && artRight != null;

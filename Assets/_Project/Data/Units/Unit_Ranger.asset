@@ -33,3 +33,5 @@ MonoBehaviour:
   muzzleOffset: {x: 0.24, y: 0.24}
   muzzleOffsetSecond: {x: 0.17, y: 0.07}
   muzzlesFireTogether: 1
+  muzzleOffsetFacing: {x: 0.31, y: 0.21}
+  muzzleOffsetBack: {x: 0.31, y: 0.23}
