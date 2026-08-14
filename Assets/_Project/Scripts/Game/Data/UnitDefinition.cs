@@ -58,7 +58,7 @@ namespace PokerDefense.Game
         [Tooltip("M6에서 스프라이트로 교체할 플레이스홀더 색")]
         [SerializeField] Color placeholderColor = Color.gray;
 
-        [Header("★1 기준 스탯. 성급 배수를 곱해 쓴다.")]
+        [Header("★1 기준 스탯")]
         [SerializeField] float attackPower = 10f;
         [SerializeField] float attacksPerSecond = 1f;
         [SerializeField] float range = 2f;
@@ -84,13 +84,16 @@ namespace PokerDefense.Game
         [SerializeField] Sprite artLeft;
         [SerializeField] Sprite artRight;
 
-        [Tooltip("총구 화염 위치. x = 좌우로 미는 거리, y = 총구 높이 (슬롯 로컬 좌표)\n" +
-                 "스프라이트에서 직접 재서 넣는다. 눈대중으로 잡으면 총구를 벗어난다")]
+        [Tooltip("총구 화염 위치. x = 좌우로 미는 거리, y = 총구 높이 (슬롯 로컬 좌표)\n")]
         [SerializeField] Vector2 muzzleOffset = new Vector2(0.24f, 0.26f);
 
         [Tooltip("쌍무기 전용. 두 번째 총구 위치. (0,0)이면 총이 하나로 그려진다\n" +
                  "측면 스프라이트에서 아래쪽 총을 재서 넣는다")]
         [SerializeField] Vector2 muzzleOffsetSecond;
+
+        [Tooltip("두 총구가 동시에 불을 뿜는지 여부\n false면 한 발씩 번갈아 쏜다\n" +
+                 "적을 여럿 동시에 때리는 유닛만 켠다 (AttackPattern.Multi)")]
+        [SerializeField] bool muzzlesFireTogether;
 
         public string Id => id;
         public string DisplayName => displayName;
@@ -106,26 +109,21 @@ namespace PokerDefense.Game
         /**
          * 총구 화염을 띄울 위치
          *
-         * 좌우는 대칭으로 묶는다 - 실측에서 좌우 차이가 3.6px이라 나눌 값어치가 없다.
-         * 방향별로 따로 두면 13종 x 4방향 = 52개 좌표가 된다
+         * 좌우는 대칭으로 묶는다
          */
         public Vector2 MuzzleOffset => muzzleOffset;
 
         /**
-         * 두 번째 총구. 쌍권총처럼 무기를 둘 든 유닛만 채운다
-         *
-         * 채워져 있으면 발사할 때마다 두 총구가 번갈아 화염을 낸다.
-         * 측면은 두 총이 위아래로 엇갈려 있어 각자의 좌표를 그대로 쓰지만,
-         * 정면·후면은 좌우 대칭이라 MuzzleOffset의 x를 뒤집어 쓴다 -
-         * 그러지 않으면 방향마다 좌표가 둘씩 필요해 13종 x 4방향 x 2가 된다
+         * 두 번째 총구. 쌍권총처럼 무기를 둘 든 유닛만 채움
+         * 채워져 있으면 발사할 때마다 두 총구가 번갈아 muzzle 이펙트가 나옴
          */
         public Vector2 MuzzleOffsetSecond => muzzleOffsetSecond;
 
-        // 비어 있는 것이 단발이라는 뜻이라, 기존 12종 에셋은 손대지 않아도 된다
         public bool HasSecondMuzzle => muzzleOffsetSecond != Vector2.zero;
 
-        // 한 방향이라도 비면 플레이스홀더 색 사각형으로 떨어진다.
-        // M11이 13종을 한 번에 채우지 않으므로 아트가 있는 유닛과 없는 유닛이 섞인다
+        public bool MuzzlesFireTogether => muzzlesFireTogether;
+
+        // 한 방향이라도 비면 플레이스홀더 색 사각형으로 폴백 (폴백하지 않으려면 아트 리소스 필수)
         public bool HasArt => artDown != null && artUp != null && artLeft != null && artRight != null;
 
         public Sprite ArtFor(AimDirection direction)

@@ -111,6 +111,8 @@ PokerDefense.UI         ← 카드 UI, HUD, 팝업
 
 **테스트 폴더 이름은 정확히 `Editor`여야 한다.** 테스트 러너는 asmdef가 아니라 `nunit.framework`를 참조하는 로드된 어셈블리를 스캔해 `EditorOnly`면 EditMode로 분류하기 때문이다. 대신 `[UnityTest]`·`LogAssert` 등 `UnityEngine.TestTools`와 PlayMode 테스트는 쓸 수 없다 — 순수 NUnit만 가능하다.
 
+**개발 도구도 같은 자리에 둔다.** `Editor/` 밑은 빌드에 들어가지 않으므로 치트·검증 창을 여기 두면 뺄 것이 없다. 게임 코드에 진입점이 필요하면 **`#if UNITY_EDITOR`로 감싸고 최소한만** 남긴다 — 도구가 아는 것(무엇을 소환할지, 어떤 카드가 어떤 족보인지)은 전부 `Editor/`에 두고, 게임 코드는 "이대로 바꿔라"만 안다.
+
 ### 폴더 구조
 
 ```
@@ -118,6 +120,8 @@ Assets/_Project/
 ├── Art/            Sprites/, UI/, VFX/   (생성형 AI 산출물 배치처)
 ├── Audio/
 ├── Data/           ScriptableObject 에셋 인스턴스 (Units/, Enemies/, Waves/)
+├── Editor/         개발 전용 도구 → Assembly-CSharp-Editor. 빌드에 안 들어간다
+│                   HandCheatTable, HandCheatWindow (원하는 족보를 손패에 쥐여 준다)
 ├── Prefabs/        Units/, Enemies/, Projectiles/, UI/
 ├── Scenes/         Boot.unity, Game.unity
 └── Scripts/

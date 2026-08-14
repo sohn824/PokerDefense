@@ -15,8 +15,8 @@ MonoBehaviour:
   id: two_pair
   displayName: "\uD22C\uD398\uC5B4 \uD2B8\uC708\uB808\uC778\uC800"
   placeholderColor: {r: 0.38, g: 0.62, b: 0.72, a: 1}
-  attackPower: 15
-  attacksPerSecond: 1
+  attackPower: 10
+  attacksPerSecond: 1.5
   range: 2.5
   starMultipliers:
   - 1
@@ -26,8 +26,10 @@ MonoBehaviour:
   multiTargets: 2
   splashRadius: 1
   pierceLength: 2
-  artDown: {fileID: 0}
-  artUp: {fileID: 0}
-  artLeft: {fileID: 0}
-  artRight: {fileID: 0}
-  muzzleOffset: {x: 0.24, y: 0.26}
+  artDown: {fileID: 21300000, guid: f2b99378edea36448b37c84846f2702c, type: 3}
+  artUp: {fileID: 21300000, guid: 061cf274e765fe847a2e80ba04ddacee, type: 3}
+  artLeft: {fileID: 21300000, guid: 642739e28de95a944aaa6f1d4ff62543, type: 3}
+  artRight: {fileID: 21300000, guid: b4db586fb464a8747b07c213bac9af27, type: 3}
+  muzzleOffset: {x: 0.24, y: 0.24}
+  muzzleOffsetSecond: {x: 0.17, y: 0.07}
+  muzzlesFireTogether: 1

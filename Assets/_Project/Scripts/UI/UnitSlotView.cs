@@ -67,6 +67,11 @@ namespace PokerDefense.UI
 
         UnitInstance current;
 
+        // 두 총구가 동시에 터지는 유닛에만 필요하다. 씬의 슬롯 15칸에 손으로 하나씩 다는 대신
+        // **처음 쓸 때** 복제한다 - 한 칸을 빠뜨릴 일이 없고, Awake에서 만들지 않으므로
+        // 다른 컴포넌트의 Awake가 먼저 도는 순서 문제에도 안 걸린다
+        SpriteRenderer muzzleSecond;
+
         public int Index { get; private set; }
 
         void Awake()
@@ -89,7 +94,7 @@ namespace PokerDefense.UI
             {
                 background.color = EmptyColor;
                 art.enabled = false;
-                muzzle.enabled = false;
+                HideMuzzles();
                 nameLabel.text = string.Empty;
                 starLabel.text = string.Empty;
                 return;
@@ -110,7 +115,7 @@ namespace PokerDefense.UI
 
             background.color = unit.Definition.PlaceholderColor;
             art.enabled = false;
-            muzzle.enabled = false;
+            HideMuzzles();
 
             // 띄어쓰기를 개행으로 바꿔 단어 단위로만 끊는다
             nameLabel.text = unit.Definition.DisplayName.Replace(' ', '\n');
@@ -150,65 +155,95 @@ namespace PokerDefense.UI
 
         void ApplyMuzzle(AimDirection direction, float secondsSinceShot, int shotCount)
         {
-            bool firing = secondsSinceShot >= 0f && secondsSinceShot < MuzzleSeconds;
-
-            muzzle.enabled = firing;
-
-            if (firing == false)
+            if (secondsSinceShot < 0f || secondsSinceShot >= MuzzleSeconds)
             {
+                HideMuzzles();
                 return;
             }
 
             UnitDefinition definition = current.Definition;
-            Vector2 main = definition.MuzzleOffset;
+            float t = secondsSinceShot / MuzzleSeconds;
 
-            // 쌍무기는 한 발씩 번갈아 쏜다. 홀짝을 CombatContext가 세므로 프레임에 안 걸린다
-            bool dual = definition.HasSecondMuzzle;
-            bool otherHand = dual && (shotCount & 1) == 0;
+            // 등 뒤로 쏘면 몸에 가려야 자연스럽고, 나머지는 몸 앞에 온다
+            int order = direction == AimDirection.Up ? 2 : 8;
 
-            Vector2 offset;
-
-            switch (direction)
+            if (definition.HasSecondMuzzle && definition.MuzzlesFireTogether)
             {
-                case AimDirection.Left:
-                case AimDirection.Right:
-                {
-                    // 측면은 두 총이 위아래로 엇갈려 있어 각자의 좌표를 그대로 쓴다
-                    Vector2 gun = otherHand ? definition.MuzzleOffsetSecond : main;
-                    offset = new Vector2(direction == AimDirection.Left ? -gun.x : gun.x, gun.y);
-                    muzzle.sortingOrder = 8;
-                    break;
-                }
-
-                case AimDirection.Up:
-                    // 등 뒤로 쏘므로 몸에 가려야 자연스럽다.
-                    // 단 쌍무기는 총이 몸 밖으로 벌어져 있어 머리 위로 올릴 필요가 없다
-                    offset = dual
-                        ? new Vector2(otherHand ? -main.x : main.x, main.y)
-                        : new Vector2(0f, main.y + MuzzleBackExtraY);
-                    muzzle.sortingOrder = 2;
-                    break;
-
-                default:
-                    // 카메라 쪽으로 쏘므로 몸 앞에 온다.
-                    // 단발은 총구가 몸 가운데에 있고, 쌍무기는 좌우로 벌어진다
-                    offset = dual
-                        ? new Vector2(otherHand ? -main.x : main.x, main.y)
-                        : new Vector2(0f, main.y);
-                    muzzle.sortingOrder = 8;
-                    break;
+                // 적 둘을 동시에 때리는 유닛이라 두 총구가 함께 터진다 (DESIGN §10.2)
+                Flash(muzzle, MuzzleOffsetFor(definition, direction, second: false), order, t);
+                Flash(SecondMuzzle(), MuzzleOffsetFor(definition, direction, second: true), order, t);
+                return;
             }
 
-            muzzle.transform.localPosition = new Vector3(offset.x, offset.y, 0f);
+            // 나머지는 한 발씩 번갈아. 홀짝을 CombatContext가 세므로 프레임에 안 걸린다
+            bool otherHand = definition.HasSecondMuzzle && (shotCount & 1) == 0;
+
+            Flash(muzzle, MuzzleOffsetFor(definition, direction, otherHand), order, t);
+
+            if (muzzleSecond != null)
+            {
+                muzzleSecond.enabled = false;
+            }
+        }
+
+        static Vector2 MuzzleOffsetFor(UnitDefinition definition, AimDirection direction, bool second)
+        {
+            Vector2 main = definition.MuzzleOffset;
+
+            if (definition.HasSecondMuzzle == false)
+            {
+                // 총이 카메라 축으로 겨눠져 총구가 그대로 가슴 높이에 있다.
+                // 후면만 몸에 가리므로 머리 윤곽 밖으로 조금 올린다
+                return new Vector2(0f, main.y + (direction == AimDirection.Up ? MuzzleBackExtraY : 0f));
+            }
+
+            if (direction == AimDirection.Left || direction == AimDirection.Right)
+            {
+                // 측면은 두 총이 위아래로 엇갈려 있어 각자의 좌표를 그대로 쓴다
+                Vector2 gun = second ? definition.MuzzleOffsetSecond : main;
+                return new Vector2(direction == AimDirection.Left ? -gun.x : gun.x, gun.y);
+            }
+
+            // 정면·후면은 두 총이 좌우 대칭이라 주 총구의 x를 뒤집어 쓴다.
+            // 쌍무기는 총이 몸 밖으로 벌어져 있어 후면 보정이 필요 없다
+            return new Vector2(second ? -main.x : main.x, main.y);
+        }
+
+        static void Flash(SpriteRenderer renderer, Vector2 offset, int sortingOrder, float t)
+        {
+            renderer.enabled = true;
+            renderer.sortingOrder = sortingOrder;
+            renderer.transform.localPosition = new Vector3(offset.x, offset.y, 0f);
 
             // 터졌다가 사그라든다. 방사 대칭이라 방향에 따라 돌릴 필요가 없다
-            float t = secondsSinceShot / MuzzleSeconds;
             float scale = MuzzleScale * (0.7f + 0.5f * t);
-            muzzle.transform.localScale = new Vector3(scale, scale, 1f);
+            renderer.transform.localScale = new Vector3(scale, scale, 1f);
 
-            Color c = muzzle.color;
+            Color c = renderer.color;
             c.a = 1f - t * t;
-            muzzle.color = c;
+            renderer.color = c;
+        }
+
+        void HideMuzzles()
+        {
+            muzzle.enabled = false;
+
+            if (muzzleSecond != null)
+            {
+                muzzleSecond.enabled = false;
+            }
+        }
+
+        // 처음 쓸 때 복제한다. 대부분의 유닛은 총구가 하나라 끝까지 안 만들어진다
+        SpriteRenderer SecondMuzzle()
+        {
+            if (muzzleSecond == null)
+            {
+                muzzleSecond = Instantiate(muzzle, muzzle.transform.parent);
+                muzzleSecond.name = muzzle.name + "_Second";
+            }
+
+            return muzzleSecond;
         }
 
         void ApplyArtTransform(float punch)

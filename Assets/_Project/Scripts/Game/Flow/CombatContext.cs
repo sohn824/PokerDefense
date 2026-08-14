@@ -43,9 +43,7 @@ namespace PokerDefense.Game
 
         /**
          * 한 발이 실제로 때린 지점
-         *
-         * 표시 전용이다. UI가 타격 이펙트를 어디에 띄울지 알려면 이것 말고는 방법이 없다 -
-         * Fire가 대상에 피해만 주고 끝나면 누가 맞았는지 밖에서 알 수 없다
+         * 타격 이펙트 표시를 위해 기록
          */
         public struct HitEvent
         {
@@ -53,7 +51,7 @@ namespace PokerDefense.Game
             public float Time;
         }
 
-        // 피격 기록을 들고 있는 시간. 타격 이펙트 수명보다 넉넉하면 된다
+        // 피격 기록을 들고 있는 시간 (타격 이펙트 수명보다 길어야 함)
         const float HitMemorySeconds = 0.5f;
 
         // 앞선 적부터. Multi가 사거리 안에서 몇 기를 고를지 정할 때 쓴다
@@ -71,12 +69,11 @@ namespace PokerDefense.Game
         // 유닛별 남은 공격 쿨타임
         readonly Dictionary<UnitInstance, float> cooldowns = new Dictionary<UnitInstance, float>();
 
-        // 유닛별 마지막으로 겨눈 방향과 쏜 시각. 표시 전용이라 규칙에는 관여하지 않는다
-        // 쿨다운과 같은 이유로 슬롯이 아니라 유닛을 키로 든다 - 전투 중 이동해도 어긋나면 안 된다
+        // 유닛별 마지막으로 겨눈 방향과 쏜 시각 (이펙트 표시용)
         readonly Dictionary<UnitInstance, AimState> aims = new Dictionary<UnitInstance, AimState>();
 
-        // 최근 피격 지점. 오래된 것은 Tick에서 버린다
-        // UI가 아직 안 읽었을 수 있으므로 프레임이 아니라 시간으로 재야 스크립트 실행 순서에 안 걸린다
+        // 최근 피격 지점
+        // 오래된 것은 Tick에서 버린다
         readonly List<HitEvent> hits = new List<HitEvent>();
 
         int nextSpawnIndex;
@@ -275,28 +272,29 @@ namespace PokerDefense.Game
 
         public IReadOnlyList<HitEvent> RecentHits => hits;
 
-        // 유닛이 마지막으로 겨눈 방향. 한 번도 못 쏜 유닛은 정면을 본다
+        // 유닛이 마지막으로 겨눈 방향
         public AimDirection AimOf(UnitInstance unit)
         {
             AimState state;
             return aims.TryGetValue(unit, out state) ? state.Direction : AimDirection.Down;
         }
 
-        // 마지막 발사로부터 지난 시간. 한 번도 못 쐈으면 -1
+        // 마지막 발사로부터 지난 시간
         public float SecondsSinceShot(UnitInstance unit)
         {
             AimState state;
             return aims.TryGetValue(unit, out state) ? ElapsedTime - state.LastShotTime : -1f;
         }
 
-        // 지금까지 쏜 횟수. 쌍무기가 어느 쪽 총을 쏠 차례인지 정하는 데 쓴다
+        // 지금까지 쏜 횟수 (쌍권총류 무기가 어느 쪽 총을 쏠 차례인지 정할 때 사용)
         public int ShotCountOf(UnitInstance unit)
         {
             AimState state;
             return aims.TryGetValue(unit, out state) ? state.ShotCount : 0;
         }
 
-        // 화면 기준 4분할. 가로 성분이 더 크면 좌우, 아니면 상하로 본다
+        // 화면 기준 4분할
+        // 가로 성분이 더 크면 좌우, 아니면 상하로 본다
         static AimDirection DirectionTo(Vector2 from, Vector2 to)
         {
             Vector2 delta = to - from;
