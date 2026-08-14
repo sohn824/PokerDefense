@@ -121,11 +121,7 @@ namespace PokerDefense.UI
             nameLabel.text = unit.Definition.DisplayName.Replace(' ', '\n');
         }
 
-        /**
-         * 조준 방향과 발사 반동을 갱신한다
-         *
-         * 매 프레임 BoardScreen이 부른다. 전투가 없으면 secondsSinceShot에 -1을 넘긴다
-         */
+        // 슬롯에 있는 유닛의 조준 방향과 발사 반동을 갱신한다
         public void SetAim(AimDirection direction, float secondsSinceShot, float attacksPerSecond, int shotCount)
         {
             if (current == null || current.Definition.HasArt == false)
@@ -143,7 +139,7 @@ namespace PokerDefense.UI
 
                 if (secondsSinceShot < duration)
                 {
-                    // 쏘는 순간 튀고 되돌아온다. 총구가 카메라를 향하므로 스케일이 가장 잘 읽힌다
+                    // 쏘는 순간 튀고 되돌아온다
                     float remain = 1f - (secondsSinceShot / duration);
                     punch = RecoilAmount * remain * remain;
                 }
@@ -164,18 +160,18 @@ namespace PokerDefense.UI
             UnitDefinition definition = current.Definition;
             float t = secondsSinceShot / MuzzleSeconds;
 
-            // 등 뒤로 쏘면 몸에 가려야 자연스럽고, 나머지는 몸 앞에 온다
+            // 등 뒤로 쏘면 몸에 가려야 하므로 order를 낮게 주고, 나머지는 몸 앞에 나와야 하므로 order를 높게 줌
             int order = direction == AimDirection.Up ? 2 : 8;
 
             if (definition.HasSecondMuzzle && definition.MuzzlesFireTogether)
             {
-                // 적 둘을 동시에 때리는 유닛이라 두 총구가 함께 터진다 (DESIGN §10.2)
+                // 적 둘을 동시에 때리는 유닛은 두 총구가 함께 터져야 함
                 Flash(muzzle, MuzzleOffsetFor(definition, direction, second: false), order, t);
                 Flash(SecondMuzzle(), MuzzleOffsetFor(definition, direction, second: true), order, t);
                 return;
             }
 
-            // 나머지는 한 발씩 번갈아. 홀짝을 CombatContext가 세므로 프레임에 안 걸린다
+            // 나머지는 한 발씩 번갈아 사격
             bool otherHand = definition.HasSecondMuzzle && (shotCount & 1) == 0;
 
             Flash(muzzle, MuzzleOffsetFor(definition, direction, otherHand), order, t);
@@ -192,20 +188,15 @@ namespace PokerDefense.UI
 
             if (definition.HasSecondMuzzle == false)
             {
-                // 총이 카메라 축으로 겨눠져 총구가 그대로 가슴 높이에 있다.
-                // 후면만 몸에 가리므로 머리 윤곽 밖으로 조금 올린다
                 return new Vector2(0f, main.y + (direction == AimDirection.Up ? MuzzleBackExtraY : 0f));
             }
 
             if (direction == AimDirection.Left || direction == AimDirection.Right)
             {
-                // 측면은 두 총이 위아래로 엇갈려 있어 각자의 좌표를 그대로 쓴다
                 Vector2 gun = second ? definition.MuzzleOffsetSecond : main;
                 return new Vector2(direction == AimDirection.Left ? -gun.x : gun.x, gun.y);
             }
 
-            // 정면·후면은 두 총이 좌우 대칭이라 주 총구의 x를 뒤집어 쓴다.
-            // 쌍무기는 총이 몸 밖으로 벌어져 있어 후면 보정이 필요 없다
             return new Vector2(second ? -main.x : main.x, main.y);
         }
 
@@ -215,7 +206,6 @@ namespace PokerDefense.UI
             renderer.sortingOrder = sortingOrder;
             renderer.transform.localPosition = new Vector3(offset.x, offset.y, 0f);
 
-            // 터졌다가 사그라든다. 방사 대칭이라 방향에 따라 돌릴 필요가 없다
             float scale = MuzzleScale * (0.7f + 0.5f * t);
             renderer.transform.localScale = new Vector3(scale, scale, 1f);
 
@@ -234,7 +224,7 @@ namespace PokerDefense.UI
             }
         }
 
-        // 처음 쓸 때 복제한다. 대부분의 유닛은 총구가 하나라 끝까지 안 만들어진다
+        // 쌍권총류 유닛은 muzzle 위치를 복제해서 씀 (쌍권총류가 아닌 유닛은 호출 안함)
         SpriteRenderer SecondMuzzle()
         {
             if (muzzleSecond == null)
@@ -251,7 +241,6 @@ namespace PokerDefense.UI
             float breath = Mathf.Sin(Time.time * BreathSpeed) * BreathAmount;
             float scale = ArtScale * (1f + punch + breath);
 
-            // 피벗이 발끝이라 커져도 접지선이 안 흔들린다
             art.transform.localPosition = new Vector3(0f, ArtBottomY, 0f);
             art.transform.localScale = new Vector3(scale, scale, 1f);
         }

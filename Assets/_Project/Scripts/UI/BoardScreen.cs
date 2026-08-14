@@ -127,13 +127,7 @@ namespace PokerDefense.UI
             Refresh();
         }
 
-        // 그리드 슬롯을 클릭했을 때 호출
-        /**
-         * 유닛 아트의 방향과 반동을 매 프레임 갱신한다
-         *
-         * 조준 방향은 전투가 들고 있다 - UI는 "지금 어디를 보는가"만 묻는다 (DESIGN §11.1과 같은 방식)
-         * 전투 중이 아니면 정면으로 세워 둔다. 배치 단계에서도 호흡은 돈다
-         */
+        // 유닛 아트의 방향과 반동을 매 프레임 갱신
         void UpdateSlotArt()
         {
             GridBoard board = placement.Board;
@@ -159,6 +153,7 @@ namespace PokerDefense.UI
             }
         }
 
+        // 그리드 슬롯을 클릭했을 때 호출
         void OnSlotClicked(UnitSlotView slot)
         {
             // 배치 대기 중인 유닛이 있으면 배치 시도
