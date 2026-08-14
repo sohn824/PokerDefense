@@ -62,5 +62,18 @@ namespace PokerDefense.Game
             PhaseChanged?.Invoke(round.Phase);
             Evaluated?.Invoke(result);
         }
+
+#if UNITY_EDITOR
+        // 라운드를 다시 열지 않고 손패만 갈아끼운다. 루프의 주인은 여전히 GameFlowController다
+        public bool CanForceHand => round != null && round.Phase == RoundPhase.Exchange;
+
+        /// <summary>개발 전용. 원하는 5장을 손에 쥐여 준다. 확정은 평소대로 누른다.</summary>
+        public void DevForceHand(IReadOnlyList<Card> cards)
+        {
+            round.ForceHand(cards);
+
+            HandChanged?.Invoke(round.Hand);
+        }
+#endif
     }
 }

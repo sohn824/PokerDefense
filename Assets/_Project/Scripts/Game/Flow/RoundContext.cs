@@ -107,6 +107,33 @@ namespace PokerDefense.Game
             return Result;
         }
 
+#if UNITY_EDITOR
+        // 개발 전용. 손패를 원하는 5장으로 갈아끼운다
+        //
+        // 덱은 건드리지 않으므로 **강제한 카드가 덱에 그대로 남는다** - 이 뒤에 교체를 누르면
+        // 같은 카드가 다시 나올 수 있다. 막으려면 Poker 층의 Deck에 손을 대야 해서 두고 간다.
+        // 정상 사용은 강제 -> 확정이라 교체를 거치지 않는다
+        public void ForceHand(IReadOnlyList<Card> cards)
+        {
+            Require(RoundPhase.Exchange);
+
+            if (cards == null)
+            {
+                throw new ArgumentNullException(nameof(cards));
+            }
+
+            if (cards.Count != HandSize)
+            {
+                throw new ArgumentException($"손패는 {HandSize}장이어야 합니다. 받은 수: {cards.Count}", nameof(cards));
+            }
+
+            for (int i = 0; i < HandSize; i++)
+            {
+                hand[i] = cards[i];
+            }
+        }
+#endif
+
         // 손패 검증 - 비정상 시도일 경우 예외를 던지고 실패 처리
         void Validate(IReadOnlyList<int> indices)
         {
