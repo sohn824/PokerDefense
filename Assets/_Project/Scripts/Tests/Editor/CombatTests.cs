@@ -221,6 +221,40 @@ namespace PokerDefense.Tests
         }
 
         [Test]
+        public void 발사_횟수는_쏜_만큼_쌓인다()
+        {
+            // 쌍무기가 좌우 총구를 번갈아 쏘려면 홀짝을 알아야 한다.
+            // 뷰가 프레임으로 세면 어긋나므로 CombatContext가 센다
+            var unit = new UnitInstance(MakeUnit(10f, attacksPerSecond: 1f, range: 100f));
+            var board = new GridBoard();
+            board.TryPlace(7, unit);
+
+            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            Assert.AreEqual(0, combat.ShotCountOf(unit), "쏘기 전인데 세고 있다");
+
+            Run(combat, 3.05f);
+
+            Assert.AreEqual(4, combat.ShotCountOf(unit));
+        }
+
+        [Test]
+        public void 사거리_밖이면_발사_횟수가_늘지_않는다()
+        {
+            var unit = new UnitInstance(MakeUnit(50f, 1f, range: 0.1f));
+            var board = new GridBoard();
+            board.TryPlace(7, unit);
+
+            var wave = MakeWave(MakeEnemy(100f, 0f), count: 1, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            Run(combat, 5f);
+
+            Assert.AreEqual(0, combat.ShotCountOf(unit));
+        }
+
+        [Test]
         public void HP가_0이_되면_적이_사라진다()
         {
             var board = new GridBoard();

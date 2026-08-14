@@ -121,7 +121,7 @@ namespace PokerDefense.UI
          *
          * 매 프레임 BoardScreen이 부른다. 전투가 없으면 secondsSinceShot에 -1을 넘긴다
          */
-        public void SetAim(AimDirection direction, float secondsSinceShot, float attacksPerSecond)
+        public void SetAim(AimDirection direction, float secondsSinceShot, float attacksPerSecond, int shotCount)
         {
             if (current == null || current.Definition.HasArt == false)
             {
@@ -145,10 +145,10 @@ namespace PokerDefense.UI
             }
 
             ApplyArtTransform(punch);
-            ApplyMuzzle(direction, secondsSinceShot);
+            ApplyMuzzle(direction, secondsSinceShot, shotCount);
         }
 
-        void ApplyMuzzle(AimDirection direction, float secondsSinceShot)
+        void ApplyMuzzle(AimDirection direction, float secondsSinceShot, int shotCount)
         {
             bool firing = secondsSinceShot >= 0f && secondsSinceShot < MuzzleSeconds;
 
@@ -159,30 +159,42 @@ namespace PokerDefense.UI
                 return;
             }
 
-            Vector2 gun = current.Definition.MuzzleOffset;
+            UnitDefinition definition = current.Definition;
+            Vector2 main = definition.MuzzleOffset;
+
+            // 쌍무기는 한 발씩 번갈아 쏜다. 홀짝을 CombatContext가 세므로 프레임에 안 걸린다
+            bool dual = definition.HasSecondMuzzle;
+            bool otherHand = dual && (shotCount & 1) == 0;
+
             Vector2 offset;
 
             switch (direction)
             {
+                case AimDirection.Left:
+                case AimDirection.Right:
+                {
+                    // 측면은 두 총이 위아래로 엇갈려 있어 각자의 좌표를 그대로 쓴다
+                    Vector2 gun = otherHand ? definition.MuzzleOffsetSecond : main;
+                    offset = new Vector2(direction == AimDirection.Left ? -gun.x : gun.x, gun.y);
+                    muzzle.sortingOrder = 8;
+                    break;
+                }
+
                 case AimDirection.Up:
-                    // 등 뒤로 쏘므로 몸에 가려야 자연스럽다
-                    offset = new Vector2(0f, gun.y + MuzzleBackExtraY);
+                    // 등 뒤로 쏘므로 몸에 가려야 자연스럽다.
+                    // 단 쌍무기는 총이 몸 밖으로 벌어져 있어 머리 위로 올릴 필요가 없다
+                    offset = dual
+                        ? new Vector2(otherHand ? -main.x : main.x, main.y)
+                        : new Vector2(0f, main.y + MuzzleBackExtraY);
                     muzzle.sortingOrder = 2;
                     break;
 
-                case AimDirection.Left:
-                    offset = new Vector2(-gun.x, gun.y);
-                    muzzle.sortingOrder = 8;
-                    break;
-
-                case AimDirection.Right:
-                    offset = new Vector2(gun.x, gun.y);
-                    muzzle.sortingOrder = 8;
-                    break;
-
                 default:
-                    // 카메라 쪽으로 쏘므로 몸 앞에 온다
-                    offset = new Vector2(0f, gun.y);
+                    // 카메라 쪽으로 쏘므로 몸 앞에 온다.
+                    // 단발은 총구가 몸 가운데에 있고, 쌍무기는 좌우로 벌어진다
+                    offset = dual
+                        ? new Vector2(otherHand ? -main.x : main.x, main.y)
+                        : new Vector2(0f, main.y);
                     muzzle.sortingOrder = 8;
                     break;
             }

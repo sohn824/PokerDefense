@@ -88,6 +88,10 @@ namespace PokerDefense.Game
                  "스프라이트에서 직접 재서 넣는다. 눈대중으로 잡으면 총구를 벗어난다")]
         [SerializeField] Vector2 muzzleOffset = new Vector2(0.24f, 0.26f);
 
+        [Tooltip("쌍무기 전용. 두 번째 총구 위치. (0,0)이면 총이 하나로 그려진다\n" +
+                 "측면 스프라이트에서 아래쪽 총을 재서 넣는다")]
+        [SerializeField] Vector2 muzzleOffsetSecond;
+
         public string Id => id;
         public string DisplayName => displayName;
         public Color PlaceholderColor => placeholderColor;
@@ -106,6 +110,19 @@ namespace PokerDefense.Game
          * 방향별로 따로 두면 13종 x 4방향 = 52개 좌표가 된다
          */
         public Vector2 MuzzleOffset => muzzleOffset;
+
+        /**
+         * 두 번째 총구. 쌍권총처럼 무기를 둘 든 유닛만 채운다
+         *
+         * 채워져 있으면 발사할 때마다 두 총구가 번갈아 화염을 낸다.
+         * 측면은 두 총이 위아래로 엇갈려 있어 각자의 좌표를 그대로 쓰지만,
+         * 정면·후면은 좌우 대칭이라 MuzzleOffset의 x를 뒤집어 쓴다 -
+         * 그러지 않으면 방향마다 좌표가 둘씩 필요해 13종 x 4방향 x 2가 된다
+         */
+        public Vector2 MuzzleOffsetSecond => muzzleOffsetSecond;
+
+        // 비어 있는 것이 단발이라는 뜻이라, 기존 12종 에셋은 손대지 않아도 된다
+        public bool HasSecondMuzzle => muzzleOffsetSecond != Vector2.zero;
 
         // 한 방향이라도 비면 플레이스홀더 색 사각형으로 떨어진다.
         // M11이 13종을 한 번에 채우지 않으므로 아트가 있는 유닛과 없는 유닛이 섞인다

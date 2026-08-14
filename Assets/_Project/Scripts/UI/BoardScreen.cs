@@ -150,11 +150,12 @@ namespace PokerDefense.UI
 
                 if (fight == null)
                 {
-                    slots[i].SetAim(AimDirection.Down, -1f, unit.AttacksPerSecond);
+                    slots[i].SetAim(AimDirection.Down, -1f, unit.AttacksPerSecond, 0);
                     continue;
                 }
 
-                slots[i].SetAim(fight.AimOf(unit), fight.SecondsSinceShot(unit), unit.AttacksPerSecond);
+                slots[i].SetAim(fight.AimOf(unit), fight.SecondsSinceShot(unit),
+                    unit.AttacksPerSecond, fight.ShotCountOf(unit));
             }
         }
 

@@ -36,6 +36,9 @@ namespace PokerDefense.Game
         {
             public AimDirection Direction;
             public float LastShotTime;
+
+            // 쌍무기가 좌우를 번갈아 쏘는 데 쓴다. 뷰가 프레임으로 세면 어긋난다
+            public int ShotCount;
         }
 
         /**
@@ -255,10 +258,14 @@ namespace PokerDefense.Game
                     continue;
                 }
 
+                AimState previous;
+                aims.TryGetValue(unit, out previous);
+
                 aims[unit] = new AimState
                 {
                     Direction = DirectionTo(slotPosition, target.Position),
                     LastShotTime = ElapsedTime,
+                    ShotCount = previous.ShotCount + 1,
                 };
 
                 Fire(slotPosition, unit, target);
@@ -280,6 +287,13 @@ namespace PokerDefense.Game
         {
             AimState state;
             return aims.TryGetValue(unit, out state) ? ElapsedTime - state.LastShotTime : -1f;
+        }
+
+        // 지금까지 쏜 횟수. 쌍무기가 어느 쪽 총을 쏠 차례인지 정하는 데 쓴다
+        public int ShotCountOf(UnitInstance unit)
+        {
+            AimState state;
+            return aims.TryGetValue(unit, out state) ? state.ShotCount : 0;
         }
 
         // 화면 기준 4분할. 가로 성분이 더 크면 좌우, 아니면 상하로 본다
