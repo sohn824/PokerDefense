@@ -15,8 +15,8 @@ MonoBehaviour:
   id: full_house
   displayName: "\uD480\uD558\uC6B0\uC2A4 \uBC30\uD130\uB9AC"
   placeholderColor: {r: 0.75, g: 0.38, b: 0.72, a: 1}
-  attackPower: 68
-  attacksPerSecond: 0.8
+  attackPower: 22
+  attacksPerSecond: 2.5
   range: 3
   starMultipliers:
   - 1
@@ -26,8 +26,27 @@ MonoBehaviour:
   multiTargets: 2
   splashRadius: 1.6
   pierceLength: 2
-  artDown: {fileID: 0}
-  artUp: {fileID: 0}
-  artLeft: {fileID: 0}
-  artRight: {fileID: 0}
-  muzzleOffset: {x: 0.24, y: 0.26}
+  artDown: {fileID: 21300000, guid: 4223c6f311c171643890c1eb91be4028, type: 3}
+  artUp: {fileID: 21300000, guid: 3b58f0aaba9d6074190cf74f97ed5ffe, type: 3}
+  artLeft: {fileID: 21300000, guid: 1c8e57242824f8b468e8e0c6d8aef4b6, type: 3}
+  artRight: {fileID: 21300000, guid: fbdccaa8d437a8544a7f8a9a9529b3a1, type: 3}
+  muzzlesSide:
+  - {x: 0.25, y: 0.32}
+  - {x: 0.22, y: 0.29}
+  - {x: 0.15, y: 0.25}
+  - {x: 0.19, y: 0.04}
+  - {x: 0.18, y: -0.01}
+  muzzlesFacing:
+  - {x: -0.17, y: 0.32}
+  - {x: -0.01, y: 0.32}
+  - {x: 0.15, y: 0.32}
+  - {x: -0.03, y: -0.03}
+  - {x: 0.03, y: -0.03}
+  muzzlesBack:
+  - {x: -0.18, y: 0.29}
+  - {x: 0, y: 0.31}
+  - {x: 0.18, y: 0.29}
+  - {x: -0.03, y: -0.03}
+  - {x: 0.03, y: -0.03}
+  muzzlesFireTogether: 0
+  muzzleRandomOrder: 1

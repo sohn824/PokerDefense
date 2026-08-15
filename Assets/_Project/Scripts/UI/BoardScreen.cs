@@ -35,10 +35,10 @@ namespace PokerDefense.UI
         [SerializeField] Button jokerButton;
         [SerializeField] TMP_Text jokerLabel;
 
-        [Tooltip("고른 딜러 특전. 상단 줄 라이프·라운드 사이에 둔다")]
+        [Tooltip("고른 특전 표시")]
         [SerializeField] TMP_Text perkLabel;
 
-        [Tooltip("유닛 아트의 조준 방향·반동을 얻는 곳. 전투 중이 아니면 정면으로 둔다")]
+        [Tooltip("유닛 아트의 조준 방향·반동을 얻는 컨트롤러")]
         [SerializeField] CombatController combat;
 
         int selected = NoSelection;
@@ -69,7 +69,7 @@ namespace PokerDefense.UI
         }
 
         
-        // 전투 중에도 보드를 조작할 수 있으므로 유닛을 고른 채로 웨이브가 끝날 수 있는데
+        // 전투 중에도 보드를 조작할 수 있으므로 유닛을 고른 채로 웨이브가 끝날 수 있기 때문에
         // 웨이브가 끝나면 강제로 유닛 선택을 해제하고 Refresh 호출    
         void OnPhaseChanged(RoundPhase phase)
         {
@@ -131,7 +131,7 @@ namespace PokerDefense.UI
         void UpdateSlotArt()
         {
             GridBoard board = placement.Board;
-            CombatContext fight = combat.IsFighting ? combat.Combat : null;
+            CombatContext combatContext = combat.IsFighting ? combat.Combat : null;
 
             for (int i = 0; i < slots.Length; i++)
             {
@@ -142,14 +142,17 @@ namespace PokerDefense.UI
                     continue;
                 }
 
-                if (fight == null)
+                // 전투 중이 아닐 경우 조준 방향은 아래로 고정하고 발사 반동은 0으로 설정
+                if (combatContext == null)
                 {
                     slots[i].SetAim(AimDirection.Down, -1f, unit.AttacksPerSecond, 0);
                     continue;
                 }
 
-                slots[i].SetAim(fight.AimOf(unit), fight.SecondsSinceShot(unit),
-                    unit.AttacksPerSecond, fight.ShotCountOf(unit));
+                // 각 슬롯(UnitSlotView)의 업데이트 메소드에
+                // CombatContext에서 얻은 조준 방향과 발사 반동 정보를 넘겨줌
+                slots[i].SetAim(combatContext.AimOf(unit), combatContext.SecondsSinceShot(unit),
+                    unit.AttacksPerSecond, combatContext.ShotCountOf(unit));
             }
         }
 
@@ -304,15 +307,7 @@ namespace PokerDefense.UI
             ShowDetail(null, "족보를 확정하면 유닛이 소환됩니다");
         }
 
-        /**
-         * 고른 특전 표시
-         *
-         * 특전은 한 판 내내 규칙을 바꾸므로 라이프·Chip과 같은 "판이 끝날 때까지 유지되는 상태"다
-         * 효과 자체는 이미 다른 숫자에 드러나지만(확정 +5 / 지원 소환 5 / 공격력) 무엇 때문인지는 여기서만 알 수 있다
-         *
-         * 보스가 셋(5·10·15)이라 한 판에 최대 3개다. 최악값 338px이고 rect는 400px
-         * 좌우 이웃과의 여유는 44px / 15px뿐이니 특전 이름을 늘릴 때는 이 줄을 다시 재야 한다
-         */
+        // 고른 특전 표시
         void ShowPerks()
         {
             var owned = stage.Stage.Perks.Owned;
@@ -350,7 +345,7 @@ namespace PokerDefense.UI
 
             string suffix = string.IsNullOrEmpty(hint) ? string.Empty : "  -  " + hint;
 
-            // 특전이 붙은 공격력을 띄운다. 전투에서 실제로 나가는 수와 같아야 비교가 성립한다
+            // 특전이 붙은 공격력을 표시
             float power = stage.Stage.Perks.AttackPowerOf(unit);
 
             pendingLabel.text =

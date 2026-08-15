@@ -30,8 +30,14 @@ MonoBehaviour:
   artUp: {fileID: 21300000, guid: 061cf274e765fe847a2e80ba04ddacee, type: 3}
   artLeft: {fileID: 21300000, guid: 642739e28de95a944aaa6f1d4ff62543, type: 3}
   artRight: {fileID: 21300000, guid: b4db586fb464a8747b07c213bac9af27, type: 3}
-  muzzleOffset: {x: 0.24, y: 0.24}
-  muzzleOffsetSecond: {x: 0.17, y: 0.07}
+  muzzlesSide:
+  - {x: 0.24, y: 0.24}
+  - {x: 0.17, y: 0.07}
+  muzzlesFacing:
+  - {x: 0.31, y: 0.21}
+  - {x: -0.31, y: 0.21}
+  muzzlesBack:
+  - {x: 0.31, y: 0.23}
+  - {x: -0.31, y: 0.23}
   muzzlesFireTogether: 1
-  muzzleOffsetFacing: {x: 0.31, y: 0.21}
-  muzzleOffsetBack: {x: 0.31, y: 0.23}
+  muzzleRandomOrder: 0

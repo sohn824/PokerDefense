@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PokerDefense.Game;
 using TMPro;
 using UnityEngine;
@@ -52,8 +53,9 @@ namespace PokerDefense.UI
 
         UnitInstance current;
 
-        // 쌍권총류 유닛이 사용할 복제 muzzle
-        SpriteRenderer muzzleSecond;
+        // 총구가 여럿인 유닛이 쓰는 muzzle 렌더러 풀
+        // [0]은 씬에 있는 muzzle이고 나머지는 처음 쓸 때 복제해서 붙임
+        readonly List<SpriteRenderer> muzzlePool = new List<SpriteRenderer>();
 
         public int Index { get; private set; }
 
@@ -141,31 +143,55 @@ namespace PokerDefense.UI
             }
 
             UnitDefinition definition = current.Definition;
-            float t = secondsSinceShot / MuzzleSeconds;
+            Vector2[] muzzles = definition.MuzzlesFor(direction);
 
-            // 등 뒤로 쏘면 몸에 가려야 하므로 order를 낮게 주고, 나머지는 몸 앞에 나와야 하므로 order를 높게 줌
-            int order = direction == AimDirection.Up ? 2 : 8;
-
-            if (definition.HasSecondMuzzle && definition.MuzzlesFireTogether)
+            if (muzzles == null || muzzles.Length == 0)
             {
-                // 적 둘을 동시에 때리는 유닛은 두 총구가 함께 터져야 함
-                DrawMuzzleFlash(muzzle, Recoiled(MuzzleOffsetFor(definition, direction, false), artGrowth), order, t);
-                DrawMuzzleFlash(SecondMuzzle(), Recoiled(MuzzleOffsetFor(definition, direction, true), artGrowth), order, t);
+                HideMuzzles();
                 return;
             }
 
-            // 나머지는 한 발씩 번갈아 사격
-            bool otherHand = definition.HasSecondMuzzle && (shotCount & 1) == 0;
+            float t = secondsSinceShot / MuzzleSeconds;
 
-            DrawMuzzleFlash(muzzle, Recoiled(MuzzleOffsetFor(definition, direction, otherHand), artGrowth), order, t);
+            // 등 뒤로 쏘면 몸에 가려야 하므로 order를 낮게, 나머지는 몸 앞에 나와야 하므로 높게
+            int order = direction == AimDirection.Up ? 2 : 8;
 
-            if (muzzleSecond != null)
+            if (definition.MuzzlesFireTogether)
             {
-                muzzleSecond.enabled = false;
+                // 적을 여럿 동시에 때리는 유닛은 총구가 다 같이 터진다
+                for (int i = 0; i < muzzles.Length; i++)
+                {
+                    DrawMuzzleFlash(MuzzleAt(i), Recoiled(Aimed(muzzles[i], direction), artGrowth), order, t);
+                }
+
+                HideMuzzlesFrom(muzzles.Length);
+                return;
             }
+
+            // 하나씩 쏜다. 어느 총구인지는 CombatContext가 센 발사 횟수로 정해
+            // 0.06초 동안 흔들리지 않으면서 발사마다 바뀐다
+            int pick = definition.MuzzleRandomOrder
+                ? Scatter(shotCount) % muzzles.Length
+                : shotCount % muzzles.Length;
+
+            DrawMuzzleFlash(MuzzleAt(0), Recoiled(Aimed(muzzles[pick], direction), artGrowth), order, t);
+            HideMuzzlesFrom(1);
         }
 
-        
+        // 측면은 좌우를 대칭으로 묶으므로 왼쪽을 볼 때만 x를 뒤집는다
+        static Vector2 Aimed(Vector2 muzzle, AimDirection direction)
+        {
+            return direction == AimDirection.Left ? new Vector2(-muzzle.x, muzzle.y) : muzzle;
+        }
+
+        // 발사 횟수를 흩뿌린다. 프레임이 아니라 발사에 물려 있어야 화염이 0.06초 동안 안 떨린다
+        static int Scatter(int shotCount)
+        {
+            uint h = (uint)shotCount * 2654435761u;
+            h ^= h >> 15;
+            return (int)(h & 0x7fffffff);
+        }
+
         // 반동으로 커진 아트에 맞춰 화염 위치를 밀어 준다
         static Vector2 Recoiled(Vector2 muzzleOffset, float artGrowth)
         {
@@ -173,35 +199,7 @@ namespace PokerDefense.UI
                                ArtBottomY + (muzzleOffset.y - ArtBottomY) * artGrowth);
         }
 
-        // 총구 위치를 유닛 정의와 조준 방향, 쌍권총 여부에 따라 계산
-        static Vector2 MuzzleOffsetFor(UnitDefinition definition, AimDirection direction, bool second)
-        {
-            Vector2 side = definition.MuzzleOffset;
-
-            if (direction == AimDirection.Left || direction == AimDirection.Right)
-            {
-                // 측면은 좌우 대칭으로 묶는다
-                Vector2 gun = second ? definition.MuzzleOffsetSecond : side;
-                return new Vector2(direction == AimDirection.Left ? -gun.x : gun.x, gun.y);
-            }
-
-            bool back = direction == AimDirection.Up;
-            // 유닛 정의를 참고해서 현재 유닛이 정면, 후면을 보고있는지에 따라 총구 위치를 가져옴
-            Vector2 facing = back ? definition.MuzzleOffsetBack : definition.MuzzleOffsetFacing;
-
-            // 아직 유닛 정의에 총구 위치가 없는 경우 임시 좌표 사용
-            if (facing == Vector2.zero)
-            {
-                float y = side.y + (back ? MuzzleBackExtraY : 0f);
-                facing = definition.HasSecondMuzzle ? new Vector2(side.x, y) : new Vector2(0f, y);
-            }
-
-            return definition.HasSecondMuzzle
-                ? new Vector2(second ? -Mathf.Abs(facing.x) : Mathf.Abs(facing.x), facing.y)
-                : facing;
-        }
-
-        // 총구 화염 그리기 (muzzle renderer를 켜고 위치, 크기, 투명도 조정)
+        // 총구 화염 그리기 (renderer를 켜고 위치, 크기, 투명도 조정)
         static void DrawMuzzleFlash(SpriteRenderer renderer, Vector2 offset, int sortingOrder, float t)
         {
             renderer.enabled = true;
@@ -218,24 +216,42 @@ namespace PokerDefense.UI
 
         void HideMuzzles()
         {
-            muzzle.enabled = false;
+            HideMuzzlesFrom(0);
+        }
 
-            if (muzzleSecond != null)
+        // from번째부터 끝까지 끈다. 총구 수가 방향마다 다를 수 있어 남은 것을 지워야 한다
+        void HideMuzzlesFrom(int from)
+        {
+            if (from == 0)
             {
-                muzzleSecond.enabled = false;
+                muzzle.enabled = false;
+            }
+
+            for (int i = 1; i < muzzlePool.Count; i++)
+            {
+                if (i >= from)
+                {
+                    muzzlePool[i].enabled = false;
+                }
             }
         }
 
-        // 쌍권총류 유닛은 muzzle 위치를 복제해서 씀 (쌍권총류가 아닌 유닛은 호출 안함)
-        SpriteRenderer SecondMuzzle()
+        // i번째 화염 렌더러. 모자라면 씬의 muzzle을 복제해 채운다
+        SpriteRenderer MuzzleAt(int index)
         {
-            if (muzzleSecond == null)
+            if (muzzlePool.Count == 0)
             {
-                muzzleSecond = Instantiate(muzzle, muzzle.transform.parent);
-                muzzleSecond.name = muzzle.name + "_Second";
+                muzzlePool.Add(muzzle);
             }
 
-            return muzzleSecond;
+            while (muzzlePool.Count <= index)
+            {
+                SpriteRenderer clone = Instantiate(muzzle, muzzle.transform.parent);
+                clone.name = muzzle.name + "_" + muzzlePool.Count;
+                muzzlePool.Add(clone);
+            }
+
+            return muzzlePool[index];
         }
 
         // 호흡과 반동을 합친 크기로 아트를 키우고, 그때 쓴 스케일을 반환
