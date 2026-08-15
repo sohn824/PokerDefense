@@ -21,7 +21,7 @@ namespace PokerDefense.EditorTools
         HandUnitTable unitTable;
         Vector2 scroll;
 
-        [MenuItem("PokerDefense/족보 소환 (개발용)")]
+        [MenuItem("DevMode/족보 소환")]
         static void Open()
         {
             GetWindow<HandCheatWindow>("족보 소환").minSize = new Vector2(300f, 320f);
@@ -65,28 +65,29 @@ namespace PokerDefense.EditorTools
             }
         }
 
-        // 누를 수 없는 이유. 누를 수 있으면 null
+        // 버튼을 누를 수 없는 이유를 문자열로 반환
+        // 누를 수 있는 상태면 null 반환
         static string BlockedReason(RoundController round)
         {
             if (Application.isPlaying == false)
             {
-                return "플레이 중에만 쓸 수 있다.";
+                return "플레이 중에만 쓸 수 있습니다.";
             }
 
             if (round == null)
             {
-                return "씬에서 RoundController를 찾지 못했다. Game 씬인지 확인할 것.";
+                return "씬에서 RoundController를 찾지 못했습니다. Game 씬인지 확인해주세요.";
             }
 
             if (round.CanForceHand == false)
             {
-                return $"교체 단계에서만 바꿀 수 있다. 지금은 {round.Phase}.";
+                return $"교체 단계에서만 바꿀 수 있습니다. 지금은 {round.Phase}입니다.";
             }
 
             return null;
         }
 
-        // 무엇이 소환되는지 같이 보여준다. 이름은 HandUnitTable에서 읽어 데이터와 어긋나지 않게 한다
+        // 어떤 유닛이 소환되는지 같이 보여줌 (유닛 이름은 HandUnitTable에서 읽어 데이터와 어긋나지 않도록 함)
         string Label(HandCategory category)
         {
             string hand = HandCheatTable.NameOf(category);
@@ -116,7 +117,6 @@ namespace PokerDefense.EditorTools
             }
             catch (System.InvalidOperationException)
             {
-                // 매핑이 빠진 것은 데이터 버그지만, 창이 그것 때문에 예외를 쏟을 이유는 없다
                 return null;
             }
         }
