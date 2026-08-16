@@ -57,12 +57,16 @@ namespace PokerDefense.UI
         // [0]은 씬에 있는 muzzle이고 나머지는 처음 쓸 때 복제해서 붙임
         readonly List<SpriteRenderer> muzzlePool = new List<SpriteRenderer>();
 
+        // 13종 공용 화염. 유닛 전용 이펙트가 없으면 이것으로 떨어진다
+        Sprite sharedMuzzleSprite;
+
         public int Index { get; private set; }
 
         void Awake()
         {
             starLabel.outlineColor = new Color32(0, 0, 0, 255);
             starLabel.outlineWidth = 0.25f;
+            sharedMuzzleSprite = muzzle.sprite;
         }
 
         public void Bind(int index)
@@ -130,7 +134,7 @@ namespace PokerDefense.UI
             // ApplyArtTransform은 호흡 상수와 반동(punch)를 반영해
             // 아트 scale을 계산하고 그 때 쓴 scale을 반환함
             float artScale = ApplyArtTransform(punch);
-            // 반동으로 커진 만큼 muzzle 이펙트도 밀어줌 
+            // 반동으로 커진 만큼 muzzle 이펙트도 밀어줌
             ApplyMuzzle(direction, secondsSinceShot, shotCount, artScale / ArtScale);
         }
 
@@ -156,12 +160,15 @@ namespace PokerDefense.UI
             // 등 뒤로 쏘면 몸에 가려야 하므로 order를 낮게, 나머지는 몸 앞에 나와야 하므로 높게
             int order = direction == AimDirection.Up ? 2 : 8;
 
+            // 유닛 전용 이펙트가 없으면 13종 공용 화염으로 떨어진다
+            Sprite flash = definition.AttackEffect != null ? definition.AttackEffect : sharedMuzzleSprite;
+
             if (definition.MuzzlesFireTogether)
             {
                 // 적을 여럿 동시에 때리는 유닛은 총구가 다 같이 터진다
                 for (int i = 0; i < muzzles.Length; i++)
                 {
-                    DrawMuzzleFlash(MuzzleAt(i), Recoiled(Aimed(muzzles[i], direction), artGrowth), order, t);
+                    DrawMuzzleFlash(MuzzleAt(i), flash, Recoiled(Aimed(muzzles[i], direction), artGrowth), order, t);
                 }
 
                 HideMuzzlesFrom(muzzles.Length);
@@ -174,7 +181,7 @@ namespace PokerDefense.UI
                 ? Scatter(shotCount) % muzzles.Length
                 : shotCount % muzzles.Length;
 
-            DrawMuzzleFlash(MuzzleAt(0), Recoiled(Aimed(muzzles[pick], direction), artGrowth), order, t);
+            DrawMuzzleFlash(MuzzleAt(0), flash, Recoiled(Aimed(muzzles[pick], direction), artGrowth), order, t);
             HideMuzzlesFrom(1);
         }
 
@@ -199,10 +206,11 @@ namespace PokerDefense.UI
                                ArtBottomY + (muzzleOffset.y - ArtBottomY) * artGrowth);
         }
 
-        // 총구 화염 그리기 (renderer를 켜고 위치, 크기, 투명도 조정)
-        static void DrawMuzzleFlash(SpriteRenderer renderer, Vector2 offset, int sortingOrder, float t)
+        // 총구 화염 그리기 (renderer를 켜고 스프라이트, 위치, 크기, 투명도 조정)
+        static void DrawMuzzleFlash(SpriteRenderer renderer, Sprite flash, Vector2 offset, int sortingOrder, float t)
         {
             renderer.enabled = true;
+            renderer.sprite = flash;
             renderer.sortingOrder = sortingOrder;
             renderer.transform.localPosition = new Vector3(offset.x, offset.y, 0f);
 
@@ -219,7 +227,7 @@ namespace PokerDefense.UI
             HideMuzzlesFrom(0);
         }
 
-        // from번째부터 끝까지 끈다. 총구 수가 방향마다 다를 수 있어 남은 것을 지워야 한다
+        // muzzlePool에 있는 muzzle sprite를 from번째부터 끝까지 끈다
         void HideMuzzlesFrom(int from)
         {
             if (from == 0)
@@ -236,7 +244,7 @@ namespace PokerDefense.UI
             }
         }
 
-        // i번째 화염 렌더러. 모자라면 씬의 muzzle을 복제해 채운다
+        // muzzlePool을 index번째까지 채워서 반환 (모자라는 경우 씬의 muzzle을 복제해 채움)
         SpriteRenderer MuzzleAt(int index)
         {
             if (muzzlePool.Count == 0)

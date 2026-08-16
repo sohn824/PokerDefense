@@ -240,6 +240,98 @@ namespace PokerDefense.Tests
         }
 
         [Test]
+        public void 피격_기록은_때린_유닛을_함께_남긴다()
+        {
+            // 유닛마다 타격 이펙트가 다를 수 있어 누가 때렸는지가 필요하다
+            UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
+            var board = new GridBoard();
+            board.TryPlace(7, new UnitInstance(definition));
+
+            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            Run(combat, 1.05f);
+
+            IReadOnlyList<CombatContext.HitEvent> hits = combat.RecentHits;
+            Assert.Greater(hits.Count, 0, "때린 기록이 없다");
+
+            for (int i = 0; i < hits.Count; i++)
+            {
+                Assert.AreSame(definition, hits[i].Source);
+            }
+        }
+
+        [Test]
+        public void 관통은_찌른_선을_남긴다()
+        {
+            // 맞은 지점만으로는 궤적을 못 그린다. 어디서 뻗어 나갔는지가 따로 필요하다
+            UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
+            var so = new UnityEditor.SerializedObject(definition);
+            so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Pierce;
+            so.FindProperty("pierceLength").floatValue = 1.5f;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            var board = new GridBoard();
+            board.TryPlace(7, new UnitInstance(definition));
+
+            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            Run(combat, 1.05f);
+
+            IReadOnlyList<CombatContext.PierceEvent> lines = combat.RecentPierces;
+            Assert.Greater(lines.Count, 0, "관통 기록이 없다");
+
+            CombatContext.PierceEvent line = lines[0];
+            Assert.AreSame(definition, line.Source);
+            Assert.AreEqual(GridBoard.SlotToLocalPosition(7), line.Origin, "유닛이 선 칸이 아니다");
+            Assert.AreEqual(combat.Enemies[0].Position, line.Target, "겨눈 적이 아니다");
+        }
+
+        [Test]
+        public void 찌른_선의_방향은_유닛에서_적을_본_방향이다()
+        {
+            // 창끝이 방향마다 다른 자리에 붙어 있어 뷰가 이 방향으로 시작점을 고른다
+            UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
+            var so = new UnityEditor.SerializedObject(definition);
+            so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Pierce;
+            so.FindProperty("pierceLength").floatValue = 1.5f;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            var board = new GridBoard();
+            board.TryPlace(7, new UnitInstance(definition));
+
+            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            Run(combat, 1.05f);
+
+            CombatContext.PierceEvent line = combat.RecentPierces[0];
+            Vector2 delta = line.Target - line.Origin;
+
+            AimDirection expected = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y)
+                ? (delta.x >= 0f ? AimDirection.Right : AimDirection.Left)
+                : (delta.y >= 0f ? AimDirection.Up : AimDirection.Down);
+
+            Assert.AreEqual(expected, line.Direction);
+        }
+
+        [Test]
+        public void 관통이_아니면_찌른_선을_안_남긴다()
+        {
+            var board = new GridBoard();
+            board.TryPlace(7, new UnitInstance(MakeUnit(10f, attacksPerSecond: 1f, range: 100f)));
+
+            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            Run(combat, 1.05f);
+
+            Assert.Greater(combat.RecentHits.Count, 0, "때리지도 않았다");
+            Assert.AreEqual(0, combat.RecentPierces.Count);
+        }
+
+        [Test]
         public void 사거리_밖이면_발사_횟수가_늘지_않는다()
         {
             var unit = new UnitInstance(MakeUnit(50f, 1f, range: 0.1f));

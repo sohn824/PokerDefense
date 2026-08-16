@@ -49,6 +49,28 @@ namespace PokerDefense.Game
         {
             public Vector2 Position;
             public float Time;
+
+            // 때린 유닛. 전용 타격 이펙트를 고르는 데 쓴다
+            public UnitDefinition Source;
+        }
+
+        /**
+         * 한 발이 찌른 선
+         *
+         * 유닛이 선 칸에서 겨눈 적까지다. 맞은 지점만으로는 이 선을 못 그린다 -
+         * 누구를 때렸는지는 알아도 어디서 뻗어 나갔는지가 없다
+         */
+        public struct PierceEvent
+        {
+            // 유닛이 선 칸의 중심과 겨눈 적의 위치
+            public Vector2 Origin;
+            public Vector2 Target;
+
+            // 그 방향에서 창끝이 어디 붙어 있는지 고르는 데 쓴다
+            public AimDirection Direction;
+
+            public float Time;
+            public UnitDefinition Source;
         }
 
         // 피격 기록을 들고 있는 시간 (타격 이펙트 수명보다 길어야 함)
@@ -75,6 +97,9 @@ namespace PokerDefense.Game
         // 최근 피격 지점
         // 오래된 것은 Tick에서 버린다
         readonly List<HitEvent> hits = new List<HitEvent>();
+
+        // 최근 관통 구간. 피격 지점과 같은 주기로 버린다
+        readonly List<PierceEvent> pierces = new List<PierceEvent>();
 
         int nextSpawnIndex;
 
@@ -272,6 +297,8 @@ namespace PokerDefense.Game
 
         public IReadOnlyList<HitEvent> RecentHits => hits;
 
+        public IReadOnlyList<PierceEvent> RecentPierces => pierces;
+
         // 유닛이 마지막으로 겨눈 방향
         public AimDirection AimOf(UnitInstance unit)
         {
@@ -345,6 +372,16 @@ namespace PokerDefense.Game
 
                 case AttackPattern.Pierce:
                     CollectPierce(unit, target);
+
+                    // 겨눈 적을 기준으로 남긴다. 뒤에 아무도 없어도 창이 뻗은 자리는 보여야 한다
+                    pierces.Add(new PierceEvent
+                    {
+                        Origin = slotPosition,
+                        Target = target.Position,
+                        Direction = DirectionTo(slotPosition, target.Position),
+                        Time = ElapsedTime,
+                        Source = unit.Definition,
+                    });
                     break;
 
                 default:
@@ -360,7 +397,12 @@ namespace PokerDefense.Game
             for (int i = 0; i < shotTargets.Count; i++)
             {
                 shotTargets[i].TakeDamage(power);
-                hits.Add(new HitEvent { Position = shotTargets[i].Position, Time = ElapsedTime });
+                hits.Add(new HitEvent
+                {
+                    Position = shotTargets[i].Position,
+                    Time = ElapsedTime,
+                    Source = unit.Definition,
+                });
             }
         }
 
@@ -380,6 +422,19 @@ namespace PokerDefense.Game
             }
 
             hits.RemoveRange(keep, hits.Count - keep);
+
+            keep = 0;
+
+            for (int i = 0; i < pierces.Count; i++)
+            {
+                if (pierces[i].Time >= cutoff)
+                {
+                    pierces[keep] = pierces[i];
+                    keep++;
+                }
+            }
+
+            pierces.RemoveRange(keep, pierces.Count - keep);
         }
 
         // 사거리 안에서 앞선 순으로 최대 MultiTargets기 탐색

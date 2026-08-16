@@ -100,6 +100,17 @@ namespace PokerDefense.Game
         [Tooltip("하나씩 쏠 때 총구가 순서대로 돌지 않고 랜덤으로 고를지 여부")]
         [SerializeField] bool muzzleRandomOrder;
 
+        [Header("연출")]
+        [Tooltip("발사 순간 총구에 뜨는 이펙트. 비우면 공용 이펙트를 쓴다")]
+        [SerializeField] Sprite attackEffect;
+
+        [Tooltip("적이 맞은 지점에 뜨는 이펙트. 비우면 공용 이펙트를 쓴다")]
+        [SerializeField] Sprite hitEffect;
+
+        [Tooltip("Pierce 전용. 관통한 트랙 구간을 따라 그리는 궤적. 비우면 안 그린다\n" +
+                 "가로로 균일한 띠여야 한다 - 모서리에서 조각내 이어 붙인다")]
+        [SerializeField] Sprite pierceTrailEffect;
+
         public string Id => id;
         public string DisplayName => displayName;
         public Color PlaceholderColor => placeholderColor;
@@ -136,6 +147,13 @@ namespace PokerDefense.Game
 
         // 하나씩 쏠 때 순서대로 돌지 무작위로 고를지
         public bool MuzzleRandomOrder => muzzleRandomOrder;
+
+        // 유닛 전용 이펙트. 비어 있으면 뷰가 공용 이펙트로 떨어뜨린다
+        public Sprite AttackEffect => attackEffect;
+        public Sprite HitEffect => hitEffect;
+
+        // 관통 궤적. 비어 있으면 안 그린다 (공용 대역이 없다 - 방향이 있는 유일한 이펙트다)
+        public Sprite PierceTrailEffect => pierceTrailEffect;
 
         // 한 방향이라도 비면 플레이스홀더 색 사각형으로 폴백 (폴백하지 않으려면 아트 리소스 필수)
         public bool HasArt => artDown != null && artUp != null && artLeft != null && artRight != null;

@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Unit_Vanguard
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: straight
-  displayName: "\uC2A4\uD2B8\uB808\uC774\uD2B8 \uB79C\uC11C"
+  displayName: "\uC2A4\uD2B8\uB808\uC774\uD2B8 \uB871\uBC14\uB810"
   placeholderColor: {r: 0.42, g: 0.45, b: 0.85, a: 1}
-  attackPower: 38
-  attacksPerSecond: 1
-  range: 3
+  attackPower: 26
+  attacksPerSecond: 2.2
+  range: 2.5
   starMultipliers:
   - 1
   - 1.6
@@ -25,9 +25,19 @@ MonoBehaviour:
   attackPattern: 4
   multiTargets: 2
   splashRadius: 1
-  pierceLength: 2
-  artDown: {fileID: 0}
-  artUp: {fileID: 0}
-  artLeft: {fileID: 0}
-  artRight: {fileID: 0}
-  muzzleOffset: {x: 0.24, y: 0.26}
+  pierceLength: 1.5
+  artDown: {fileID: 21300000, guid: 48497b4cafe68a74f807ee06c055b09c, type: 3}
+  artUp: {fileID: 21300000, guid: bb36b905f82f5fb4dac145ce61a5c3cc, type: 3}
+  artLeft: {fileID: 21300000, guid: 33b12b25c63cfaf4e8d3eef7e8a817a3, type: 3}
+  artRight: {fileID: 21300000, guid: de5c3a18fba0746478b4a59db8d39b62, type: 3}
+  muzzlesSide:
+  - {x: 0.459, y: 0.26}
+  muzzlesFacing:
+  - {x: 0.004, y: 0.236}
+  muzzlesBack:
+  - {x: -0.004, y: 0.236}
+  muzzlesFireTogether: 0
+  muzzleRandomOrder: 0
+  attackEffect: {fileID: 21300000, guid: cedfd7b6a69f95c4bbfb926b5a014860, type: 3}
+  hitEffect: {fileID: 21300000, guid: b64a21c239c1c5f469196cbd92f23374, type: 3}
+  pierceTrailEffect: {fileID: 21300000, guid: caaec40e391f355419236a21eed3beee, type: 3}

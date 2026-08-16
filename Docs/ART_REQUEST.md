@@ -148,7 +148,7 @@ NO text, NO numbers, NO letters anywhere in the image.
 - **성급이 올라도 구조 숫자를 바꾸지 않는다** (§10.4). 페어는 영원히 2, 트리플은 3, 쿼드는 4다.
 - **성급 오라 오버레이를 만들지 않는다.** 슬롯의 `★` 라벨이 성급을 담당한다 — §10.4의 *구조는 실루엣, 성급은 별* 두 축이 유지된다.
 - **카드 문양은 유닛마다 고정 심볼 하나다** (§10.4). 한 유닛에 여러 무늬를 섞으면 **무늬가 능력과 연결된다는 오해**(§7에서 폐기한 카드 특성)를 아트가 되살린다.
-  **배정 — 스카우트 `♠` / 건슬링어 `♥` / 트윈레인저 `♦` / 마크스맨 `♣` / 쿼드캐논 `♠` / 배터리 `♦`.** 무늬는 4개뿐이라 겹치는데, **겹치는 둘은 구조 숫자로 갈리므로 문제가 되지 않는다**(스카우트 `1` 대 쿼드캐논 `4`). 겹칠 때는 성별·외형이 가장 먼 유닛끼리 묶는다. 남은 7종은 셀 구조가 없으니 자유롭게 고르되 **플러시 보머는 컨셉이 "같은 무늬 반복"이라 먼저 잡는다.** 붉은 무늬(`♥` `♦`)는 군복에 묻히므로 흰 외곽선을 지정한다.
+  **배정 — 스카우트 `♠` / 건슬링어 `♥` / 트윈레인저 `♦` / 마크스맨 `♣` / 쿼드캐논 `♠` / 배터리 `♦`. 롱바렐만 예외로 네 무늬를 섞고, 레일거너는 하나로 통일한다** — DESIGN §10.4의 유일한 예외이고 그 둘을 가르는 축이다. 무늬는 4개뿐이라 겹치는데, **겹치는 둘은 구조 숫자로 갈리므로 문제가 되지 않는다**(스카우트 `1` 대 쿼드캐논 `4`). 구조 숫자가 없는 유닛은 성별·외형이 가장 먼 쪽과 묶는다. 남은 6종도 셀 구조가 없으니 자유롭게 고르되 **플러시 보머는 컨셉이 "같은 무늬 반복"이라 먼저 잡는다.** 붉은 무늬(`♥` `♦`)는 군복에 묻히므로 흰 외곽선을 지정한다.
 - **성별도 무늬와 같은 장식 축이다. 역할·족보 세기와 상관시키지 않는다.** 상관시키면 §0이 정한 두 관계(족보 → 유닛, 유닛 → 역할) 밖에 셋째 관계가 생기고, 124px에서 성별을 읽는 단서(머리 모양·스커트)가 **구조 숫자를 읽어야 할 실루엣 대역과 정면으로 경쟁한다.** 배분은 §4-2단계 표에 있고 지켜야 할 조건은 둘이다.
   1. **패턴 5종이 각각 한 성별로 몰리지 않는다** — 현재 Rapid 1:2 / Heavy 2:1 / Multi 1:1 / Splash 1:2 / Pierce 1:1.
   2. **고빈도 4종(하이카드·원페어·투페어·트리플)을 2:2로 맞춘다.** 이쪽이 핵심이다. 이 넷이 손패의 92%(§3.3)이고 지원 소환도 이 넷에만 나오므로(§9.3) **보드를 실제로 채우는 것이 이 넷이다. 희귀 유닛을 아무리 반대 성별로 채워도 게임은 이 넷의 성별로 보인다.**
@@ -186,7 +186,9 @@ NO text, NO numbers, NO letters anywhere in the image.
 
 이전 시트를 스타일 레퍼런스로 물린다. **구조 숫자가 있는 여섯이 전부 끝났다** — `1` 스카우트 / `2` 건슬링어 / `2+2` 트윈레인저 / `3` 마크스맨 / `3+2` 배터리 / `4` 쿼드캐논.
 
-**남은 일곱은 셀 것이 없다.** 개수 대신 각자의 컨셉으로 갈라야 한다 — 계단(에이스) / 일직선(랜서) / ▲ 산(마운틴 킹) / 같은 무늬 반복(보머) / 원형 회전(템페스트) / 레일(레일거너) / 왕좌(소버린). **색 블록은 계속 갈라야 한다** (§8).
+> **스트레이트는 랜서(창)에서 롱바렐(장총)로 다시 기획했다.** 창 시트는 네 방향·좌표·수치까지 다 들어갔지만 **찌르기 궤적 이펙트가 총기와 훨씬 잘 맞아서** 갈아엎었다. 판정(직선 관통)과 수치는 그대로고 무기와 실루엣만 바뀐다. 자세한 근거는 [HISTORY.md](HISTORY.md).
+
+**남은 일곱 중 여섯은 셀 것이 없다.** 개수 대신 각자의 컨셉으로 갈라야 한다 — 계단(에이스) / ▲ 산(마운틴 킹) / 같은 무늬 반복(보머) / 원형 회전(템페스트) / 레일(레일거너) / 왕좌(소버린). **색 블록은 계속 갈라야 한다** (§8).
 
 | 우선 | 에셋 | 이름 | 구조 | 역할 | 성별 |
 |---|---|---|---|---|---|
@@ -196,8 +198,8 @@ NO text, NO numbers, NO letters anywhere in the image.
 | — | `Unit_Lancer` | 트리플 마크스맨 | **3** 3총구 | Heavy · **완료** | 남 |
 | — | `Unit_Warden` | 풀하우스 배터리 | **3+2** 주포3 + 보조포2 | Splash · **완료** | 남 |
 | — | `Unit_Champion` | 포카드 쿼드캐논 | **4** 4연장 중포 | Heavy · **완료** | 여 |
+| — | `Unit_Vanguard` | 스트레이트 롱바렐 | **무늬 섞인** 카드 5장이 박힌 아주 긴 총열 1정 | Pierce · **완료** | 남 |
 | 2 | `Unit_Trickster` | 백스트레이트 에이스 | A→2→3→4→5 계단 | Rapid | 여 |
-| 2 | `Unit_Vanguard` | 스트레이트 랜서 | 일직선 창, 카드 5장 일렬 | Pierce | 남 |
 | 2 | `Unit_Highlander` | 마운틴 킹 | ▲ 산 왕관, 꼭대기에 A | Heavy | 남 |
 | 2 | `Unit_Mystic` | 플러시 보머 | 같은 무늬 반복 | Splash | 여 |
 | 2 | `Unit_Revenant` | 백스트레이트 플러시 템페스트 | 같은 무늬 A-5 원형 회전 | Multi | 남 |
@@ -246,14 +248,25 @@ NO text, NO numbers, NO letters anywhere in the image.
 
 ---
 
-### 이펙트 2장 — **완료**
+### 이펙트 — 다섯 장 모두 **완료**
 
-`Art/VFX/`에 있다. **유닛별이 아니라 13종이 공용으로 쓴다** — 추상 형태라 나눠 쓸 수 있고, 필요하면 색조·크기만 코드에서 바꾼다.
+`Art/VFX/`에 있다. **공용 2장이 기본이고 유닛이 따로 지정하면 그것을 쓴다** — 추상 형태라 13종이 나눠 쓸 수 있어서, 총으로 안 읽히는 무기에만 전용 장을 붙인다.
 
-| 파일 | 쓰임 | 수명 |
-|---|---|---|
-| `MuzzleEffect.png` | 총구 화염. 조준 방향으로 밀어 띄운다 | 0.06초 |
-| `HitEffect.png` | 타격 스파크. 맞은 지점에 띄운다 | 0.12초 |
+| 파일 | 쓰임 | 수명 | 상태 |
+|---|---|---|---|
+| `MuzzleEffect.png` | 총구 화염. 조준 방향으로 밀어 띄운다 | 0.06초 | **완료** |
+| `HitEffect.png` | 타격 스파크. 맞은 지점에 띄운다 | 0.12초 | **완료** |
+| `BeamMuzzleEffect.png` | 총구 섬광. 롱바렐 전용 (차가운 은백 8방) | 0.06초 | **완료** |
+| `PierceHitEffect.png` | 관통 자국. 롱바렐 전용 | 0.12초 | **완료** |
+| `PierceTrailEffect.png` | **빔 궤적.** 총구에서 겨눈 적까지 한 줄로 뻗는다 | 0.18초 | **완료** |
+
+- **네 장은 방사 대칭이고 `PierceTrailEffect`만 예외다.** 방사 대칭을 요구한 이유는 뷰가 이펙트를 위치만 옮겨 찍기 때문인데, 궤적은 **반대로 방향이 있어야 하고 코드가 회전시킨다.** 대신 지켜야 할 것이 다르다.
+  - **상하 대칭일 것.** 어느 각도로도 회전하므로 위아래가 다르면 왼쪽을 향할 때 뒤집혀 보인다. 받은 장은 뒤집어 겹친 차이 6.6%다.
+  - **길이 방향으로 균일할 것.** 유닛과 적의 거리에 따라 **1.4~2.8배**로 늘어난다. 세로 단면이 자리마다 다르면 늘릴 때 뭉개진다. 받은 장은 열별 편차 1.4%다.
+  - **좌우 끝이 꽉 찰 것.** 끝에서 알파가 죽으면 잘린 티가 난다. 받은 장은 가운데 대비 96.3% / 97.7%다.
+  - **끝을 뾰족하게 만들지 말 것.** 길이가 늘 바뀌므로 끝 모양이 거리마다 달라 보인다. 날카로움은 끝이 아니라 **단면**(가는 흰 코어)으로 낸다. 양 끝은 유닛과 `PierceHitEffect` 폭발이 덮는다.
+  > **판정 모양과 연출 모양은 다르다.** 처음에는 §10.1의 Pierce 판정 그대로 **꿰뚫은 트랙 구간**을 따라 그렸다. 판정과는 일치하지만 화면에서는 *적들 사이에 선이 하나 생긴 것*으로 보일 뿐 유닛이 찌른 것으로 안 읽혔다. **연출은 연출 기준으로 정한다.**
+- **총구 이펙트와 타격 이펙트는 얹히는 바탕이 다르다.** 총구는 유닛과 어두운 배경 위에 뜨지만 **타격은 적 위에 뜬다.** `PierceHitEffect` 1차가 무기 색(흰 강철 + 붉은 줄)을 따라 진홍으로 나왔다가 붉은 적(`rgb(216,81,76)`)에 묻혔다 — 공용 타격 대비 3.1배 약했다. 금·호박빛으로 뒤집어 닫았다. **타격 쪽 색은 무기가 아니라 적을 보고 고른다.**
 
 - **캐릭터 프롬프트를 쓰지 않는다.** 이펙트에 두꺼운 검은 아웃라인을 넣으면 스티커처럼 보인다.
 - **방사 대칭으로 뽑는다.** 그래야 방향별로 4장을 만들 필요가 없다.
@@ -272,9 +285,109 @@ NO text, NO numbers, NO letters anywhere in the image.
   | 트리플 마크스맨 | 1 | 1 | 1 | 순서대로 |
   | 포카드 쿼드캐논 | 1 | 1 | 1 | 순서대로 |
   | 풀하우스 배터리 | **5** | **5** | **5** | **무작위** |
+  | 스트레이트 롱바렐 | 1 | 1 | 1 | 순서대로 |
 
   > **모델이 세 번 넓어졌다.** ① 방향마다 무기 자리가 달라 방향을 갈랐고(마크스맨 후면 21.6px / 스카우트 후면 23px), ② 무기가 둘인 유닛 때문에 좌표를 둘로 늘렸고, ③ **배터리는 정면·후면에서 x가 둘 다 0이라 좌우 반전으로는 두 점이 한 자리로 붕괴해**(51px) 결국 목록이 됐다. 남은 7종에서 또 늘리지 않으려면 **처음부터 그 방향에 보이는 총구를 전부 세어 적을 것.**
 - **날아가는 총알은 만들지 않는다.** §5.5가 즉시 히트로 못 박았다. 비행 시간이 생기면 규칙과 어긋난다.
+
+### 롱바렐 전용 3장 프롬프트
+
+**갈릴 축을 먼저 정한다.** 공용 2장과 안 갈리면 만들 이유가 없는데, 둘 다 *흰 코어 + 방사*라는 골격은 같아야 한다(같은 게임이다). 그래서 **골격은 두고 두 축만 뒤집는다.**
+
+| 축 | 공용 2장 | 롱바렐 2장 | 왜 |
+|---|---|---|---|
+| 색 | 주황·노랑 **불** | 은백·금, 끝만 진홍 **강철** | 화약 폭발이 아니라 차가운 금속광이다. 무기가 흰 강철 + 붉은 줄 + 금 장식이라 거기서 그대로 온다 |
+| 형태 | 폭발 구름 + 잔가지 다발 | **가늘고 긴 바늘 몇 개** | 41~104px에서 0.06~0.12초 보인다. 잔가지는 그 크기에서 뭉개져 덩어리가 되므로 **큰 형태만** 남긴다 |
+| 고리 | `HitEffect`에 금색 원 | **원 금지** | 원은 범위(Splash)로 읽힌다. Pierce는 직선 관통이라 정반대다 |
+
+**수명·크기는 코드가 정해져 있다.** 총구 섬광은 `0.40 → 0.48` 월드(화면 **41 → 70px**) 0.06초, 관통 자국은 `0.33 → 0.715` 월드(화면 **48 → 104px**) 0.12초다. 캔버스 1254²는 축소 여유일 뿐 디테일을 넣으라는 뜻이 아니다 — 유닛 판별 크기와 같은 이야기다.
+
+#### 공통 헤더 (두 장에 그대로 쓴다)
+
+```
+A single game VFX sprite on a FULLY TRANSPARENT background.
+One centred radial burst. Japanese anime / JRPG game effect look,
+crisp and graphic, NOT photographic, NOT a 3D render.
+
+=== RADIAL SYMMETRY IS MANDATORY ===
+The shape must look the SAME after being rotated 90 degrees.
+It has NO up, NO down, NO left, NO right.
+NO direction of travel, NO motion trail, NO comet tail, NO arrow,
+NO single dominant spike that is longer than the others.
+The bright core sits EXACTLY at the centre of the square canvas.
+============================
+
+=== GLOWING ONLY - NO DARK PIXELS ===
+Every pixel is either fully transparent or glowing light.
+NO black, NO dark grey, NO brown, NO shadow, NO dark outline.
+NO thick black cartoon outline - it must not look like a sticker.
+============================
+
+Square canvas 1254 x 1254. The shape fills most of the canvas.
+Read at THUMBNAIL SIZE: big simple shapes, high contrast.
+NO fine texture, NO tiny specks, NO scattered debris.
+
+NO background art, NO ground, NO frame, NO panel,
+NO character, NO hand, NO weapon, NO spear, NO sword,
+NO text, NO numbers, NO letters, NO watermark, NO signature.
+```
+
+#### `BeamMuzzleEffect.png` — 총구 섬광
+
+```
+SHAPE - a cold STEEL GLINT flashing at the point of a spear.
+A very small, very bright white-hot pinpoint at the centre, and
+EIGHT long, straight, razor-thin needle rays radiating from it
+in eight evenly spaced directions, like a lens star-flare on
+polished steel. Between them, sixteen much shorter thin rays.
+The rays are STRAIGHT and SHARP and taper to fine points.
+Keep it CLEAN, SPARSE and OPEN - lots of transparent space between rays.
+
+COLOUR - white-hot core, silver-white rays, thin pale gold edging
+along the eight long rays, and a faint crimson tint ONLY at the
+outermost tips.
+
+This is COLD polished-steel light, NOT fire.
+NO orange, NO flame, NO fire, NO smoke, NO embers,
+NO explosion cloud, NO billowing shape.
+```
+
+#### `PierceHitEffect.png` — 관통 자국
+
+```
+SHAPE - a PUNCTURE. Something narrow and sharp has been driven
+clean through, and the wound splits outward from one point.
+An intensely bright small white puncture point at the centre.
+FOUR long straight needle-thin spikes forming an even cross,
+plus FOUR shorter spikes between them, all driven outward from
+that one point like split cracks. Every spike is narrow and
+tapers to a sharp point.
+The overall silhouette is a SPIKY STAR, NOT a round ball.
+
+COLOUR - white puncture core, crimson red spikes,
+pale gold highlights along the four long spikes.
+
+NO circular ring, NO round halo, NO ripple ring, NO expanding
+circle, NO round cloud, NO smoke puff, NO ball of light.
+A ring reads as an area blast - this attack is a straight-line pierce.
+NO orange, NO flame, NO fire.
+```
+
+#### 받으면 잴 것
+
+눈으로 보지 말고 잰다. 앞선 두 장이 통과한 값이 기준이다.
+
+| 항목 | 기준 | 받은 2장 |
+|---|---|---|
+| 알파 | 투명 배경일 것. **어두운 픽셀 0.2% 이하** (공용 2장이 0.01·1.87%) | 0.02% / 0.02% |
+| 방사 대칭 | 90·180도 돌려 겹쳐 **차이가 작을 것.** 이게 깨지면 4방향 회전 코드가 필요해진다 (공용 2장은 34/37%, 66/70%) | 13/8% / 15/5% |
+| 중심 | **밝기 중심이 캔버스 중심에서 몇 px인지.** 피벗이 Center이고 총구에 얹으므로 어긋나면 이펙트가 통째로 밀린다 (공용 2장은 y로 25.4·13.9px) | x2 y2 / x2 y5 |
+| 적 위 판별 | 48px로 줄여 적 몸통 `rgb(216,81,76)` 위에 얹고 **차이 40 넘는 픽셀의 비율**을 공용 타격(11.5%)과 비교 | 관통 **11.6%** |
+| 판별 | **50px·100px로 줄여** 형태가 읽히는지, 그리고 공용 2장과 나란히 놓아 갈리는지 | 통과 |
+
+> **평균 대비로 재면 안 된다.** 처음에 *적 위 평균 대비 ≥ 13.7(공용과 동급)* 을 목표로 잡았는데, 평균은 **채움 비율에 눌리는 값**이다. 공용 타격은 44.5%를 채워 평균이 올라간 것이고 관통은 16.9%인데, **그 성김이 원을 없애려고 일부러 요구한 것**이다. 일부러 만든 성질에 벌점을 주는 기준이었다. 2차는 평균 10.8로 목표에 못 미쳤지만 **또렷한 픽셀 비율 11.6% 대 11.5%로 같고 95퍼센타일 대비는 86.5 대 60.1로 오히려 강하다.** 성긴 이펙트는 평균이 아니라 **또렷한 픽셀의 양**으로 잰다.
+
+> **원이 들어오면 반려한다.** `PierceHitEffect`에서 원은 지시를 어긴 것이 아니라 **역할을 뒤집는 것**이다 — 그대로 넣으면 Pierce가 화면에서 Splash로 보인다. 공용 타격의 금색 원은 48px에서도 또렷해서, 그대로 뒀으면 확실히 범위로 읽혔다.
 
 ---
 
@@ -293,6 +406,8 @@ NO text, NO numbers, NO letters anywhere in the image.
 | **총구 화염 + 타격 이펙트** | `CombatContext`(피격 지점 노출)·`UnitSlotView`(화염)·`CombatScreen`(타격 풀) | **완료.** 타격은 24개 고정 풀로 돌린다 — Splash 한 발이 여러 기를 때려 매번 만들면 초당 수백 개가 된다 |
 | **쌍무기 총구 (교대/동시)** | `UnitDefinition`·`CombatContext`·`UnitSlotView`·`BoardScreen` | **완료.** 교대는 발사 홀짝을 `CombatContext.ShotCountOf`가 세고, 동시는 `muzzlesFireTogether`로 켠다. 둘째 렌더러는 씬이 아니라 **처음 쓸 때 코드가 복제**한다. 무기가 하나인 유닛은 두 번째 좌표가 비어 단발로 떨어진다 |
 | **방향별 총구 목록 + 반동 동조** | `UnitDefinition`·`UnitSlotView` | **완료.** 측면/정면/후면 **목록**을 따로 받아 총구 1~5개를 그대로 담는다. 발사 방식은 동시/순서대로/무작위 셋. 화염이 반동 배율을 따라가고, 렌더러는 **개수 가변 풀**이다 |
+| **유닛별 이펙트** | `UnitDefinition`·`CombatContext`·`UnitSlotView`·`CombatScreen` | **완료.** `attackEffect`·`hitEffect`를 받고 **비우면 공용 2장으로 떨어진다.** 타격 쪽은 `HitEvent`가 때린 유닛을 함께 실어 보내야 뷰가 고를 수 있다 |
+| **빔 궤적** | `UnitDefinition`·`CombatContext`·`CombatScreen` | **완료.** `PierceEvent`가 **유닛이 선 칸·겨눈 적·조준 방향**을 넘기고, 뷰가 그 방향의 총구에서 적까지 한 줄로 회전·신축해 그린다(적을 0.3만큼 지나친다). `pierceTrailEffect`가 비면 안 그린다 — **공용 대역이 없는 유일한 이펙트다**(방향이 있어 아무 유닛에나 못 쓴다) |
 | **이름 라벨 제거** | `UnitSlotView` | 13종이 전부 들어오고 판별을 확인한 뒤. 먼저 지우면 색 사각형을 색으로만 구분하게 된다 |
 | **카드 텍스트 → 이미지** | `CardView`, `CardText` | 4단계와 함께 |
 | **적 스케일** (선택) | `EnemyDefinition`, `CombatScreen.CreateView` | 3단계와 함께 |
@@ -306,9 +421,15 @@ NO text, NO numbers, NO letters anywhere in the image.
 1. 시트를 `Art/Units/<유닛>/`에 넣는다
 2. **자르기 전에 분리 행·열을 찾는다.** 세로·가로 중앙선의 통과 픽셀을 세고, 걸리면 **위 칸이 끝나는 행과 아래 칸이 시작하는 행을 찾아 그 사이에서 자른다.** 건슬링어는 간격이 0행이라 정중앙(627)이 아니라 623에서 갈랐다 — 균등 분할이었으면 아래 칸 머리끝 4행이 위 칸에 섞여 **바닥 정렬이 발끝이 아니라 그 얼룩 기준으로 잡혔다**
 3. 각 칸을 알파 기준으로 트림한다. **네 장의 높이 편차를 확인한다** — 건슬링어는 614·611·616·616(0.8%)이었다. 크게 벌어지면 방향이 바뀔 때 캐릭터가 커졌다 작아진다
+   > **편차가 크면 먼저 원인을 가른다 — 몸이 진짜 작은 것과 머리·포즈가 다른 것은 다르다.** 부츠처럼 방향에 무관한 부위의 높이를 재서 bbox 높이로 나눠 본다. 비율이 네 방향 같으면 몸 전체가 균일하게 축소된 것이고, 그때는 **네 장을 같은 몸높이로 정규화해도 안전하다.** 롱바렐은 편차 2.5%에 부츠 비율이 넷 다 30.0~30.1%로 같아 정규화했다. 비율이 갈리면 정규화하면 안 된다 — 배터리의 4.3%는 *포대가 정면에서만 머리 위로 올라가서* 생긴 것이라 그대로 두는 게 맞았다
 4. **아래 두 칸이 실제로 어느 쪽을 보는지 확인한다.** 프롬프트에 `BOTTOM-LEFT = LEFT`라고 적어도 **뒤바뀌어 나온다**(마크스맨이 그랬다). 못 잡으면 게임에서 오른쪽 적을 쏠 때 왼쪽을 겨눈 그림이 나오는데, 화면으로는 "좀 이상한데" 정도로만 보여 찾기 어렵다.
    판정은 **무기가 있는 위쪽 띠의 x 중심과 다리의 x 중심을 비교**하면 된다 — 무기가 오른쪽에 있으면 오른쪽을 보는 것이다. 뒤바뀌었으면 **다시 뽑지 말고 자를 때 엇갈려 배정한다**
 5. 네 장을 **공통 캔버스에 가로 중앙·아래 정렬**로 다시 채운다 — 크기와 접지선이 같아야 방향이 바뀔 때 캐릭터가 위아래로 튀지 않는다
+   > **가로 정렬은 "몸 튐"과 "무기 돌출"을 맞바꾸는 자리다. 한쪽만 보면 반드시 다른 쪽에서 터진다.**
+   > - **bbox 중심**에 맞추면 무기가 칸 안에 들지만, 무기가 한쪽으로만 길 때 bbox 중심이 몸에서 멀어지고 **좌향·우향에서 부호가 뒤집혀 몸이 가로로 튄다.** 롱바렐은 화면 56.8px였다.
+   > - **발 중심**에 맞추면 몸은 안 움직이지만 **무기가 칸 밖으로 나간다.** 롱바렐은 총구가 슬롯 배경을 34px 넘었다.
+   > - **답은 절충이다.** 무기 끝이 슬롯 배경(±0.46)에 닿는 지점까지만 몸을 밀고 나머지는 그대로 둔다. 롱바렐은 몸 튐 35.3px가 됐는데 **기존 6종이 이미 14~38px을 감수하고 있다**(건슬링어 37.9 / 마크스맨 34.9 / 트윈레인저 27.5 / 배터리 20.4 / 스카우트 17.5 / 쿼드캐논 14.0). 방향이 바뀌는 순간은 스프라이트가 통째로 갈리는 순간이라 "돌아섰다"로 읽힌다.
+   > - **폭 자체는 문제가 아니었다.** 롱바렐 측면 폭은 마크스맨(0.705)과 사실상 같다. 갈린 것은 정렬뿐이다.
 6. 임포트: `Sprite / Single`, **`npotScale = None`**, `PPU = 스프라이트 높이`, `Bilinear`, 밉맵 켬, 피벗 `BottomCenter`, `Alpha Is Transparency` 켬
    > **피벗은 `TextureImporterSettings.spriteAlignment`로만 걸린다.** `TextureImporter`에는 그 속성이 없고, MCP `manage_asset`으로 넘기면 성공을 반환하면서 조용히 무시된다. 메타를 되읽어 `alignment: 7`을 확인할 것 — Center로 남으면 유닛이 슬롯에서 위로 뜬다
 7. `UnitDefinition`의 아트 4칸에 물린다
@@ -320,10 +441,13 @@ NO text, NO numbers, NO letters anywhere in the image.
    ```
 
    - **측면**은 가장 바깥으로 뻗은 픽셀이 총구 끝이라 자동으로 잡힌다.
-   - **정면·후면**은 총구가 실루엣 안쪽에 있어 자동 검출이 안 된다. **20px 격자를 얹어 확대해 눈으로 읽는 편이 정확하다.**
+   - **정면·후면**은 총구가 실루엣 안쪽에 있어 바깥 끝으로는 못 잡는다. 20px 격자를 얹어 확대해 읽되, **눈으로 읽은 값을 그대로 믿지 말 것** — 롱바렐 정면 보어를 격자로 읽었다가 **x가 21px 틀렸고**, §7-10의 왕복 검산에서야 드러났다. **총구 주위만 좁게 잘라 특징 색으로 자동 검출**하는 편이 정확하다(롱바렐은 금색 링, 스카우트·마크스맨은 총열 끝).
+   - **무기가 몸에 완전히 가려 안 보이는 방향이 있다.** 롱바렐 후면이 그렇다 — 총을 정면으로 겨눠 뒤에서는 몸에 가린다. 그때는 **정면 보어를 좌우 반전한 자리**를 쓴다. 실제로 그 점에 투영되고, 화염은 몸 뒤(order 2)에 들어가 안 보이며, 궤적만 몸 위로 뻗어 나간다.
    - 무기가 하나면 **부호를 그대로**, 둘이면 좌우 대칭이므로 양수로 넣는다.
 
    > **재는 식이 맞는지는 스카우트 측면으로 확인할 수 있다.** 같은 식을 돌리면 기록된 값(우향 +0.206/+0.261, 좌향 −0.231/+0.257)이 그대로 나와야 한다.
+   >
+   > **끝이 뾰족하게 수렴하는 무기는 기하학적 끝과 눈에 보이는 끝이 다르다.** 124px로 줄면 마지막 몇 px이 배경과 섞여 사라진다 — 폐기한 창 시트에서 그 차이가 **화면 9px**이었다. 알파 임계를 올려도 안 잡힌다(0.8px밖에 안 줄어든다). **얇아서 없어지는 것이지 흐려서 없어지는 것이 아니다.** 그때도 기하학적 끝을 그대로 썼다 — 화염 스프라이트가 41px이라 보이는 끝을 덮는다. 총구가 뭉툭한 유닛은 두 끝의 차이가 0.2px이라 이 문제가 없다. 마운틴 킹의 ▲나 소버린의 왕관처럼 뾰족한 형태가 오면 다시 만난다.
 
 9. **124px로 줄여 기존 유닛과 나란히 놓고 판별을 확인한다.** 종횡비만 보지 말 것 (§4-2단계)
 10. **화염 위치를 그림으로 검산한다.** 코드와 같은 식(방향별 좌표 + 반동 배율)으로 계산한 점을 **반동이 최대인 순간의 아트 위에** 찍어 총구에 붙는지 본다. 눈으로만 보면 0.06초라 놓친다
