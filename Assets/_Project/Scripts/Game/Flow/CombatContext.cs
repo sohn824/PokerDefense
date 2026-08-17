@@ -42,23 +42,33 @@ namespace PokerDefense.Game
         }
 
         /**
-         * 한 발이 실제로 때린 지점
-         * 타격 이펙트 표시를 위해 기록
+         * 피격 이벤트가 발생했을 때
+         * 한 발이 실제로 때린 지점을 타격 이펙트 표시를 위해 기록
          */
         public struct HitEvent
         {
             public Vector2 Position;
             public float Time;
 
-            // 때린 유닛. 전용 타격 이펙트를 고르는 데 쓴다
+            // 때린 유닛 정보
             public UnitDefinition Source;
         }
 
         /**
-         * 한 발이 찌른 선
-         *
-         * 유닛이 선 칸에서 겨눈 적까지다. 맞은 지점만으로는 이 선을 못 그린다 -
-         * 누구를 때렸는지는 알아도 어디서 뻗어 나갔는지가 없다
+         * Splash 한 발의 폭발 이벤트가 발생했을 때
+         * 착탄 지점과 그때의 splashRadius를 함께 기록
+         */
+        public struct SplashEvent
+        {
+            public Vector2 Position;
+            public float Radius;
+            public float Time;
+            public UnitDefinition Source;
+        }
+
+        /**
+         * Pierce 한 발이 적을 관통할 때
+         * 궤적 표시를 위해 필요한 정보 기록
          */
         public struct PierceEvent
         {
@@ -76,7 +86,7 @@ namespace PokerDefense.Game
         // 피격 기록을 들고 있는 시간 (타격 이펙트 수명보다 길어야 함)
         const float HitMemorySeconds = 0.5f;
 
-        // 앞선 적부터. Multi가 사거리 안에서 몇 기를 고를지 정할 때 쓴다
+        // 앞선 적부터 정렬 (Multi 타입이 사거리 안에서 타격할 적들을 정할 때 쓴다)
         static readonly Comparison<EnemyInstance> ByProgressDescending
             = (a, b) => b.Progress.CompareTo(a.Progress);
 
@@ -100,6 +110,9 @@ namespace PokerDefense.Game
 
         // 최근 관통 구간. 피격 지점과 같은 주기로 버린다
         readonly List<PierceEvent> pierces = new List<PierceEvent>();
+
+        // 최근 Splash 폭발. 피격 지점과 같은 주기로 버린다
+        readonly List<SplashEvent> splashes = new List<SplashEvent>();
 
         int nextSpawnIndex;
 
@@ -299,6 +312,8 @@ namespace PokerDefense.Game
 
         public IReadOnlyList<PierceEvent> RecentPierces => pierces;
 
+        public IReadOnlyList<SplashEvent> RecentSplashes => splashes;
+
         // 유닛이 마지막으로 겨눈 방향
         public AimDirection AimOf(UnitInstance unit)
         {
@@ -358,6 +373,7 @@ namespace PokerDefense.Game
         }
 
         // 유닛 공격 종류별 공격 1회 처리
+        // 공격 패턴에 따라 때릴 적들을 찾고 해당 적들에게 데미지 적용
         void Fire(Vector2 slotPosition, UnitInstance unit, EnemyInstance target)
         {
             switch (unit.Definition.Pattern)
@@ -368,12 +384,21 @@ namespace PokerDefense.Game
 
                 case AttackPattern.Splash:
                     CollectSplash(unit, target);
+
+                    // Splash 이벤트 기록 (착탄 지점 하나에 한 번)
+                    splashes.Add(new SplashEvent
+                    {
+                        Position = target.Position,
+                        Radius = unit.Definition.SplashRadius,
+                        Time = ElapsedTime,
+                        Source = unit.Definition,
+                    });
                     break;
 
                 case AttackPattern.Pierce:
                     CollectPierce(unit, target);
 
-                    // 겨눈 적을 기준으로 남긴다. 뒤에 아무도 없어도 창이 뻗은 자리는 보여야 한다
+                    // Pierce 이벤트 기록
                     pierces.Add(new PierceEvent
                     {
                         Origin = slotPosition,
@@ -406,35 +431,56 @@ namespace PokerDefense.Game
             }
         }
 
-        // 이펙트가 살아 있을 시간보다 조금 길게만 들고 있는다
+        /**
+         * 오래된 HitEvent들을 주기적으로 제거하는 Garbage Collector 메소드
+         * 투 포인터로 hits를 순회하면서 살아남을 이벤트들만 남겨서
+         * 앞쪽부터 덮어씌우고 오래된 이벤트들은 뒤쪽에서 한꺼번에 제거
+         */
         void PruneHits()
         {
-            float cutoff = ElapsedTime - HitMemorySeconds;
-            int keep = 0;
-
+            // 이펙트 지속 시간보다 조금 길게만 HitEvent를 유지
+            float minKeepTime = ElapsedTime - HitMemorySeconds;
+            int keepIndex = 0;
             for (int i = 0; i < hits.Count; i++)
             {
-                if (hits[i].Time >= cutoff)
+                // 살아남을 이벤트들은 앞쪽으로 옮김
+                if (hits[i].Time >= minKeepTime)
                 {
-                    hits[keep] = hits[i];
-                    keep++;
+                    hits[keepIndex] = hits[i];
+                    keepIndex++;
                 }
             }
 
-            hits.RemoveRange(keep, hits.Count - keep);
+            // keepIndex 이후의 오래된 이벤트들은 한꺼번에 제거
+            // (위에서 덮어씌울때마다 keepIndex를 증가시켰으므로
+            // 이 시점에서 뒤쪽에 남은 이벤트들은 모두 오래된 이벤트)
+            hits.RemoveRange(keepIndex, hits.Count - keepIndex);
 
-            keep = 0;
+            keepIndex = 0;
 
             for (int i = 0; i < pierces.Count; i++)
             {
-                if (pierces[i].Time >= cutoff)
+                if (pierces[i].Time >= minKeepTime)
                 {
-                    pierces[keep] = pierces[i];
-                    keep++;
+                    pierces[keepIndex] = pierces[i];
+                    keepIndex++;
                 }
             }
 
-            pierces.RemoveRange(keep, pierces.Count - keep);
+            pierces.RemoveRange(keepIndex, pierces.Count - keepIndex);
+
+            keepIndex = 0;
+
+            for (int i = 0; i < splashes.Count; i++)
+            {
+                if (splashes[i].Time >= minKeepTime)
+                {
+                    splashes[keepIndex] = splashes[i];
+                    keepIndex++;
+                }
+            }
+
+            splashes.RemoveRange(keepIndex, splashes.Count - keepIndex);
         }
 
         // 사거리 안에서 앞선 순으로 최대 MultiTargets기 탐색

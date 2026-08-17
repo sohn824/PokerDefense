@@ -15,7 +15,7 @@ MonoBehaviour:
   id: flush
   displayName: "\uD50C\uB7EC\uC2DC \uBCF4\uBA38"
   placeholderColor: {r: 0.58, g: 0.38, b: 0.82, a: 1}
-  attackPower: 50
+  attackPower: 55.5
   attacksPerSecond: 0.8
   range: 3.5
   starMultipliers:
@@ -24,10 +24,17 @@ MonoBehaviour:
   - 2.25
   attackPattern: 3
   multiTargets: 2
-  splashRadius: 1
+  splashRadius: 0.75
   pierceLength: 2
-  artDown: {fileID: 0}
-  artUp: {fileID: 0}
-  artLeft: {fileID: 0}
-  artRight: {fileID: 0}
-  muzzleOffset: {x: 0.24, y: 0.26}
+  artDown: {fileID: 21300000, guid: f93142817fa941d5af21eaa2a129e217, type: 3}
+  artUp: {fileID: 21300000, guid: 2b8f23374f814bf186ca76733a745f9a, type: 3}
+  artLeft: {fileID: 21300000, guid: 25eec66264c049c982619435ab1f0738, type: 3}
+  artRight: {fileID: 21300000, guid: 32e8ab0170bf4bb4b329900243236d39, type: 3}
+  muzzlesSide:
+  - {x: 0.351, y: 0.201}
+  muzzlesFacing:
+  - {x: -0.042, y: 0.169}
+  muzzlesBack:
+  - {x: 0.042, y: 0.169}
+  muzzlesFireTogether: 0
+  muzzleRandomOrder: 0

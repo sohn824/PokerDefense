@@ -15,8 +15,8 @@ MonoBehaviour:
   id: royal_straight_flush
   displayName: "\uB85C\uC5F4 \uC2A4\uD2B8\uB808\uC774\uD2B8 \uD50C\uB7EC\uC2DC \uC18C\uBC84\uB9B0"
   placeholderColor: {r: 0.95, g: 0.8, b: 0.25, a: 1}
-  attackPower: 203
-  attacksPerSecond: 0.8
+  attackPower: 233.5
+  attacksPerSecond: 0.92
   range: 4
   starMultipliers:
   - 1
@@ -24,7 +24,7 @@ MonoBehaviour:
   - 2.25
   attackPattern: 3
   multiTargets: 2
-  splashRadius: 2.2
+  splashRadius: 1.65
   pierceLength: 2
   artDown: {fileID: 0}
   artUp: {fileID: 0}

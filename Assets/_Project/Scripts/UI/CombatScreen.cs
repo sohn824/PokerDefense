@@ -40,6 +40,15 @@ namespace PokerDefense.UI
         // 적 중심에서 조금 더 뻗어야 꿰뚫은 것으로 보임
         const float TrailOvershoot = 0.3f;
 
+        // Splash 폭발 풀 사이즈
+        const int SplashPoolSize = 12;
+        const float SplashSeconds = 0.20f;
+
+        // Splash 이펙트는처음 25%에서 다 자란 크기까지 커지고
+        // 그 뒤로는 크기를 유지한 채 옅어지도록 연출
+        const float SplashGrowRatio = 0.25f;
+        const float SplashStartScale = 0.6f;
+
         const float BarWidth = 0.5f;
         const float BarHeight = 0.07f;
         const float BarBorder = 0.04f;
@@ -54,6 +63,9 @@ namespace PokerDefense.UI
 
         [Tooltip("타격 이펙트")]
         [SerializeField] Sprite hitSprite;
+
+        [Tooltip("Splash 공용 폭발 이펙트")]
+        [SerializeField] Sprite splashSprite;
         [SerializeField] TMP_Text lifeLabel;
         [SerializeField] TMP_Text waveLabel;
         [SerializeField] TMP_Text combatLabel;
@@ -71,8 +83,16 @@ namespace PokerDefense.UI
         float[] trailBornAt;
         int trailCursor;
 
+        SpriteRenderer[] splashPool;
+        float[] splashBornAt;
+
+        // Splash 이펙트의 최대 scale (점점 커지도록 연출)
+        float[] splashFullScale;
+        int splashCursor;
+
         float lastHitSeen;
         float lastPierceSeen;
+        float lastSplashSeen;
 
         string lastOutcome = string.Empty;
 
@@ -83,6 +103,27 @@ namespace PokerDefense.UI
             controller.CombatFinished += OnCombatFinished;
             BuildHitPool();
             BuildTrailPool();
+            BuildSplashPool();
+        }
+
+        void BuildSplashPool()
+        {
+            splashPool = new SpriteRenderer[SplashPoolSize];
+            splashBornAt = new float[SplashPoolSize];
+            splashFullScale = new float[SplashPoolSize];
+
+            for (int i = 0; i < SplashPoolSize; i++)
+            {
+                var gameObject = new GameObject("SplashEffect");
+                gameObject.transform.SetParent(boardRoot, false);
+
+                var spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+                spriteRenderer.sortingOrder = 9;
+                spriteRenderer.enabled = false;
+
+                splashPool[i] = spriteRenderer;
+                splashBornAt[i] = float.NegativeInfinity;
+            }
         }
 
         void BuildTrailPool()
@@ -130,6 +171,7 @@ namespace PokerDefense.UI
             // 웨이브가 바뀌면 ElapsedTime이 0부터 다시 흐른다
             lastHitSeen = -1f;
             lastPierceSeen = -1f;
+            lastSplashSeen = -1f;
 
             for (int i = 0; i < hitPool.Length; i++)
             {
@@ -139,6 +181,11 @@ namespace PokerDefense.UI
             for (int i = 0; i < trailPool.Length; i++)
             {
                 trailPool[i].enabled = false;
+            }
+
+            for (int i = 0; i < splashPool.Length; i++)
+            {
+                splashPool[i].enabled = false;
             }
         }
 
@@ -164,6 +211,7 @@ namespace PokerDefense.UI
             SyncEnemies();
             SyncPierceTrails();
             SyncHitEffects();
+            SyncSplashEffects();
             UpdateLabels();
         }
 
@@ -297,6 +345,87 @@ namespace PokerDefense.UI
             sr.color = Color.white;
             sr.enabled = true;
             trailBornAt[index] = Time.time;
+        }
+
+        void SyncSplashEffects()
+        {
+            CombatContext combat = controller.Combat;
+
+            if (combat != null)
+            {
+                IReadOnlyList<CombatContext.SplashEvent> recent = combat.RecentSplashes;
+
+                for (int i = 0; i < recent.Count; i++)
+                {
+                    if (recent[i].Time <= lastSplashSeen)
+                    {
+                        continue;
+                    }
+
+                    SpawnSplash(recent[i]);
+                }
+
+                lastSplashSeen = combat.ElapsedTime;
+            }
+
+            // Splash 이펙트는 처음 SplashGrowRatio 구간에서 실제 공격 반경까지 커지고
+            // 그 뒤로는 크기를 유지한 채 옅어짐
+            for (int i = 0; i < splashPool.Length; i++)
+            {
+                if (splashPool[i].enabled == false)
+                {
+                    continue;
+                }
+
+                float age = Time.time - splashBornAt[i];
+
+                if (age >= SplashSeconds)
+                {
+                    splashPool[i].enabled = false;
+                    continue;
+                }
+
+                float t = age / SplashSeconds;
+                float growth = Mathf.Min(1f, t / SplashGrowRatio);
+                float ratio = SplashStartScale + (1f - SplashStartScale) * growth;
+                float scale = splashFullScale[i] * ratio;
+
+                splashPool[i].transform.localScale = new Vector3(scale, scale, 1f);
+
+                Color c = splashPool[i].color;
+                c.a = 1f - t * t;
+                splashPool[i].color = c;
+            }
+        }
+
+        // 착탄 지점에 splashRadius 크기의 폭발이 나타나도록 함
+        // (폭발 이펙트는 splashPool에서 꺼내옴)
+        void SpawnSplash(CombatContext.SplashEvent splash)
+        {
+            Sprite sprite = splash.Source != null && splash.Source.SplashEffect != null
+                ? splash.Source.SplashEffect
+                : splashSprite;
+
+            if (sprite == null)
+            {
+                return;
+            }
+
+            int index = splashCursor;
+            splashCursor = (splashCursor + 1) % splashPool.Length;
+
+            SpriteRenderer sr = splashPool[index];
+            sr.sprite = sprite;
+            sr.transform.localPosition = new Vector3(splash.Position.x, splash.Position.y, 0f);
+
+            Vector2 spriteSize = sprite.bounds.size;
+            float fullScale = splash.Radius * 2f / spriteSize.x;
+            splashFullScale[index] = fullScale;
+            sr.transform.localScale = new Vector3(fullScale * SplashStartScale, fullScale * SplashStartScale, 1f);
+
+            sr.color = Color.white;
+            sr.enabled = true;
+            splashBornAt[index] = Time.time;
         }
 
         static Vector2 MuzzleOffsetOf(UnitDefinition definition, AimDirection direction)

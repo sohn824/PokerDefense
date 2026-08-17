@@ -15,16 +15,16 @@ MonoBehaviour:
   id: full_house
   displayName: "\uD480\uD558\uC6B0\uC2A4 \uBC30\uD130\uB9AC"
   placeholderColor: {r: 0.75, g: 0.38, b: 0.72, a: 1}
-  attackPower: 22
+  attackPower: 19
   attacksPerSecond: 2.5
   range: 3
   starMultipliers:
   - 1
   - 1.6
   - 2.25
-  attackPattern: 3
-  multiTargets: 2
-  splashRadius: 1.6
+  attackPattern: 2
+  multiTargets: 3
+  splashRadius: 1
   pierceLength: 2
   artDown: {fileID: 21300000, guid: 4223c6f311c171643890c1eb91be4028, type: 3}
   artUp: {fileID: 21300000, guid: 3b58f0aaba9d6074190cf74f97ed5ffe, type: 3}

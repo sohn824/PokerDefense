@@ -184,11 +184,11 @@ NO text, NO numbers, NO letters anywhere in the image.
 
 ### 2단계 — 나머지 유닛 7시트 (28장)
 
-이전 시트를 스타일 레퍼런스로 물린다. **구조 숫자가 있는 여섯이 전부 끝났다** — `1` 스카우트 / `2` 건슬링어 / `2+2` 트윈레인저 / `3` 마크스맨 / `3+2` 배터리 / `4` 쿼드캐논.
+이전 시트를 스타일 레퍼런스로 물린다. **구조 숫자가 있는 여섯이 전부 끝났고**(`1` 스카우트 / `2` 건슬링어 / `2+2` 트윈레인저 / `3` 마크스맨 / `3+2` 배터리 / `4` 쿼드캐논) **구조가 없는 롱바렐·보머도 끝났다.**
 
 > **스트레이트는 랜서(창)에서 롱바렐(장총)로 다시 기획했다.** 창 시트는 네 방향·좌표·수치까지 다 들어갔지만 **찌르기 궤적 이펙트가 총기와 훨씬 잘 맞아서** 갈아엎었다. 판정(직선 관통)과 수치는 그대로고 무기와 실루엣만 바뀐다. 자세한 근거는 [HISTORY.md](HISTORY.md).
 
-**남은 일곱 중 여섯은 셀 것이 없다.** 개수 대신 각자의 컨셉으로 갈라야 한다 — 계단(에이스) / ▲ 산(마운틴 킹) / 같은 무늬 반복(보머) / 원형 회전(템페스트) / 레일(레일거너) / 왕좌(소버린). **색 블록은 계속 갈라야 한다** (§8).
+**남은 다섯은 셀 것이 없다.** 개수 대신 각자의 컨셉으로 갈라야 한다 — 계단(에이스) / ▲ 산(마운틴 킹) / 원형 회전(템페스트) / 레일(레일거너) / 왕좌(소버린). **색 블록은 계속 갈라야 한다** (§8).
 
 | 우선 | 에셋 | 이름 | 구조 | 역할 | 성별 |
 |---|---|---|---|---|---|
@@ -196,12 +196,12 @@ NO text, NO numbers, NO letters anywhere in the image.
 | — | `Unit_Guard` | 원페어 건슬링어 | **2** 쌍권총 | Rapid · **완료** | 여 |
 | — | `Unit_Ranger` | 투페어 트윈레인저 | **2+2** 양팔 2연장 | Multi · **완료** | 여 |
 | — | `Unit_Lancer` | 트리플 마크스맨 | **3** 3총구 | Heavy · **완료** | 남 |
-| — | `Unit_Warden` | 풀하우스 배터리 | **3+2** 주포3 + 보조포2 | Splash · **완료** | 남 |
+| — | `Unit_Warden` | 풀하우스 배터리 | **3+2** 주포3 + 보조포2 | Multi · **완료** (Splash에서 변경, [HISTORY](HISTORY.md) 참고) | 남 |
 | — | `Unit_Champion` | 포카드 쿼드캐논 | **4** 4연장 중포 | Heavy · **완료** | 여 |
 | — | `Unit_Vanguard` | 스트레이트 롱바렐 | **무늬 섞인** 카드 5장이 박힌 아주 긴 총열 1정 | Pierce · **완료** | 남 |
 | 2 | `Unit_Trickster` | 백스트레이트 에이스 | A→2→3→4→5 계단 | Rapid | 여 |
 | 2 | `Unit_Highlander` | 마운틴 킹 | ▲ 산 왕관, 꼭대기에 A | Heavy | 남 |
-| 2 | `Unit_Mystic` | 플러시 보머 | 같은 무늬 반복 | Splash | 여 |
+| — | `Unit_Mystic` | 플러시 보머 | 같은 무늬 반복 | Splash · **완료** | 여 |
 | 2 | `Unit_Revenant` | 백스트레이트 플러시 템페스트 | 같은 무늬 A-5 원형 회전 | Multi | 남 |
 | 2 | `Unit_Paladin` | 스트레이트 플러시 레일거너 | 같은 무늬 5장 일렬 = 레일 | Pierce | 여 |
 | 2 | `Unit_Sovereign` | 로열 스트레이트 플러시 소버린 | 10-J-Q-K-A 왕좌, 왕관 | Splash | 여 |
@@ -248,7 +248,7 @@ NO text, NO numbers, NO letters anywhere in the image.
 
 ---
 
-### 이펙트 — 다섯 장 모두 **완료**
+### 이펙트 — 여섯 장 모두 **완료**
 
 `Art/VFX/`에 있다. **공용 2장이 기본이고 유닛이 따로 지정하면 그것을 쓴다** — 추상 형태라 13종이 나눠 쓸 수 있어서, 총으로 안 읽히는 무기에만 전용 장을 붙인다.
 
@@ -259,6 +259,7 @@ NO text, NO numbers, NO letters anywhere in the image.
 | `BeamMuzzleEffect.png` | 총구 섬광. 롱바렐 전용 (차가운 은백 8방) | 0.06초 | **완료** |
 | `PierceHitEffect.png` | 관통 자국. 롱바렐 전용 | 0.12초 | **완료** |
 | `PierceTrailEffect.png` | **빔 궤적.** 총구에서 겨눈 적까지 한 줄로 뻗는다 | 0.18초 | **완료** |
+| `SplashEffect.png` | **폭발.** 착탄 지점에 `splashRadius` 지름으로 그린다 | 0.20초 | **완료** (3차 시도, [상세](#splash-폭발-전용-프롬프트--splasheffectpng)) |
 
 - **네 장은 방사 대칭이고 `PierceTrailEffect`만 예외다.** 방사 대칭을 요구한 이유는 뷰가 이펙트를 위치만 옮겨 찍기 때문인데, 궤적은 **반대로 방향이 있어야 하고 코드가 회전시킨다.** 대신 지켜야 할 것이 다르다.
   - **상하 대칭일 것.** 어느 각도로도 회전하므로 위아래가 다르면 왼쪽을 향할 때 뒤집혀 보인다. 받은 장은 뒤집어 겹친 차이 6.6%다.
@@ -272,6 +273,7 @@ NO text, NO numbers, NO letters anywhere in the image.
 - **방사 대칭으로 뽑는다.** 그래야 방향별로 4장을 만들 필요가 없다.
 - **밝은 색만 쓰고 어두운 픽셀을 넣지 않는다.** 가산 합성처럼 보이게 하려면 필요하다 (받은 두 장은 어두운 픽셀 0~0.2%였다).
 - **총구 위치는 유닛마다 방향별 목록으로 넣는다 — `muzzlesSide`(오른쪽 기준) / `muzzlesFacing` / `muzzlesBack`.** 그 방향에서 보이는 총구를 **전부** 적는다. `x`·`y`는 슬롯 로컬이다. **좌우만은 대칭으로 묶는다** — 실측 차이가 1.7~3.6px이라 나눌 값어치가 없다. 방향을 가른 이유는 DESIGN §10.4에 있다.
+  > **묶을 때 한쪽 실측값을 그대로 쓰지 말고 양쪽의 중점을 쓸 것.** 보머는 **좌향 발사기가 우향보다 27px 짧게 그려져** 좌우 차가 화면 5.5px이었다. 우향 값을 그대로 넣으면 좌향만 4.9px 어긋난다. 중점(0.351)이면 양쪽 2.8px로 기존 6종 대역에 들어온다. **좌우를 따로 재야 알 수 있다** — 한쪽만 재고 뒤집으면 이 차이가 보이지 않는다.
 - **발사 방식을 함께 정한다.** `muzzlesFireTogether`(한 발에 전부) / 끄면 하나씩, 그때 `muzzleRandomOrder`로 순서대로냐 무작위냐를 고른다. 무기 수로 유추하지 말 것 — §10.2의 공격 방식이 정한다(DESIGN §10.4의 표). 지금은 **트윈레인저만 동시, 배터리만 무작위**다.
   > **정면·후면도 반드시 따로 잰다.** 한때 주 총구의 x를 뒤집어 쓰는 근사로 넘어갔는데, 마크스맨에서 후면이 21.6px 어긋나 뒤통수에 화염이 떴다. 찾는 김에 재보니 **이미 넣은 스카우트도 후면이 23px 틀려 있었다** — 세 시트를 넘기는 동안 아무도 못 봤다.
   > 처음에 가슴 높이(+0.05)로 눈대중해서 **총구보다 30px 아래**에 떴다. 반드시 잴 것 — 재는 법은 §7에 있다.
@@ -286,6 +288,7 @@ NO text, NO numbers, NO letters anywhere in the image.
   | 포카드 쿼드캐논 | 1 | 1 | 1 | 순서대로 |
   | 풀하우스 배터리 | **5** | **5** | **5** | **무작위** |
   | 스트레이트 롱바렐 | 1 | 1 | 1 | 순서대로 |
+  | 플러시 보머 | 1 | 1 | 1 | 순서대로 |
 
   > **모델이 세 번 넓어졌다.** ① 방향마다 무기 자리가 달라 방향을 갈랐고(마크스맨 후면 21.6px / 스카우트 후면 23px), ② 무기가 둘인 유닛 때문에 좌표를 둘로 늘렸고, ③ **배터리는 정면·후면에서 x가 둘 다 0이라 좌우 반전으로는 두 점이 한 자리로 붕괴해**(51px) 결국 목록이 됐다. 남은 7종에서 또 늘리지 않으려면 **처음부터 그 방향에 보이는 총구를 전부 세어 적을 것.**
 - **날아가는 총알은 만들지 않는다.** §5.5가 즉시 히트로 못 박았다. 비행 시간이 생기면 규칙과 어긋난다.
@@ -389,6 +392,158 @@ NO orange, NO flame, NO fire.
 
 > **원이 들어오면 반려한다.** `PierceHitEffect`에서 원은 지시를 어긴 것이 아니라 **역할을 뒤집는 것**이다 — 그대로 넣으면 Pierce가 화면에서 Splash로 보인다. 공용 타격의 금색 원은 48px에서도 또렷해서, 그대로 뒀으면 확실히 범위로 읽혔다.
 
+### Splash 폭발 전용 프롬프트 — `SplashEffect.png`
+
+**왜 필요한가.** 지금까지 Splash 패턴(보머·소버린)은 맞은 적마다 공용 `HitEffect`(고정 크기 스파크)만 떴다 — 실제로 몇 발이 얼마나 넓은 범위를 때렸는지가 화면에 없었다. `CombatContext`에 착탄 지점 + 그 순간의 `splashRadius`를 함께 남기는 `SplashEvent`를 추가했고(맞은 적 수와 무관하게 착탄 1회에 1건), 뷰가 이 반경 그대로 폭발 스프라이트를 그린다.
+
+**Bomber 전용이 아니라 Splash 패턴 공용 기본값이다.** §10.1이 "13종이 각자 다른 시스템을 쓰지 않는다"고 못 박았고 Splash는 패턴 코드가 공유되므로, 착탄 폭발도 패턴 단위로 넣었다. `UnitDefinition.splashEffect`로 유닛별 override는 가능하지만(공용 이펙트 두 장과 같은 방식) 지금은 두 유닛 다 비워 이 한 장을 같이 쓴다.
+
+> **풀하우스 배터리는 원래 Splash 셋째였는데 Multi로 옮겨갔다.** 초당 2.5회씩 폭발이 반복되는 것이 "연사"가 아니라 "난사"로 보인다는 지적 때문이다 — 자세한 경위는 [HISTORY.md](HISTORY.md)에 있다. 지금 Splash는 보머·소버린 둘뿐이다.
+
+| 유닛 | splashRadius | 화면 지름(× 145.5px) |
+|---|---|---|
+| 플러시 보머 | 1.0 | 291px |
+| 로열 스트레이트 플러시 소버린 | 2.2 | 640px |
+
+**한 장으로 291~640px을 전부 커버해야 한다.** 유닛마다 새로 그리지 않는다 — 코드가 스프라이트 전체 폭을 `splashRadius × 2`에 맞춰 늘이고 줄일 뿐이다.
+
+**캔버스 전체가 실제 피해 범위에 대응한다 — 스파크 두 장과 다른 제약이다.** `MuzzleEffect`·`HitEffect`는 크기가 코드 상수(`MuzzleScale`·`HitScale`)라 캔버스에 여백이 많아도 상관없었다. 이 이펙트는 **스프라이트 가로 폭 전체를 실제 반경의 지름으로 스케일**하므로, 그림 주위에 빈 여백이 크면 **화면에서 폭발이 실제로 때리는 범위보다 작아 보인다.** 스카우트 파일럿 검증에서 기존 `HitEffect`를 임시로 물려 확인한 결과, 밝은 내용물이 캔버스 폭의 약 55%만 채우고 있어 그대로 썼으면 손실이 났을 것이다 — **최소 85%까지 채울 것.**
+
+> **위 두 문단의 291·640px은 최초 설계값 기준이고, 지금 실제 화면 크기는 그 75%다.** v3를 넣어 보니 소버린(반경 2.2)이 보드 폭의 96%를 덮어 "너무 크다"는 피드백을 받았다. 처음엔 `CombatScreen`에 코스메틱 배율을 넣어 화면 크기만 줄였는데, 곧바로 **`splashRadius` 데이터 자체를 75%로 줄이고 공격력·공격속도로 유효 피해량을 보정하는 쪽으로 바꿨다** — 화면 크기(보머 218px / 소버린 480px, 보드 폭의 72%)는 그대로고 이제는 진짜 반경이다. 밸런스 계산 과정은 [HISTORY.md](HISTORY.md)에 있다. **캔버스를 85% 채워야 하는 기준은 그대로 유효하다** — 축소된 반경 안에서도 여백이 있으면 손실이 나기 때문이다.
+
+#### 1차 시도 — 반려
+
+수치는 대부분 통과했지만(알파 정상, 채움 비율 97%, 중심 오프셋 9px, 방사 대칭 22%) **화풍이 게임과 안 맞았다.** `NOT photographic, NOT a 3D render`, `NO smoke, NO soot, NO ash cloud`를 넣었는데도 사실적인 실사 톤 폭발과 뭉게구름 형태가 그대로 나왔다 — 기존 `MuzzleEffect`·`HitEffect`(크리스프한 벡터형 광선)와 나란히 놓으면 이질감이 바로 보였다. **수치 통과가 스타일 통과를 보장하지 않는다** — 이 이펙트에서 처음 나온 함정이다.
+
+**v2로 두 가지를 바꿨다.**
+- `NOT photographic` 한 줄로는 막히지 않아 **"FLAT CEL-SHADED VECTOR ILLUSTRATION"** 문단으로 승격하고, 원인이 됐을 부드러운 그라데이션·연기 질감을 **"하드엣지 평면 채색", "2~3단 플랫 컬러 밴드"**로 구체적으로 반대 지정했다. §2의 교훈과 같다 — 한 줄 부정문은 무시되고 문단으로 뺴야 먹힌다.
+- **레퍼런스 이미지 첨부를 권장으로 추가했다.** 캐릭터 시트는 이미 "이전 유닛 시트를 레퍼런스로 물린다"를 쓰는데 이펙트는 텍스트만으로 뽑아 왔다 — 이번이 첫 이탈이라 다음부터는 `MuzzleEffect.png`·`HitEffect.png`를 같이 첨부한다.
+
+#### 2차 시도 — 화풍은 통과, 실루엣이 새로 반려됨
+
+화풍 문제는 완전히 해결됐다 — 하드엣지 평면 채색, 어두운 픽셀 0.000%(지금까지 중 가장 깨끗함), 채움 비율 97~98%. 그런데 **화풍을 고치는 과정에서 다른 문제가 새로 생겼다.**
+
+- **"폭발"이 아니라 "빛줄기 별"로 읽혔다.** `a ring of solid flat-orange jagged flame shapes`를 요구했는데, 받은 건 중심에서 바로 뾰족한 광선이 뻗어 나가는 구성이라 **고리·덩어리감이 없었다.**
+- **상하좌우 네 축이 대각선보다 뚜렷이 길었다.** 프롬프트가 명시적으로 금지한 지점(`NO up, NO down, NO left, NO right`, `NO single dominant spike longer than the others`)인데 그대로 나왔다 — 640px로 키우면 십자형이 확연했다. 방사 대칭 수치도 26.8%/24.5%로 1차(21.9%/21.3%)보다 오히려 나빠졌다 — **십자 구조는 90도 회전엔 강해도(자기 자신과 겹침) "축이 있다는 인상" 자체는 못 막는다는 것이 이번에 드러났다.** 숫자와 인상이 어긋난 첫 사례다.
+- **기존 `MuzzleEffect`(가늘고 긴 8방향 스파크)와 실루엣이 너무 닮았다.** 폭발과 총구 화염이 구분이 안 되면 Splash 패턴 자체가 무의미해진다.
+- **정작 이 게임 안에 "고리" 선례가 있었다.** `HitEffect`가 이미 중심 스파크 바깥에 두꺼운 고리를 두르고 있다 — v2 SHAPE 문단이 고리를 요구하긴 했지만 강도가 약해 무시됐다.
+
+**v3는 세 가지를 더 박았다** — ① 고리에 실제 부피(반경의 1/3 두께)를 명시하고 `HitEffect`를 직접 지목해 참조하게 함, ② "네 방향이 길면 안 된다"를 별도 `===` 블록으로 승격(문단 하나로는 v2에서 무시당했다), ③ **이 게임의 다른 이펙트(`MuzzleEffect`)와 실루엣이 겹치면 안 된다**는 것을 이유와 함께 명시.
+
+```
+A single game VFX sprite on a FULLY TRANSPARENT background.
+One centred radial burst. Japanese anime / JRPG game effect look,
+FLAT CEL-SHADED VECTOR ILLUSTRATION - like a mobile game skill icon,
+NOT photographic, NOT a 3D render, NOT a realistic fire simulation.
+
+=== THIS MUST LOOK DRAWN, NOT RENDERED ===
+Every ray, spike and flame tongue is a HARD-EDGED FLAT SHAPE with a
+crisp vector outline, filled with 2-3 flat colour bands (NOT a smooth
+photographic gradient, NOT volumetric lighting, NOT soft airbrushed
+glow). Reference look: a mobile gacha game skill-cast icon, or a
+retro arcade explosion sprite - graphic and readable, not simulated.
+If it looks like a photo or a realistic CGI fire render, it is wrong.
+============================
+
+=== NO DOMINANT AXIS - THIS IS A BLAST, NOT A COMPASS STAR ===
+Do NOT build this as four long spikes at 12/3/6/9 o'clock with
+shorter ones in between - that reads as a compass star or a sparkle,
+not an explosion, and this game already has a sparkle-style effect
+(a thin needle-ray star flare) used for muzzle flashes. This sprite
+must look clearly different from that one: NOT thin needle rays from
+a point, but a THICK, DENSE, IRREGULAR mass of flame with real bulk.
+Vary the angle and length of every spike randomly so no 4-fold or
+8-fold repeating pattern is visible - no two adjacent spikes should
+be the same length, and no spike pointing exactly up, down, left or
+right may be longer than its neighbours.
+============================
+
+=== RADIAL SYMMETRY IS MANDATORY (COVERAGE, NOT REPETITION) ===
+The overall coverage must look roughly the SAME after being rotated
+90 degrees (no side of the canvas emptier than another), but the
+individual spike shapes must NOT repeat in an obvious 4-fold pattern
+(see rule above - the two rules work together, not against each
+other). NO direction of travel, NO motion trail, NO comet tail,
+NO arrow. The bright core sits EXACTLY at the centre of the canvas.
+============================
+
+=== GLOWING ONLY - NO DARK PIXELS, NO SMOKE ===
+Every pixel is either fully transparent or glowing light.
+NO black, NO dark grey, NO brown, NO shadow, NO dark outline.
+NO thick black cartoon outline - it must not look like a sticker.
+NO smoke, NO soot, NO ash, NO billowing cloud puffs, NO mushroom
+cloud shape - these all read as dark/grey/muddy pixels and are
+strictly forbidden even when tinted orange. The whole shape is made
+of flat, saturated, glowing colour - nothing textured or hazy.
+============================
+
+=== FILL THE CANVAS - THIS IS NOT A SMALL SPARK ===
+The game engine scales this sprite's FULL CANVAS WIDTH to match the
+actual explosion radius that damages enemies on screen.
+The glowing shape must reach AT LEAST 85% of the way to every edge.
+Large empty margin around a small tight burst will make the explosion
+look smaller than the area it actually damages - this is a functional
+bug, not just a look. Fill the frame.
+============================
+
+Square canvas 1254 x 1254. Read at THUMBNAIL SIZE: big simple shapes,
+high contrast. NO fine texture, NO tiny specks, NO scattered debris,
+NO grainy noise - this sprite is shown as small as 290px and as large
+as 640px, so anything busier than a few clean flat shapes turns to
+mud when shrunk or goes soft and blurry when enlarged.
+
+NO background art, NO ground, NO frame, NO panel,
+NO character, NO hand, NO weapon, NO card,
+NO text, NO numbers, NO letters, NO watermark, NO signature.
+
+SHAPE - a heavy GRENADE BLAST with real VOLUME, drawn as FLAT VECTOR
+SHAPES. A blinding white-hot star core at the exact centre, surrounded
+immediately by a THICK, CHUNKY RING of solid flat-orange flame blocks
+(overlapping rounded flame-tongue shapes, each with clear area and
+mass, NOT thin lines) - this ring must be the widest, densest part of
+the image, roughly a third of the canvas radius thick. This is the
+single most important shape note: match the weight and density of the
+ring already used in this game's existing HitEffect sprite, just
+bigger and bolder. Only past this ring do jagged spikes and flame
+tongues break outward toward the edges, irregular in angle, length
+and width as described above. Leave a few small transparent gaps
+between spikes so it doesn't read as a solid disc, but the ring
+itself must never look thin or wiry.
+
+COLOUR - white-hot centre, then 2-3 FLAT colour bands stepping out
+through bright orange to deep red at the outer tips (hard edges
+between bands, not a smooth gradient), with a few small flat gold
+diamond sparks scattered near the tips. Same warm fire palette as
+the existing MuzzleEffect and HitEffect (NOT the cold steel palette
+used for the Vanguard-only effects) - this is the shared default for
+every Splash-pattern unit, not a per-unit effect.
+
+NO thin ring drawn as an outline only - it must feel like a solid,
+heavy blast, not a decorative halo or a UI radius indicator.
+NO single small burst centred in a mostly empty canvas.
+NO four-armed compass-star silhouette - that is the OTHER effect in
+this game (the muzzle flash), not this one. If someone could mistake
+this for a bigger muzzle flash, it has failed the brief.
+NO photographic fire, NO realistic smoke, NO 3D volumetric render.
+```
+
+> **생성할 때 `MuzzleEffect.png`·`HitEffect.png` 두 장을 스타일 레퍼런스로 함께 첨부할 것.** 특히 `HitEffect`의 고리 두께를 목표로 삼고, `MuzzleEffect`의 가는 광선과는 겹치지 않게 갈라야 한다.
+
+#### 받으면 잴 것 — v3에서 **완료**
+
+| 항목 | 기준 | 근거 | 1차 | 2차 | 3차 |
+|---|---|---|---|---|---|
+| 알파 | 어두운 픽셀 0.2% 이하 | 기존 5장과 동일 기준 | 통과 (0.8%) | 통과 (0.000%) | **통과 (0.000%)** |
+| 방사 대칭 | 90·180도 돌려 겹쳐 차이가 작을 것 | 위치만 옮겨 찍으므로 회전 코드가 없다 | 21.9%/21.3% | 26.8%/24.5% | **21.4%/20.2% — 여섯 장 중 최고** |
+| 중심 | 밝기 중심이 캔버스 중심에서 몇 px인지 | 피벗이 Center이고 착탄 지점에 그대로 얹는다 | x4/y9px | x3/y16px | **x3/y13px (통과)** |
+| 채움 비율 | 가로 bbox가 캔버스 폭의 85% 이상 | 캔버스 전체 폭이 실제 반경으로 스케일된다 | 97.3%/97.7% | 97.3%/98.5% | **98.8%/99.0%** |
+| 화풍 | 크리스프한 셀셰이딩 벡터일 것 | 수치가 다 통과해도 화풍이 다르면 반려한다 | 탈락 — 실사풍 | 통과 | **통과** |
+| 실루엣 | 고리·덩어리감이 있을 것. `MuzzleEffect`와 구분될 것 | 고리 없이 광선만 있으면 "폭발"이 아니라 "반짝임"으로 읽힌다 | (해당 없음) | 탈락 — 고리 없음, 십자형 축 | **통과** — 뚜렷한 화염 덩어리, `MuzzleEffect`와 확연히 다름 |
+
+> **v3에도 경미한 대각선 편향이 남아 있다** (모서리 방향 스파이크가 상하좌우보다 최대 837px 대 573px로 길다). `NO up/down/left/right`만 금지하고 대각선은 안 막아서 생긴 틈이다. **291~465px 실사용 크기에서는 거의 안 보이고**, 640px(소버린)에서만 자세히 보면 티가 난다 — 십자형이었던 2차와 달리 고리가 있어 "폭발인데 모서리가 좀 더 뻗었다" 수준으로만 읽혀 **통과로 판단**했다. 반경이 훨씬 큰 유닛이 늘어나면 다시 볼 것.
+>
+> **`SplashEffect.png`가 `HitEffect.png`와 같은 임포트 설정으로 `Art/VFX/`에 있고, `Game.unity`의 `CombatScreen.splashSprite`에 연결됐다** (PPU 1254 / alignment Center / npotScale None / alphaIsTransparency 켬). `sprite.bounds.size`가 정확히 `(1, 1)`이라 `fullScale = splashRadius × 2`가 그대로 성립한다 — `splashRadius` 자체가 75%로 조정돼 있어(위 참고) 화면 크기는 코스메틱 배율 없이도 의도한 크기로 나온다. EditMode 217/217, 콘솔 0건. 착탄 지점에 실제로 그려지는 것을 캡처로 확인했다.
+
 ---
 
 ## 5. M11 범위 밖
@@ -408,6 +563,7 @@ NO orange, NO flame, NO fire.
 | **방향별 총구 목록 + 반동 동조** | `UnitDefinition`·`UnitSlotView` | **완료.** 측면/정면/후면 **목록**을 따로 받아 총구 1~5개를 그대로 담는다. 발사 방식은 동시/순서대로/무작위 셋. 화염이 반동 배율을 따라가고, 렌더러는 **개수 가변 풀**이다 |
 | **유닛별 이펙트** | `UnitDefinition`·`CombatContext`·`UnitSlotView`·`CombatScreen` | **완료.** `attackEffect`·`hitEffect`를 받고 **비우면 공용 2장으로 떨어진다.** 타격 쪽은 `HitEvent`가 때린 유닛을 함께 실어 보내야 뷰가 고를 수 있다 |
 | **빔 궤적** | `UnitDefinition`·`CombatContext`·`CombatScreen` | **완료.** `PierceEvent`가 **유닛이 선 칸·겨눈 적·조준 방향**을 넘기고, 뷰가 그 방향의 총구에서 적까지 한 줄로 회전·신축해 그린다(적을 0.3만큼 지나친다). `pierceTrailEffect`가 비면 안 그린다 — **공용 대역이 없는 유일한 이펙트다**(방향이 있어 아무 유닛에나 못 쓴다) |
+| **Splash 폭발** | `UnitDefinition`(`splashEffect`)·`CombatContext`(`SplashEvent`)·`CombatScreen`(폭발 풀) | **완료.** 착탄 지점 1회당 `SplashEvent` 1건(맞은 적 수와 무관), 뷰가 스프라이트 **전체 폭을 `splashRadius × 2`로 스케일**해 그린다 — 실제 피해 범위와 화면상 크기가 항상 같다. `splashSprite`가 비어 있으면 아무것도 안 그린다(피해 판정은 무관하게 정상 동작). Splash 2종(보머·소버린) 공용이고, 유닛별 `splashEffect`로 덮어쓸 수 있다. **풀하우스 배터리는 Splash → Multi로 옮겨 이 이펙트를 안 쓴다**([HISTORY](HISTORY.md)) |
 | **이름 라벨 제거** | `UnitSlotView` | 13종이 전부 들어오고 판별을 확인한 뒤. 먼저 지우면 색 사각형을 색으로만 구분하게 된다 |
 | **카드 텍스트 → 이미지** | `CardView`, `CardText` | 4단계와 함께 |
 | **적 스케일** (선택) | `EnemyDefinition`, `CombatScreen.CreateView` | 3단계와 함께 |

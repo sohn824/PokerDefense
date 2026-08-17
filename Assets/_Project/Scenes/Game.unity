@@ -6626,6 +6626,7 @@ MonoBehaviour:
   boardRoot: {fileID: 191374145}
   enemySprite: {fileID: 21300000, guid: 25ebf703fc65664458487e4b695f2524, type: 3}
   hitSprite: {fileID: 21300000, guid: fc91a8beb035c814d92932ddd3d49913, type: 3}
+  splashSprite: {fileID: 21300000, guid: acd5f51bcfed49349272293a869fb054, type: 3}
   lifeLabel: {fileID: 15151339}
   waveLabel: {fileID: 141105516}
   combatLabel: {fileID: 43605011}

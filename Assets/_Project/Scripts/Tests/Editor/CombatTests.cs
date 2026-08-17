@@ -332,6 +332,71 @@ namespace PokerDefense.Tests
         }
 
         [Test]
+        public void 폭발_기록은_착탄_지점과_반경을_남긴다()
+        {
+            // 화면에 그리는 폭발이 실제 피해 범위와 같은 크기여야 하므로 반경을 함께 남긴다
+            UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
+            var so = new UnityEditor.SerializedObject(definition);
+            so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Splash;
+            so.FindProperty("splashRadius").floatValue = 1.6f;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            var board = new GridBoard();
+            board.TryPlace(7, new UnitInstance(definition));
+
+            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            Run(combat, 1.05f);
+
+            IReadOnlyList<CombatContext.SplashEvent> splashes = combat.RecentSplashes;
+            Assert.Greater(splashes.Count, 0, "폭발 기록이 없다");
+
+            CombatContext.SplashEvent splash = splashes[0];
+            Assert.AreSame(definition, splash.Source);
+            Assert.AreEqual(1.6f, splash.Radius, 0.0001f);
+            Assert.AreEqual(combat.Enemies[0].Position, splash.Position, "착탄 지점이 아니다");
+        }
+
+        [Test]
+        public void 폭발은_맞은_적_수와_무관하게_한_발에_한_번만_남는다()
+        {
+            // Splash 한 발이 여럿을 때려도 폭발 연출은 착탄 지점 하나다
+            UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
+            var so = new UnityEditor.SerializedObject(definition);
+            so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Splash;
+            so.FindProperty("splashRadius").floatValue = 100f; // 스폰된 적이 전부 반경 안에 들도록
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            var board = new GridBoard();
+            board.TryPlace(7, new UnitInstance(definition));
+
+            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 4, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            combat.Tick(0.05f);
+
+            Assert.AreEqual(4, combat.RemainingEnemies, "넷 다 스폰되지 않았다");
+            Assert.AreEqual(4, combat.RecentHits.Count, "넷 다 맞지 않았다");
+            Assert.AreEqual(1, combat.RecentSplashes.Count, "한 발인데 폭발이 여러 번 남았다");
+        }
+
+        [Test]
+        public void Splash가_아니면_폭발_기록을_안_남긴다()
+        {
+            var board = new GridBoard();
+            board.TryPlace(7, new UnitInstance(MakeUnit(10f, attacksPerSecond: 1f, range: 100f)));
+
+            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            Run(combat, 1.05f);
+
+            Assert.Greater(combat.RecentHits.Count, 0, "때리지도 않았다");
+            Assert.AreEqual(0, combat.RecentSplashes.Count);
+        }
+
+        [Test]
         public void 사거리_밖이면_발사_횟수가_늘지_않는다()
         {
             var unit = new UnitInstance(MakeUnit(50f, 1f, range: 0.1f));
