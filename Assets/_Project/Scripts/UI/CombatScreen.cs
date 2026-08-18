@@ -37,8 +37,8 @@ namespace PokerDefense.UI
         const float TrailSeconds = 0.18f;
         const float TrailThickness = 0.84f;
 
-        // 적 중심에서 조금 더 뻗어야 꿰뚫은 것으로 보임
-        const float TrailOvershoot = 0.3f;
+        // Pierce 트레일 최소 길이 (실제 길이는 UnitDefinition의 PierceLength 참조)
+        const float MinTrailOvershoot = 0.3f;
 
         // Splash 폭발 풀 사이즈
         const int SplashPoolSize = 12;
@@ -325,8 +325,9 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 적 중심을 조금 지나쳐야 꿰뚫은 것처럼 보임
-            float length = delta.magnitude + TrailOvershoot;
+            // 관통 길이만큼 뻗어야 그 안에서 맞은 뒤쪽 적도 이 빔에 맞은 것처럼 보임
+            float overshoot = Mathf.Max(MinTrailOvershoot, pierce.Source.PierceLength);
+            float length = delta.magnitude + overshoot;
             Vector2 middle = from + delta.normalized * (length * 0.5f);
             Vector2 spriteSize = sprite.bounds.size;
 

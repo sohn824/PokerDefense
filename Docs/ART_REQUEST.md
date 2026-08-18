@@ -203,7 +203,7 @@ NO text, NO numbers, NO letters anywhere in the image.
 | 2 | `Unit_Highlander` | 마운틴 킹 | ▲ 산 왕관, 꼭대기에 A | Heavy | 남 |
 | — | `Unit_Mystic` | 플러시 보머 | 같은 무늬 반복 | Splash · **완료** | 여 |
 | 2 | `Unit_Revenant` | 백스트레이트 플러시 템페스트 | 같은 무늬 A-5 원형 회전 | Multi | 남 |
-| 2 | `Unit_Paladin` | 스트레이트 플러시 레일거너 | 같은 무늬 5장 일렬 = 레일 | Pierce | 여 |
+| — | `Unit_Paladin` | 스트레이트 플러시 레일거너 | 같은 무늬 5장 일렬 = 레일 | Pierce · **완료** | 여 |
 | 2 | `Unit_Sovereign` | 로열 스트레이트 플러시 소버린 | 10-J-Q-K-A 왕좌, 왕관 | Splash | 여 |
 
 **남 6 / 여 7.** 배분 규칙과 근거는 §3에 있다. 빈도 구간별로는 고빈도 4종 2:2, 중간 4종(백스트레이트·스트레이트·마운틴·플러시) 2:2, 희귀 5종 남 2 / 여 3이다.
