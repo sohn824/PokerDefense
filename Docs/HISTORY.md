@@ -18,7 +18,7 @@
 - **렌더링:** URP 2D. Game 뷰 Portrait 1080x1920, 카메라 직교 크기 6.6, 보드 중심 월드 y=3.4
 - **어셈블리:** asmdef 없음. 게임 코드 `Assembly-CSharp`, 테스트 `Assembly-CSharp-Editor`
 - **테스트:** EditMode **219/219 통과** (2026-08-23 확인, Multi `multiSpread` 테스트 2건 추가)
-- **개발 도구:** Unity 메뉴 `DevMode > 족보 소환` — 플레이 중 교체 단계에서 원하는 족보를 손패에 쥐여 준다. 족보 13종과 유닛 13종이 1:1이라 **원하는 유닛을 즉시 부르는 수단**이다. 게임 코드에는 `#if UNITY_EDITOR`로 감싼 진입점만 있고 카드표·창은 `Assembly-CSharp-Editor`에 있다
+- **개발 도구:** Unity 메뉴 `DevMode > 족보 소환` — 플레이 중 교체 단계에서 원하는 족보를 손패에 쥐여 준다. 족보 13종과 유닛 13종이 1:1이라 **원하는 유닛을 즉시 부르는 수단**이다. `DevMode > 웨이브 스킵` — 전투 없이 지금 웨이브를 클리어한 것으로 치고 다음(또는 지정한) 웨이브로 넘긴다. 둘 다 게임 코드에는 `#if UNITY_EDITOR`로 감싼 진입점만 있고 카드표·창은 `Assembly-CSharp-Editor`에 있다
 - **전투:** 겨냥 대상은 언제나 사거리 내 가장 앞선 적 1기. 패턴은 그 한 발이 **몇 기를 함께 때리는가**만 정한다 — DESIGN §10.1
 - **루프:** 20라운드가 자동으로 이어지고 끝나면 결과 화면 → 씬 리로드로 재시작. 플레이어 입력이 필요한 지점은 **확정**, **전투 시작**, 그리고 보스를 잡았을 때의 **특전 선택** 셋
 - **특전:** 5·10·15 보스를 클리어하면 3중 택1. 특전이 바꾸는 값은 전부 `PerkSet` 하나에 묻는다 — DESIGN §11.1
@@ -100,6 +100,14 @@
 ---
 
 ## 이력
+
+### 2026-08-23 — DevMode: 웨이브 스킵 창 추가
+
+- **웨이브 뒤쪽(예: 5·10·15 보스, 20 최종전)을 테스트할 때마다 초반 웨이브를 다 플레이해야 하는 게 불편하다는 요청**으로, `DevMode > 웨이브 스킵` 창을 새로 만들었다. "다음 웨이브로" 버튼 하나와, 목표 웨이브 번호를 입력하고 누르는 "이동" 버튼 둘로 구성된다 — `HandCheatWindow`와 같은 자리(`Assets/_Project/Editor/`)에 같은 관례(`#if UNITY_EDITOR` 진입점 + 에디터 창 분리, DESIGN §10.3 화면에 빈 자리 없음 이유 재사용)로 넣었다.
+- **가짜 전투를 만들지 않고 실제 전투 결과 처리 경로를 재사용했다.** `GameFlowController.OnCombatFinished`가 하던 판정(게임 오버/전체 클리어 확인 → 특전 대상 웨이브면 특전 제안 후 대기 → 아니면 다음 라운드)을 `AdvanceRound(outcome, perkReward)`로 뽑아내, 실전 전투와 `DevSkipWave()` 둘 다 이 한 곳을 거치게 했다. `DevSkipWave()`는 `StageController.ApplyCombatResult(Cleared, unresolvedEnemies: 0, unresolvedBosses: 0)`로 "완벽 클리어"를 흉내 낸 뒤 `AdvanceRound`를 그대로 부른다 — 그래서 스킵한 웨이브도 Chip 유지 보너스 없이(전투가 없으니 교체 횟수가 없다) Joker·특전은 정상 지급되고, 라이프는 깎이지 않는다.
+- **`DevJumpToWave(targetWaveIndex)`는 `DevSkipWave()`를 반복 호출하는 루프일 뿐이다.** 특전 대기(`Offer != null`)나 게임 종료를 만나면 `CanDevSkip`이 false가 되어 그 자리에서 멈춘다 — 특전 선택 없이 강제로 통과시키지 않는다. 창에서 목표 웨이브에 못 미치고 멈추면 "특전 선택 대기 중" 안내가 뜨고, 사용자가 정상 UI로 특전을 고른 뒤 다시 누르면 이어서 진행된다.
+- **전투 중에는 막았다.** `CanDevSkip`이 `CombatController.IsFighting`을 보므로, 진행 중인 `CombatContext`가 있는 동안 `StageContext.ApplyResult`를 또 부르는 이중 처리를 원천 차단한다 — `HandCheatWindow`가 교체 단계로 자기 조건을 제한한 것과 같은 종류의 가드다.
+- **검증:** EditMode 219/219(회귀 없음, 이 변경은 순수 에디터 전용이라 테스트를 새로 추가하지 않았다) → 플레이 모드에서 `execute_code`로 직접 호출해 확인: `DevSkipWave()` 한 번으로 1→2웨이브 이동, `DevJumpToWave(9)`가 특전 웨이브(6웨이브)에서 정확히 멈추고 `Offer`가 채워짐, `ChoosePerk` 후 재호출하니 목표(10웨이브)까지 정확히 이어짐. `IsFighting` 중 차단은 `CanStart`가 이미 같은 플래그로 검증돼 있어 로직만 확인했고, 이번 플레이 모드 세션에서는 실제 전투를 띄우지 못해(배치 대기 유닛이 남아 있어 `CanStart`가 false) 라이브로 재현하진 못했다.
 
 ### 2026-08-23 — Multi 패턴에 `multiSpread`(타겟 간 최대 거리) 추가
 

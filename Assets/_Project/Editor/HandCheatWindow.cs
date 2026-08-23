@@ -41,8 +41,7 @@ namespace PokerDefense.EditorTools
             RoundController round = FindAnyObjectByType<RoundController>();
             string blocked = BlockedReason(round);
 
-            EditorGUILayout.LabelField("족보를 고르면 손패가 그 5장으로 바뀐다.", EditorStyles.wordWrappedLabel);
-            EditorGUILayout.LabelField("확정은 평소대로 누른다.", EditorStyles.wordWrappedLabel);
+            EditorGUILayout.LabelField("족보를 고르면 손패가 그 5장으로 바뀜", EditorStyles.wordWrappedLabel);
             EditorGUILayout.Space();
 
             if (blocked != null)

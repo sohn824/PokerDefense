@@ -86,8 +86,17 @@ namespace PokerDefense.Game
 
         void OnCombatFinished(CombatOutcome outcome, int unresolved)
         {
+            AdvanceRound(outcome, combat.Combat.Wave.PerkReward);
+        }
+
+        /**
+         * 전투 결과 하나를 라운드 루프에 반영한다 (StageContext에는 이미 반영된 뒤)
+         * 실전 전투(OnCombatFinished)와 DevMode 웨이브 스킵이 이 판정을 공유한다
+         */
+        void AdvanceRound(CombatOutcome outcome, bool perkReward)
+        {
             // 게임 오버나 게임 클리어 시 라운드 루프를 멈춤
-            if (combat.Stage.IsGameOver || combat.Stage.IsAllWavesCleared)
+            if (stage.Stage.IsGameOver || stage.Stage.IsAllWavesCleared)
             {
                 IsFinished = true;
                 ElapsedSeconds = Time.time - startedAt;
@@ -97,7 +106,7 @@ namespace PokerDefense.Game
 
             // 특전을 주는 라운드라면 특전을 고르기 전까지 라운드 루프를 멈춤
             // (Stage.CurrentWave는 이미 다음 웨이브를 가리키므로 방금 클리어한 웨이브를 기준으로 판정)
-            if (outcome == CombatOutcome.Cleared && combat.Combat.Wave.PerkReward)
+            if (outcome == CombatOutcome.Cleared && perkReward)
             {
                 Offer = perkOffer.DrawPerks(stage.Stage.Perks);
 
@@ -149,5 +158,37 @@ namespace PokerDefense.Game
             round.StartRound();
             FlowChanged?.Invoke();
         }
+
+#if UNITY_EDITOR
+        // 전투 중이거나(진행 중인 CombatContext와 충돌)
+        // 특전 대기 중이거나
+        // 이미 끝난 판이면 스킵 불가
+        public bool CanDevSkip => combat.IsFighting == false && Offer == null && IsFinished == false;
+
+        // 개발 전용
+        // 전투 없이 지금 웨이브를 클리어한 것으로 치고 다음 라운드로 넘김
+        public void DevSkipWave()
+        {
+            if (CanDevSkip == false || stage.Stage.IsAllWavesCleared)
+            {
+                return;
+            }
+
+            bool perkReward = stage.Stage.CurrentWave.PerkReward;
+            stage.ApplyCombatResult(CombatOutcome.Cleared, 0, 0);
+            AdvanceRound(CombatOutcome.Cleared, perkReward);
+        }
+
+        // 개발 전용
+        // targetWaveIndex에 닿을 때까지 DevSkipWave를 반복
+        // 특전 대기나 게임 종료를 만나면 그 자리에서 멈춤
+        public void DevJumpToWave(int targetWaveIndex)
+        {
+            while (CanDevSkip && stage.Stage.WaveIndex < targetWaveIndex && stage.Stage.IsAllWavesCleared == false)
+            {
+                DevSkipWave();
+            }
+        }
+#endif // UNITY_EDITOR
     }
 }
