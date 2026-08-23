@@ -188,7 +188,7 @@ NO text, NO numbers, NO letters anywhere in the image.
 
 > **스트레이트는 랜서(창)에서 롱바렐(장총)로 다시 기획했다.** 창 시트는 네 방향·좌표·수치까지 다 들어갔지만 **찌르기 궤적 이펙트가 총기와 훨씬 잘 맞아서** 갈아엎었다. 판정(직선 관통)과 수치는 그대로고 무기와 실루엣만 바뀐다. 자세한 근거는 [HISTORY.md](HISTORY.md).
 
-**남은 하나는 셀 것이 없다.** 개수 대신 컨셉으로 갈라야 한다 — 왕좌(소버린). 계단(에이스)·레일(레일거너)·산(마운틴 킹)·원형 회전(템페스트)은 끝났다. **색 블록은 계속 갈라야 한다** (§8).
+**13종 전부 끝났다.** 개수 대신 컨셉으로 가른 계단(에이스)·레일(레일거너)·산(마운틴 킹)·원형 회전(템페스트)·왕좌(소버린)까지 모두 완료다. **색 블록은 계속 갈라야 한다** (§8).
 
 | 우선 | 에셋 | 이름 | 구조 | 역할 | 성별 |
 |---|---|---|---|---|---|
@@ -204,7 +204,7 @@ NO text, NO numbers, NO letters anywhere in the image.
 | — | `Unit_Mystic` | 플러시 보머 | 같은 무늬 반복 | Splash · **완료** | 여 |
 | — | `Unit_Revenant` | 백스트레이트 플러시 템페스트 | 같은 무늬 A-5 원형 회전 | Multi · **완료** | 남 |
 | — | `Unit_Paladin` | 스트레이트 플러시 레일거너 | 같은 무늬 5장 일렬 = 레일 | Pierce · **완료** | 여 |
-| 2 | `Unit_Sovereign` | 로열 스트레이트 플러시 소버린 | 10-J-Q-K-A 왕좌, 왕관 | Splash | 여 |
+| — | `Unit_Sovereign` | 로열 스트레이트 플러시 소버린 | 10-J-Q-K-A 왕좌, 왕관 | Multi · **완료** (Splash에서 변경, [HISTORY](HISTORY.md) 참고) | 여 |
 
 **남 6 / 여 7.** 배분 규칙과 근거는 §3에 있다. 빈도 구간별로는 고빈도 4종 2:2, 중간 4종(백스트레이트·스트레이트·마운틴·플러시) 2:2, 희귀 5종 남 2 / 여 3이다.
 
@@ -398,12 +398,12 @@ NO orange, NO flame, NO fire.
 
 **Bomber 전용이 아니라 Splash 패턴 공용 기본값이다.** §10.1이 "13종이 각자 다른 시스템을 쓰지 않는다"고 못 박았고 Splash는 패턴 코드가 공유되므로, 착탄 폭발도 패턴 단위로 넣었다. `UnitDefinition.splashEffect`로 유닛별 override는 가능하지만(공용 이펙트 두 장과 같은 방식) 지금은 두 유닛 다 비워 이 한 장을 같이 쓴다.
 
-> **풀하우스 배터리는 원래 Splash 셋째였는데 Multi로 옮겨갔다.** 초당 2.5회씩 폭발이 반복되는 것이 "연사"가 아니라 "난사"로 보인다는 지적 때문이다 — 자세한 경위는 [HISTORY.md](HISTORY.md)에 있다. 지금 Splash는 보머·소버린 둘뿐이다.
+> **풀하우스 배터리는 원래 Splash 셋째였는데 Multi로 옮겨갔다.** 초당 2.5회씩 폭발이 반복되는 것이 "연사"가 아니라 "난사"로 보인다는 지적 때문이다 — 자세한 경위는 [HISTORY.md](HISTORY.md)에 있다. **로열 스트레이트 플러시 소버린도 같은 이유로 이후 Splash → Multi로 다시 옮겨갔다**(자동소총 실루엣에 맞춰 초고속 연사로 재설계, [HISTORY.md](HISTORY.md) 참고) — 지금 Splash는 플러시 보머 하나뿐이다. 아래 표의 소버린 반경·화면 크기는 **Splash였던 당시의 기록**이라 지금은 쓰이지 않는다.
 
 | 유닛 | splashRadius | 화면 지름(× 145.5px) |
 |---|---|---|
 | 플러시 보머 | 1.0 | 291px |
-| 로열 스트레이트 플러시 소버린 | 2.2 | 640px |
+| 로열 스트레이트 플러시 소버린 (구 Splash 당시) | 2.2 | 640px |
 
 **한 장으로 291~640px을 전부 커버해야 한다.** 유닛마다 새로 그리지 않는다 — 코드가 스프라이트 전체 폭을 `splashRadius × 2`에 맞춰 늘이고 줄일 뿐이다.
 
@@ -563,7 +563,7 @@ NO photographic fire, NO realistic smoke, NO 3D volumetric render.
 | **방향별 총구 목록 + 반동 동조** | `UnitDefinition`·`UnitSlotView` | **완료.** 측면/정면/후면 **목록**을 따로 받아 총구 1~5개를 그대로 담는다. 발사 방식은 동시/순서대로/무작위 셋. 화염이 반동 배율을 따라가고, 렌더러는 **개수 가변 풀**이다 |
 | **유닛별 이펙트** | `UnitDefinition`·`CombatContext`·`UnitSlotView`·`CombatScreen` | **완료.** `attackEffect`·`hitEffect`를 받고 **비우면 공용 2장으로 떨어진다.** 타격 쪽은 `HitEvent`가 때린 유닛을 함께 실어 보내야 뷰가 고를 수 있다 |
 | **빔 궤적** | `UnitDefinition`·`CombatContext`·`CombatScreen` | **완료.** `PierceEvent`가 **유닛이 선 칸·겨눈 적·조준 방향**을 넘기고, 뷰가 그 방향의 총구에서 적까지 한 줄로 회전·신축해 그린다(적을 0.3만큼 지나친다). `pierceTrailEffect`가 비면 안 그린다 — **공용 대역이 없는 유일한 이펙트다**(방향이 있어 아무 유닛에나 못 쓴다) |
-| **Splash 폭발** | `UnitDefinition`(`splashEffect`)·`CombatContext`(`SplashEvent`)·`CombatScreen`(폭발 풀) | **완료.** 착탄 지점 1회당 `SplashEvent` 1건(맞은 적 수와 무관), 뷰가 스프라이트 **전체 폭을 `splashRadius × 2`로 스케일**해 그린다 — 실제 피해 범위와 화면상 크기가 항상 같다. `splashSprite`가 비어 있으면 아무것도 안 그린다(피해 판정은 무관하게 정상 동작). Splash 2종(보머·소버린) 공용이고, 유닛별 `splashEffect`로 덮어쓸 수 있다. **풀하우스 배터리는 Splash → Multi로 옮겨 이 이펙트를 안 쓴다**([HISTORY](HISTORY.md)) |
+| **Splash 폭발** | `UnitDefinition`(`splashEffect`)·`CombatContext`(`SplashEvent`)·`CombatScreen`(폭발 풀) | **완료.** 착탄 지점 1회당 `SplashEvent` 1건(맞은 적 수와 무관), 뷰가 스프라이트 **전체 폭을 `splashRadius × 2`로 스케일**해 그린다 — 실제 피해 범위와 화면상 크기가 항상 같다. `splashSprite`가 비어 있으면 아무것도 안 그린다(피해 판정은 무관하게 정상 동작). **지금 Splash는 플러시 보머 하나뿐**이고, 유닛별 `splashEffect`로 덮어쓸 수 있다. **풀하우스 배터리·로열 스트레이트 플러시 소버린은 둘 다 Splash → Multi로 옮겨 이 이펙트를 안 쓴다**([HISTORY](HISTORY.md)) |
 | **이름 라벨 제거** | `UnitSlotView` | 13종이 전부 들어오고 판별을 확인한 뒤. 먼저 지우면 색 사각형을 색으로만 구분하게 된다 |
 | **카드 텍스트 → 이미지** | `CardView`, `CardText` | 4단계와 함께 |
 | **적 스케일** (선택) | `EnemyDefinition`, `CombatScreen.CreateView` | 3단계와 함께 |

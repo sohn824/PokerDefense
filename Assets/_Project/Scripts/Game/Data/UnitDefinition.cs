@@ -16,7 +16,7 @@ namespace PokerDefense.Game
         // 느리고 강한 단일 공격
         Heavy,
 
-        // 다중 공격 (사거리 안에서 앞선 적 우선으로)
+        // 다중 공격 (첫 타겟에서 multiSpread 범위 안쪽의 적을 앞선 순으로 탐색)
         Multi,
 
         // 착탄 지점 주변 스플래쉬
@@ -68,13 +68,16 @@ namespace PokerDefense.Game
         [Header("공격 패턴")]
         [SerializeField] AttackPattern attackPattern = AttackPattern.Rapid;
 
-        [Tooltip("Multi 전용. 한 번에 때리는 최대 적 수")]
+        [Tooltip("Multi 전용\n한 번에 때리는 최대 적 수")]
         [SerializeField] int multiTargets = 2;
 
-        [Tooltip("Splash 전용. 착탄 지점 반경(월드 단위)")]
+        [Tooltip("Multi 전용\n첫 타겟에서 이 거리안에 있는 적만 함께 때림")]
+        [SerializeField] float multiSpread = 1f;
+
+        [Tooltip("Splash 전용\n착탄 지점 반경")]
         [SerializeField] float splashRadius = 1f;
 
-        [Tooltip("Pierce 전용. 타겟 뒤로 관통하는 트랙 길이(월드 단위)")]
+        [Tooltip("Pierce 전용\n타겟 뒤로 관통하는 트랙 길이")]
         [SerializeField] float pierceLength = 2f;
 
         [Header("유닛 아트(위, 아래, 왼쪽, 오른쪽 네 방향 필요)")]
@@ -84,7 +87,7 @@ namespace PokerDefense.Game
         [SerializeField] Sprite artRight;
 
         [Header("총구 화염 위치 (슬롯 로컬 좌표) 방향마다 총구를 전부 적는다")]
-        [Tooltip("오른쪽을 볼 때의 총구 오프셋 배열. 왼쪽은 x를 뒤집어서 사용\n")]
+        [Tooltip("오른쪽을 볼 때의 총구 오프셋 배열. 왼쪽은 x를 뒤집어서 사용")]
         [SerializeField] Vector2[] muzzlesSide;
 
         [Tooltip("아래를 볼 때의 총구 오프셋 배열")]
@@ -101,17 +104,16 @@ namespace PokerDefense.Game
         [SerializeField] bool muzzleRandomOrder;
 
         [Header("연출")]
-        [Tooltip("발사 순간 총구에 뜨는 이펙트. 비우면 공용 이펙트를 쓴다")]
+        [Tooltip("발사 순간 총구에 뜨는 이펙트")]
         [SerializeField] Sprite attackEffect;
 
-        [Tooltip("적이 맞은 지점에 뜨는 이펙트. 비우면 공용 이펙트를 쓴다")]
+        [Tooltip("적이 맞은 지점에 뜨는 이펙트")]
         [SerializeField] Sprite hitEffect;
 
-        [Tooltip("Splash 전용. 착탄 지점에 splashRadius 크기로 그리는 폭발. 비우면 공용 이펙트를 쓴다")]
+        [Tooltip("Splash 전용. 착탄 지점에 splashRadius 크기로 그리는 폭발")]
         [SerializeField] Sprite splashEffect;
 
-        [Tooltip("Pierce 전용. 관통한 트랙 구간을 따라 그리는 궤적. 비우면 안 그린다\n" +
-                 "가로로 균일한 띠여야 한다 - 모서리에서 조각내 이어 붙인다")]
+        [Tooltip("Pierce 전용. 관통한 트랙 구간을 따라 그리는 궤적")]
         [SerializeField] Sprite pierceTrailEffect;
 
         public string Id => id;
@@ -122,6 +124,7 @@ namespace PokerDefense.Game
         public float Range => range;
         public AttackPattern Pattern => attackPattern;
         public int MultiTargets => multiTargets;
+        public float MultiSpread => multiSpread;
         public float SplashRadius => splashRadius;
         public float PierceLength => pierceLength;
 

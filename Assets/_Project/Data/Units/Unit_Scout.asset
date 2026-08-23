@@ -24,6 +24,7 @@ MonoBehaviour:
   - 2.25
   attackPattern: 0
   multiTargets: 2
+  multiSpread: 1
   splashRadius: 1
   pierceLength: 2
   artDown: {fileID: 21300000, guid: a8ed462c49416e64f91a102b33768006, type: 3}

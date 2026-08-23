@@ -15,19 +15,27 @@ MonoBehaviour:
   id: royal_straight_flush
   displayName: "\uB85C\uC5F4 \uC2A4\uD2B8\uB808\uC774\uD2B8 \uD50C\uB7EC\uC2DC \uC18C\uBC84\uB9B0"
   placeholderColor: {r: 0.95, g: 0.8, b: 0.25, a: 1}
-  attackPower: 233.5
-  attacksPerSecond: 0.92
+  attackPower: 35.8
+  attacksPerSecond: 6
   range: 4
   starMultipliers:
   - 1
   - 1.6
   - 2.25
-  attackPattern: 3
-  multiTargets: 2
-  splashRadius: 1.65
+  attackPattern: 2
+  multiTargets: 3
+  multiSpread: 1.5
+  splashRadius: 1
   pierceLength: 2
-  artDown: {fileID: 0}
-  artUp: {fileID: 0}
-  artLeft: {fileID: 0}
-  artRight: {fileID: 0}
-  muzzleOffset: {x: 0.24, y: 0.26}
+  artDown: {fileID: 21300000, guid: bdb198c09bb0490e9f0bf6ca223d9399, type: 3}
+  artUp: {fileID: 21300000, guid: 9f083c970fca4c80885bee6804cc19f2, type: 3}
+  artLeft: {fileID: 21300000, guid: 6eb8fa4c9c7a4e58b72f286ae1ed5f27, type: 3}
+  artRight: {fileID: 21300000, guid: c67e61dbeadf47b9a9087107747bdd30, type: 3}
+  muzzlesSide:
+  - {x: 0.44, y: 0.216}
+  muzzlesFacing:
+  - {x: -0.037, y: 0.134}
+  muzzlesBack:
+  - {x: 0.037, y: 0.134}
+  muzzlesFireTogether: 0
+  muzzleRandomOrder: 0

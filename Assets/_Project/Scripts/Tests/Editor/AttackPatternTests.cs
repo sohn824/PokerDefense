@@ -41,6 +41,7 @@ namespace PokerDefense.Tests
             float attacksPerSecond,
             float range,
             int multiTargets = 2,
+            float multiSpread = 100f,
             float splashRadius = 1f,
             float pierceLength = 2f)
         {
@@ -53,6 +54,7 @@ namespace PokerDefense.Tests
             so.FindProperty("range").floatValue = range;
             so.FindProperty("attackPattern").enumValueIndex = (int)pattern;
             so.FindProperty("multiTargets").intValue = multiTargets;
+            so.FindProperty("multiSpread").floatValue = multiSpread;
             so.FindProperty("splashRadius").floatValue = splashRadius;
             so.FindProperty("pierceLength").floatValue = pierceLength;
 
@@ -203,6 +205,33 @@ namespace PokerDefense.Tests
             Assert.AreEqual(1000f, combat.Enemies[2].Hp, 0.001f, "가장 뒤진 적까지 맞았다");
         }
 
+        [Test]
+        public void Multi는_사거리_안이라도_첫_타겟에서_MultiSpread보다_먼_적은_제외한다()
+        {
+            // 트랙 절반(11.6 = TrackLength/2)을 1초에 주파하는 속도. 1초 간격으로 스폰하면
+            // 두 번째 발사 시점에 두 적이 트랙 반대편에 있어 사거리 안이라도 서로 아주 멀다
+            var board = BoardWith(MakeUnit(
+                AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 2, multiSpread: 1f));
+            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 11.6f), 2, 1f, 100f));
+
+            Run(combat, 1.2f);
+
+            Assert.AreEqual(1, HitCount(combat), "MultiSpread 밖의 적까지 함께 맞았다");
+        }
+
+        [Test]
+        public void Multi는_MultiSpread_안이면_사거리_안의_적을_함께_때린다()
+        {
+            // 위 테스트와 같은 배치인데 MultiSpread만 넉넉하면 둘 다 맞아야 한다
+            var board = BoardWith(MakeUnit(
+                AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 2, multiSpread: 100f));
+            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 11.6f), 2, 1f, 100f));
+
+            Run(combat, 1.2f);
+
+            Assert.AreEqual(2, HitCount(combat));
+        }
+
         // ---------- Splash ----------
 
         [Test]
@@ -341,6 +370,7 @@ namespace PokerDefense.Tests
                 var unit = AssetDatabase.LoadAssetAtPath<UnitDefinition>(path);
 
                 Assert.GreaterOrEqual(unit.MultiTargets, 1, $"{unit.name}의 multiTargets가 비었다");
+                Assert.Greater(unit.MultiSpread, 0f, $"{unit.name}의 multiSpread가 비었다");
                 Assert.Greater(unit.SplashRadius, 0f, $"{unit.name}의 splashRadius가 비었다");
                 Assert.Greater(unit.PierceLength, 0f, $"{unit.name}의 pierceLength가 비었다");
                 Assert.Greater(unit.AttacksPerSecond, 0f, $"{unit.name}의 공격속도가 비었다");

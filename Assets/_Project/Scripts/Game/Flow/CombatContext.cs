@@ -379,7 +379,7 @@ namespace PokerDefense.Game
             switch (unit.Definition.Pattern)
             {
                 case AttackPattern.Multi:
-                    CollectMulti(slotPosition, unit);
+                    CollectMulti(slotPosition, unit, target);
                     break;
 
                 case AttackPattern.Splash:
@@ -483,18 +483,29 @@ namespace PokerDefense.Game
             splashes.RemoveRange(keepIndex, splashes.Count - keepIndex);
         }
 
-        // 사거리 안에서 앞선 순으로 최대 MultiTargets기 탐색
-        // 사거리 안에서 앞선 적 우선 탐색 (unitDefinition의 MultiTargets 수만큼)
-        void CollectMulti(Vector2 slotPosition, UnitInstance unit)
+        // 사거리 안이면서 첫 타겟(target)에서 MultiSpread 범위 안쪽인 적만
+        // 앞선 순으로 최대 MultiTargets기 탐색
+        void CollectMulti(Vector2 slotPosition, UnitInstance unit, EnemyInstance target)
         {
             shotTargets.Clear();
 
+            float spread = unit.Definition.MultiSpread;
+
             for (int i = 0; i < enemies.Count; i++)
             {
-                if (Vector2.Distance(slotPosition, enemies[i].Position) <= unit.Range)
+                EnemyInstance enemy = enemies[i];
+
+                if (Vector2.Distance(slotPosition, enemy.Position) > unit.Range)
                 {
-                    shotTargets.Add(enemies[i]);
+                    continue;
                 }
+
+                if (Vector2.Distance(target.Position, enemy.Position) > spread)
+                {
+                    continue;
+                }
+
+                shotTargets.Add(enemy);
             }
 
             shotTargets.Sort(ByProgressDescending);
