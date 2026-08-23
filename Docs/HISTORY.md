@@ -101,6 +101,13 @@
 
 ## 이력
 
+### 2026-08-23 — 유닛 에셋 레거시 이름 정리 (`Unit_Champion` → `Unit_QuadCannon` 등 11종)
+
+- **유닛 데이터 에셋 파일명이 M11 아트 작업 이전 레거시 코드네임으로 남아 있었다.** `Assets/_Project/Art/Units/` 아트 폴더는 이미 `QuadCannon`·`Gunslinger`·`TwinRanger`·`Marksman`·`Ace`·`LongBarrel`·`Bomber`·`Battery`·`King`·`Tempest`·`RailGunner`(+ 처음부터 일치했던 `Scout`·`Sovereign`)로 현재 이름을 쓰고 있었는데, `Assets/_Project/Data/Units/Unit_*.asset`은 옛 이름(`Champion`·`Guard`·`Ranger`·`Lancer`·`Vanguard`·`Mystic`·`Warden`·`Highlander`·`Revenant`·`Paladin`·`Trickster`)에 머물러 있었다. 롱바렐 하나는 2026-08-17 항목에 "에셋(`Unit_Vanguard`)의 이름은 새 시트가 올 때 한 번에 바꾼다"고 예고돼 있었는데(당시 이름만 먼저 고치면 "창을 든 롱바렐"이 되어 헷갈린다는 이유였다), 시트가 온 뒤에도 실제로 미뤄져 있었던 것이 이번에 같이 발견됐다.
+- **11개 에셋을 아트 폴더 이름에 맞춰 일괄 리네임했다** (`git mv`로 파일+.meta, 내부 `m_Name` 필드까지 동기화): `Guard→Gunslinger`, `Ranger→TwinRanger`, `Lancer→Marksman`, `Trickster→Ace`, `Vanguard→LongBarrel`, `Mystic→Bomber`, `Warden→Battery`, `Highlander→King`, `Revenant→Tempest`, `Paladin→RailGunner`, `Champion→QuadCannon`. `Scout`·`Sovereign`은 이미 일치해 손대지 않았다. `id`(포커 족보 카테고리, 예: `four_of_a_kind`)와 `displayName`은 이번 범위가 아니라 그대로 뒀다.
+- **GUID는 전부 그대로 보존했다** — `.meta` 파일을 내용까지 그대로 옮기기만 했으므로(`git mv`가 경로만 바꿈), `HandUnitTable` 등 GUID로 참조하는 모든 곳이 코드 변경 없이 그대로 연결된다. 코드베이스(스크립트·에디터 도구)에는 애초에 이 파일명들을 문자열로 참조하는 곳이 없었다(GUID 참조뿐) — 유일하게 고칠 문서는 `ART_REQUEST.md`의 유닛 표(에셋명 컬럼)였다. `HISTORY.md`의 과거 날짜 항목들은 그 시점의 실제 파일명을 가리키는 역사적 기록이라 손대지 않았다.
+- **검증:** Unity 리프레시 후 콘솔 에러 0건 → 리플렉션으로 `HandUnitTable`의 13개 족보→유닛 매핑이 전부 새 이름(`Unit_Gunslinger`, `Unit_QuadCannon` 등)으로 정상 조회되는지 확인 → EditMode **219/219 통과**(회귀 없음, 파일명을 문자열로 검증하는 테스트가 원래 없었음) → `git status`로 11쌍이 전부 rename으로 잡히는 것 확인.
+
 ### 2026-08-23 — 웨이브 20→50 확장 + 유닛 상위권(9~13번) 밸런스 재조정
 
 - **DevMode 웨이브 스킵/족보 소환으로 실측해 보니 소버린 한 유닛만으로 1~20웨이브를 전부 클리어할 수 있었다.** 원인 진단: (1) 유닛 자체가 이미 상위권에서 불균형했다 — ★1 단일 대상 DPS 소버린 214.8이 2위 템페스트 136의 1.58배, Multi 3타겟 유효 DPS는 644.4로 그다음 다중 유닛(배터리 142.5)의 4.6배. ★3에서는 이 격차가 그대로 ×5.06배로 벌어진다. (2) DESIGN §7이 이미 진단해 둔 문제(유닛은 머지로 배수 성장, 웨이브는 덧셈으로만 성장)가 실제로 이 정도까지 벌어져 있었다.

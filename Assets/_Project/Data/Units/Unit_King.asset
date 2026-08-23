@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2ae27f588d48dd4cbc082ef067a9c9d, type: 3}
-  m_Name: Unit_Lancer
+  m_Name: Unit_King
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
-  id: three_of_a_kind
-  displayName: "\uD2B8\uB9AC\uD50C \uB9C8\uD06C\uC2A4\uB9E8"
-  placeholderColor: {r: 0.3, g: 0.55, b: 0.82, a: 1}
-  attackPower: 66
+  id: mountain
+  displayName: "\uB9C8\uC6B4\uD2F4 \uD0B9"
+  placeholderColor: {r: 0.72, g: 0.68, b: 0.3, a: 1}
+  attackPower: 176
   attacksPerSecond: 0.5
-  range: 2.5
+  range: 3
   starMultipliers:
   - 1
   - 1.6
@@ -27,15 +27,15 @@ MonoBehaviour:
   multiSpread: 1
   splashRadius: 1
   pierceLength: 2
-  artDown: {fileID: 21300000, guid: ea32ed8b75b6e9243bb95ff92b2d8c1f, type: 3}
-  artUp: {fileID: 21300000, guid: cbf4d7b3691dbc54b96c209f942e37e2, type: 3}
-  artLeft: {fileID: 21300000, guid: d3e9447c8d9808244a37b74647d85e68, type: 3}
-  artRight: {fileID: 21300000, guid: eae48db6507faca4f9b8b3d3cfdf8552, type: 3}
+  artDown: {fileID: 21300000, guid: 8fb7d6541e8b431aa2d4135d32367c14, type: 3}
+  artUp: {fileID: 21300000, guid: bf3914ebb67e4774a5de25d43893facc, type: 3}
+  artLeft: {fileID: 21300000, guid: a23d4481d2074ffdbd75519df070e43c, type: 3}
+  artRight: {fileID: 21300000, guid: 12a2fa4077a54fbeb31b7e2b098bf442, type: 3}
   muzzlesSide:
-  - {x: 0.37, y: 0.29}
+  - {x: 0.45, y: 0.176}
   muzzlesFacing:
-  - {x: -0.04, y: 0.21}
+  - {x: -0.022, y: 0.136}
   muzzlesBack:
-  - {x: -0.15, y: 0.28}
+  - {x: 0.022, y: 0.136}
   muzzlesFireTogether: 0
   muzzleRandomOrder: 0

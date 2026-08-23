@@ -10,32 +10,32 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2ae27f588d48dd4cbc082ef067a9c9d, type: 3}
-  m_Name: Unit_Champion
+  m_Name: Unit_Ace
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
-  id: four_of_a_kind
-  displayName: "\uD3EC\uCE74\uB4DC \uCFFC\uB4DC\uCE90\uB17C"
-  placeholderColor: {r: 0.85, g: 0.35, b: 0.45, a: 1}
-  attackPower: 310
-  attacksPerSecond: 0.4
-  range: 3
+  id: back_straight
+  displayName: "\uBC31\uC2A4\uD2B8\uB808\uC774\uD2B8 \uC5D0\uC774\uC2A4"
+  placeholderColor: {r: 0.35, g: 0.72, b: 0.45, a: 1}
+  attackPower: 24
+  attacksPerSecond: 3
+  range: 2.5
   starMultipliers:
   - 1
   - 1.6
   - 2.25
-  attackPattern: 1
+  attackPattern: 0
   multiTargets: 2
   multiSpread: 1
   splashRadius: 1
   pierceLength: 2
-  artDown: {fileID: 21300000, guid: dccfedef44640264da5f27444183b3b3, type: 3}
-  artUp: {fileID: 21300000, guid: aaf59601454555c42990a49b4701381b, type: 3}
-  artLeft: {fileID: 21300000, guid: d0cc0091533349d448992e2969a0552e, type: 3}
-  artRight: {fileID: 21300000, guid: d95fe3653b1a47444a8d94be840837a7, type: 3}
+  artDown: {fileID: 21300000, guid: e33cdaf90e0744338070fcd88c7fe898, type: 3}
+  artUp: {fileID: 21300000, guid: 32b4a65820f9431387358d5dc153b708, type: 3}
+  artLeft: {fileID: 21300000, guid: fc0a6ee0e2ee45458ec1624ba610e37d, type: 3}
+  artRight: {fileID: 21300000, guid: 6ae28a9a345b4c6baac6c703cf0bad23, type: 3}
   muzzlesSide:
-  - {x: 0.27, y: 0.04}
+  - {x: 0.266, y: 0.252}
   muzzlesFacing:
-  - {x: -0.15, y: -0.03}
+  - {x: -0.071, y: 0.248}
   muzzlesBack:
-  - {x: 0.19, y: 0}
+  - {x: 0.119, y: 0.298}
   muzzlesFireTogether: 0
   muzzleRandomOrder: 0

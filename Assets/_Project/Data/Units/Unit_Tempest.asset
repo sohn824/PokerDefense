@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2ae27f588d48dd4cbc082ef067a9c9d, type: 3}
-  m_Name: Unit_Revenant
+  m_Name: Unit_Tempest
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
   id: back_straight_flush
   displayName: "\uBC31\uC2A4\uD2B8\uB808\uC774\uD2B8 \uD50C\uB7EC\uC2DC \uD15C\uD398\uC2A4\uD2B8"

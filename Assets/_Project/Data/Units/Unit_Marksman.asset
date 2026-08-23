@@ -10,32 +10,32 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2ae27f588d48dd4cbc082ef067a9c9d, type: 3}
-  m_Name: Unit_Trickster
+  m_Name: Unit_Marksman
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.UnitDefinition
-  id: back_straight
-  displayName: "\uBC31\uC2A4\uD2B8\uB808\uC774\uD2B8 \uC5D0\uC774\uC2A4"
-  placeholderColor: {r: 0.35, g: 0.72, b: 0.45, a: 1}
-  attackPower: 24
-  attacksPerSecond: 3
+  id: three_of_a_kind
+  displayName: "\uD2B8\uB9AC\uD50C \uB9C8\uD06C\uC2A4\uB9E8"
+  placeholderColor: {r: 0.3, g: 0.55, b: 0.82, a: 1}
+  attackPower: 66
+  attacksPerSecond: 0.5
   range: 2.5
   starMultipliers:
   - 1
   - 1.6
   - 2.25
-  attackPattern: 0
+  attackPattern: 1
   multiTargets: 2
   multiSpread: 1
   splashRadius: 1
   pierceLength: 2
-  artDown: {fileID: 21300000, guid: e33cdaf90e0744338070fcd88c7fe898, type: 3}
-  artUp: {fileID: 21300000, guid: 32b4a65820f9431387358d5dc153b708, type: 3}
-  artLeft: {fileID: 21300000, guid: fc0a6ee0e2ee45458ec1624ba610e37d, type: 3}
-  artRight: {fileID: 21300000, guid: 6ae28a9a345b4c6baac6c703cf0bad23, type: 3}
+  artDown: {fileID: 21300000, guid: ea32ed8b75b6e9243bb95ff92b2d8c1f, type: 3}
+  artUp: {fileID: 21300000, guid: cbf4d7b3691dbc54b96c209f942e37e2, type: 3}
+  artLeft: {fileID: 21300000, guid: d3e9447c8d9808244a37b74647d85e68, type: 3}
+  artRight: {fileID: 21300000, guid: eae48db6507faca4f9b8b3d3cfdf8552, type: 3}
   muzzlesSide:
-  - {x: 0.266, y: 0.252}
+  - {x: 0.37, y: 0.29}
   muzzlesFacing:
-  - {x: -0.071, y: 0.248}
+  - {x: -0.04, y: 0.21}
   muzzlesBack:
-  - {x: 0.119, y: 0.298}
+  - {x: -0.15, y: 0.28}
   muzzlesFireTogether: 0
   muzzleRandomOrder: 0

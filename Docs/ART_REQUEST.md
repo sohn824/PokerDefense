@@ -193,17 +193,17 @@ NO text, NO numbers, NO letters anywhere in the image.
 | 우선 | 에셋 | 이름 | 구조 | 역할 | 성별 |
 |---|---|---|---|---|---|
 | — | `Unit_Scout` | 하이카드 스카우트 | 카드 1장, 권총 1정 | Rapid · **완료** | 남 |
-| — | `Unit_Guard` | 원페어 건슬링어 | **2** 쌍권총 | Rapid · **완료** | 여 |
-| — | `Unit_Ranger` | 투페어 트윈레인저 | **2+2** 양팔 2연장 | Multi · **완료** | 여 |
-| — | `Unit_Lancer` | 트리플 마크스맨 | **3** 3총구 | Heavy · **완료** | 남 |
-| — | `Unit_Warden` | 풀하우스 배터리 | **3+2** 주포3 + 보조포2 | Multi · **완료** (Splash에서 변경, [HISTORY](HISTORY.md) 참고) | 남 |
-| — | `Unit_Champion` | 포카드 쿼드캐논 | **4** 4연장 중포 | Heavy · **완료** | 여 |
-| — | `Unit_Vanguard` | 스트레이트 롱바렐 | **무늬 섞인** 카드 5장이 박힌 아주 긴 총열 1정 | Pierce · **완료** | 남 |
-| — | `Unit_Trickster` | 백스트레이트 에이스 | A→2→3→4→5 계단 | Rapid · **완료** | 여 |
-| — | `Unit_Highlander` | 마운틴 킹 | ▲ 산 왕관, 꼭대기에 A | Heavy · **완료** | 남 |
-| — | `Unit_Mystic` | 플러시 보머 | 같은 무늬 반복 | Splash · **완료** | 여 |
-| — | `Unit_Revenant` | 백스트레이트 플러시 템페스트 | 같은 무늬 A-5 원형 회전 | Multi · **완료** | 남 |
-| — | `Unit_Paladin` | 스트레이트 플러시 레일거너 | 같은 무늬 5장 일렬 = 레일 | Pierce · **완료** | 여 |
+| — | `Unit_Gunslinger` | 원페어 건슬링어 | **2** 쌍권총 | Rapid · **완료** | 여 |
+| — | `Unit_TwinRanger` | 투페어 트윈레인저 | **2+2** 양팔 2연장 | Multi · **완료** | 여 |
+| — | `Unit_Marksman` | 트리플 마크스맨 | **3** 3총구 | Heavy · **완료** | 남 |
+| — | `Unit_Battery` | 풀하우스 배터리 | **3+2** 주포3 + 보조포2 | Multi · **완료** (Splash에서 변경, [HISTORY](HISTORY.md) 참고) | 남 |
+| — | `Unit_QuadCannon` | 포카드 쿼드캐논 | **4** 4연장 중포 | Heavy · **완료** | 여 |
+| — | `Unit_LongBarrel` | 스트레이트 롱바렐 | **무늬 섞인** 카드 5장이 박힌 아주 긴 총열 1정 | Pierce · **완료** | 남 |
+| — | `Unit_Ace` | 백스트레이트 에이스 | A→2→3→4→5 계단 | Rapid · **완료** | 여 |
+| — | `Unit_King` | 마운틴 킹 | ▲ 산 왕관, 꼭대기에 A | Heavy · **완료** | 남 |
+| — | `Unit_Bomber` | 플러시 보머 | 같은 무늬 반복 | Splash · **완료** | 여 |
+| — | `Unit_Tempest` | 백스트레이트 플러시 템페스트 | 같은 무늬 A-5 원형 회전 | Multi · **완료** | 남 |
+| — | `Unit_RailGunner` | 스트레이트 플러시 레일거너 | 같은 무늬 5장 일렬 = 레일 | Pierce · **완료** | 여 |
 | — | `Unit_Sovereign` | 로열 스트레이트 플러시 소버린 | 10-J-Q-K-A 왕좌, 왕관 | Multi · **완료** (Splash에서 변경, [HISTORY](HISTORY.md) 참고) | 여 |
 
 **남 6 / 여 7.** 배분 규칙과 근거는 §3에 있다. 빈도 구간별로는 고빈도 4종 2:2, 중간 4종(백스트레이트·스트레이트·마운틴·플러시) 2:2, 희귀 5종 남 2 / 여 3이다.
