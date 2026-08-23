@@ -15,7 +15,7 @@ MonoBehaviour:
   id: mountain
   displayName: "\uB9C8\uC6B4\uD2F4 \uD0B9"
   placeholderColor: {r: 0.72, g: 0.68, b: 0.3, a: 1}
-  attackPower: 156
+  attackPower: 176
   attacksPerSecond: 0.5
   range: 3
   starMultipliers:

@@ -15,7 +15,7 @@ MonoBehaviour:
   id: royal_straight_flush
   displayName: "\uB85C\uC5F4 \uC2A4\uD2B8\uB808\uC774\uD2B8 \uD50C\uB7EC\uC2DC \uC18C\uBC84\uB9B0"
   placeholderColor: {r: 0.95, g: 0.8, b: 0.25, a: 1}
-  attackPower: 35.8
+  attackPower: 25
   attacksPerSecond: 6
   range: 4
   starMultipliers:

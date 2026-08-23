@@ -15,7 +15,7 @@ MonoBehaviour:
   id: back_straight_flush
   displayName: "\uBC31\uC2A4\uD2B8\uB808\uC774\uD2B8 \uD50C\uB7EC\uC2DC \uD15C\uD398\uC2A4\uD2B8"
   placeholderColor: {r: 0.2, g: 0.78, b: 0.72, a: 1}
-  attackPower: 68
+  attackPower: 54
   attacksPerSecond: 2
   range: 4
   starMultipliers:
@@ -24,7 +24,7 @@ MonoBehaviour:
   - 2.25
   attackPattern: 2
   multiTargets: 3
-  multiSpread: 4
+  multiSpread: 2.2
   splashRadius: 1
   pierceLength: 2
   artDown: {fileID: 21300000, guid: 450c01661e5c45a99ec91a13d848a5ef, type: 3}

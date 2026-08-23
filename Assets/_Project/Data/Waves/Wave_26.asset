@@ -10,22 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2c4fb4739ff4e56438d1b8f8c1c27a48, type: 3}
-  m_Name: Wave_20
+  m_Name: Wave_26
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.WaveDefinition
-  waveNumber: 20
-  timeLimit: 65
-  jokerReward: 1
-  perkReward: 1
+  waveNumber: 26
+  timeLimit: 45
+  jokerReward: 0
+  perkReward: 0
   entries:
-  - enemy: {fileID: 11400000, guid: 2356a5926ab04104ab2359b8e906d1ad, type: 2}
-    count: 2
-    interval: 6
-    startDelay: 3
-  - enemy: {fileID: 11400000, guid: d0aca76ef896fb74e95222ca3006bf95, type: 2}
-    count: 4
-    interval: 3
-    startDelay: 25
   - enemy: {fileID: 11400000, guid: 52f861e302c310f4cab346e08b81eb60, type: 2}
-    count: 10
-    interval: 0.8
-    startDelay: 35
+    count: 66
+    interval: 0.375
+    startDelay: 0
+  - enemy: {fileID: 11400000, guid: d0aca76ef896fb74e95222ca3006bf95, type: 2}
+    count: 24
+    interval: 1.031
+    startDelay: 5.4

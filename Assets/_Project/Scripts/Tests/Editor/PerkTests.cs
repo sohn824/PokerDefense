@@ -349,8 +349,8 @@ namespace PokerDefense.Tests
             }
 
             rewarded.Sort();
-            // 최종 보스(20)는 받아도 쓸 라운드가 없어 빠진다
-            CollectionAssert.AreEqual(new[] { 5, 10, 15 }, rewarded);
+            // 최종 보스(50)는 받아도 쓸 라운드가 없어 빠진다
+            CollectionAssert.AreEqual(new[] { 5, 10, 15, 20, 30, 40 }, rewarded);
         }
 
         static PerkTable LoadTable()
