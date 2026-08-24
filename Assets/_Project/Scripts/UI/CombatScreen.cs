@@ -20,6 +20,7 @@ namespace PokerDefense.UI
         sealed class EnemyView
         {
             public Transform Root;
+            public SpriteRenderer Body;
             public SpriteRenderer BarBack;
             public SpriteRenderer BarFill;
         }
@@ -482,6 +483,11 @@ namespace PokerDefense.UI
                 Vector2 local = enemy.Position;
                 view.Root.localPosition = new Vector3(local.x, local.y, 0f);
 
+                if (enemy.Definition.HasArt)
+                {
+                    view.Body.sprite = enemy.Definition.ArtFor(GridBoard.TrackDirection(enemy.Progress));
+                }
+
                 float ratio = Mathf.Clamp01(enemy.Hp / enemy.Definition.MaxHp);
                 SetBar(view, ratio);
             }
@@ -541,11 +547,14 @@ namespace PokerDefense.UI
             var root = new GameObject("Enemy_" + enemy.Definition.Id);
             root.transform.SetParent(boardRoot, false);
 
+            bool hasArt = enemy.Definition.HasArt;
+            float scale = BodyScale * enemy.Definition.VisualScale;
+
             var body = new GameObject("Body").AddComponent<SpriteRenderer>();
             body.transform.SetParent(root.transform, false);
-            body.transform.localScale = new Vector3(BodyScale, BodyScale, 1f);
-            body.sprite = enemySprite;
-            body.color = enemy.Definition.PlaceholderColor;
+            body.transform.localScale = new Vector3(scale, scale, 1f);
+            body.sprite = hasArt ? enemy.Definition.ArtFor(GridBoard.TrackDirection(enemy.Progress)) : enemySprite;
+            body.color = hasArt ? Color.white : enemy.Definition.PlaceholderColor;
             body.sortingOrder = 5;
 
             var back = new GameObject("BarBack").AddComponent<SpriteRenderer>();
@@ -562,7 +571,7 @@ namespace PokerDefense.UI
             fill.color = BarFillColor;
             fill.sortingOrder = 7;
 
-            var view = new EnemyView { Root = root.transform, BarBack = back, BarFill = fill };
+            var view = new EnemyView { Root = root.transform, Body = body, BarBack = back, BarFill = fill };
             SetBar(view, 1f);
             return view;
         }

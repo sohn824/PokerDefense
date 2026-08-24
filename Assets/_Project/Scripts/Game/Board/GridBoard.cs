@@ -97,6 +97,37 @@ namespace PokerDefense.Game
             return new Vector2(-TrackHalfWidth, -TrackHalfHeight + distance);
         }
 
+        // 트랙 위 진행 방향(TrackPosition과 같은 구간 분기). 적 아트를 이동 방향에 맞춰 고르는 데 쓴다
+        public static AimDirection TrackDirection(float progress)
+        {
+            float wrapped = progress - Mathf.Floor(progress);
+            float distance = wrapped * TrackLength;
+
+            float width = TrackHalfWidth * 2f;
+            float height = TrackHalfHeight * 2f;
+
+            if (distance < width)
+            {
+                return AimDirection.Right;
+            }
+
+            distance -= width;
+
+            if (distance < height)
+            {
+                return AimDirection.Down;
+            }
+
+            distance -= height;
+
+            if (distance < width)
+            {
+                return AimDirection.Left;
+            }
+
+            return AimDirection.Up;
+        }
+
         // UnitInstance의 indexer
         // UnitInstance 객체를 배열 인덱스 접근 시 get 내부를 실행
         public UnitInstance this[int index]

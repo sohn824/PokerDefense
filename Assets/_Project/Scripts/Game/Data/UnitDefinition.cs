@@ -6,7 +6,6 @@ namespace PokerDefense.Game
      * AttackPattern
      *
      * 유닛 13종이 나눠 쓰는 공격 방식 5종
-     *
      */
     public enum AttackPattern
     {
@@ -30,9 +29,6 @@ namespace PokerDefense.Game
      * AimDirection
      *
      * 유닛이 겨누는 방향
-     *
-     * 적은 트랙을 360도로 돌지만 유닛은 회전하지 않는다 (DESIGN §5.3)
-     * 그래서 방향별 스프라이트를 바꿔 끼워 표현한다
      */
     public enum AimDirection
     {
@@ -54,8 +50,6 @@ namespace PokerDefense.Game
 
         [SerializeField] string id;
         [SerializeField] string displayName;
-
-        [SerializeField] Color placeholderColor = Color.gray;
 
         [Header("★1 기준 스탯")]
         [SerializeField] float attackPower = 10f;
@@ -118,7 +112,6 @@ namespace PokerDefense.Game
 
         public string Id => id;
         public string DisplayName => displayName;
-        public Color PlaceholderColor => placeholderColor;
         public float AttackPower => attackPower;
         public float AttacksPerSecond => attacksPerSecond;
         public float Range => range;

@@ -45,9 +45,6 @@ namespace PokerDefense.UI
         [Tooltip("발사 순간의 총구 화염 이펙트")]
         [SerializeField] SpriteRenderer muzzle;
 
-        [Tooltip("아트가 없는 동안의 대역 (이름 표시)")]
-        [SerializeField] TextMeshPro nameLabel;
-
         [SerializeField] TextMeshPro starLabel;
         [SerializeField] Collider2D hitbox;
 
@@ -83,34 +80,26 @@ namespace PokerDefense.UI
                 background.color = EmptyColor;
                 art.enabled = false;
                 HideMuzzles();
-                nameLabel.text = string.Empty;
                 starLabel.text = string.Empty;
                 return;
             }
 
-            starLabel.text = new string('★', unit.Star);
-
-            if (unit.Definition.HasArt)
+            if (unit.Definition.HasArt == false)
             {
-                background.color = EmptyColor;
-                art.enabled = true;
-                art.sprite = unit.Definition.ArtFor(AimDirection.Down);
-                nameLabel.text = string.Empty;
-                ApplyArtTransform(0f);
-                return;
+                Debug.LogWarning($"{unit.Definition.DisplayName}에 4방향 아트가 없습니다.");
             }
 
-            background.color = unit.Definition.PlaceholderColor;
-            art.enabled = false;
-            HideMuzzles();
-
-            nameLabel.text = unit.Definition.DisplayName.Replace(' ', '\n');
+            starLabel.text = new string('★', unit.Star);
+            background.color = EmptyColor;
+            art.enabled = true;
+            art.sprite = unit.Definition.ArtFor(AimDirection.Down);
+            ApplyArtTransform(0f);
         }
 
         // 슬롯에 있는 유닛의 조준 방향과 발사 반동 갱신 메소드 (Update에서 매 프레임 호출)
         public void SetAim(AimDirection direction, float secondsSinceShot, float attacksPerSecond, int shotCount)
         {
-            if (current == null || current.Definition.HasArt == false)
+            if (current == null)
             {
                 return;
             }

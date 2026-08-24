@@ -18,3 +18,4 @@ MonoBehaviour:
   maxHp: 550
   moveSpeed: 1.1
   type: 2
+  visualScale: 1.5

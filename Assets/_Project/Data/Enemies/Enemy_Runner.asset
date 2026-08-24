@@ -18,3 +18,8 @@ MonoBehaviour:
   maxHp: 82
   moveSpeed: 4.2
   type: 3
+  artDown: {fileID: 21300000, guid: 273116671c2ae574091516fe0f885689, type: 3}
+  artUp: {fileID: 21300000, guid: f46f7516cb724074da55f4b13e279e0b, type: 3}
+  artLeft: {fileID: 21300000, guid: 8595a2d6112b91e4aafa562cc1878dd9, type: 3}
+  artRight: {fileID: 21300000, guid: 6683c6c9b2893cf4c90bedbb92dde796, type: 3}
+  visualScale: 1
