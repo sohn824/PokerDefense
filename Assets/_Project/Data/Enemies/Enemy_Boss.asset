@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: Enemy_Boss
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.EnemyDefinition
   id: boss
-  displayName: Boss
+  displayName: Behemoth
   placeholderColor: {r: 0.95, g: 0.75, b: 0.2, a: 1}
   maxHp: 1300
   moveSpeed: 1
   type: 2
+  artDown: {fileID: 21300000, guid: 69ef53aa451c2244ab7c3de9180b50d0, type: 3}
+  artUp: {fileID: 21300000, guid: 0ae899f0ef0ae8247a02dd7fafc5b84b, type: 3}
+  artLeft: {fileID: 21300000, guid: 7605d51d89f70a547af4db65400e8cb4, type: 3}
+  artRight: {fileID: 21300000, guid: 05304d30040850e4884d8ccc206eaf37, type: 3}
   visualScale: 1.8
