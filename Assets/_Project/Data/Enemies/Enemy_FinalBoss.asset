@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: Enemy_FinalBoss
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.EnemyDefinition
   id: final_boss
-  displayName: Final Boss
+  displayName: Abaddon
   placeholderColor: {r: 0.95, g: 0.25, b: 0.15, a: 1}
   maxHp: 4200
   moveSpeed: 0.9
   type: 2
+  artDown: {fileID: 21300000, guid: 7f39556b448a0984ab5fa4aa36975fdc, type: 3}
+  artUp: {fileID: 21300000, guid: 27b28f449f2498b45a2e09c246e9887c, type: 3}
+  artLeft: {fileID: 21300000, guid: 0efb8808e9e14c54ea4ab2a26853bcb1, type: 3}
+  artRight: {fileID: 21300000, guid: 7280fdab9b380ca4e998f05612f3e66b, type: 3}
   visualScale: 2.3
