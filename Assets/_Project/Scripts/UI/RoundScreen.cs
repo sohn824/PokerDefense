@@ -20,6 +20,7 @@ namespace PokerDefense.UI
         [SerializeField] RoundController controller;
         [SerializeField] StageController stage;
         [SerializeField] HandUnitTable unitTable;
+        [SerializeField] CardVisualSet cardVisuals;
         [SerializeField] CardView[] cardViews;
         [SerializeField] TMP_Text categoryLabel;
         [SerializeField] TMP_Text statusLabel;
@@ -34,6 +35,7 @@ namespace PokerDefense.UI
         {
             for (int i = 0; i < cardViews.Length; i++)
             {
+                cardViews[i].Bind(cardVisuals);
                 cardViews[i].Clicked += OnCardClicked;
             }
 
