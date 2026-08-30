@@ -65,6 +65,7 @@
 | **플레이 모드에서 만든 오브젝트는 나가는 순간 사라진다** | 씬 편집 전 `Application.isPlaying` 확인. `SerializedObject`로 씬 저장 시 `This cannot be used during play mode` |
 | **라벨 넘침을 rect 폭으로 판단하면 틀림** | TMP는 자동 개행이라 넘치면 밖으로 안 나가고 두 줄이 되어 아래를 침범한다. `textBounds`는 개행 후 값이라 항상 rect 안. **`GetPreferredValues`로 재고 `textInfo.lineCount`가 1인지** |
 | 에디트 모드에서 뷰 `Show()` 미리보기 → 그대로 씬에 저장됨 | TMP 문자열·색이 직렬화된다. 찍어 본 뒤 `Show(null)`로 되돌리고 저장 |
+| **`TMP_Text.fontMaterial` getter가 인스턴스 머티리얼을 만든다** | 진단 스크립트에서 `.fontMaterial`을 읽기만 해도 그 TMP에 로컬 머티리얼이 붙고, 다음 `SaveScene`에 `m_fontMaterial`이 공유 머티리얼 링크를 끊은 채로 직렬화된다(라벨 여럿에 번져 씬 diff가 커진다). 읽기는 `.fontSharedMaterial`로. 이미 번졌으면 씬을 `git checkout` 후 의도한 변경만 다시 적용 |
 | **성급 배수는 공격력·공격속도에 동시에 곱해져 DPS가 제곱으로 커진다** | `{1, 1.6, 2.25}`면 DPS ×1 / ×2.56 / ×5.06. 배수를 만질 때는 항상 제곱해서 볼 것 |
 | **`spriteAlignment`는 `TextureImporter`에 없다** | `TextureImporterSettings`에 있다. MCP `manage_asset`으로 넘기면 성공 반환 후 조용히 무시(피벗이 Center로 남아 유닛이 슬롯에서 뜬다). `ReadTextureSettings`→수정→`SetTextureSettings`→`SaveAndReimport`, 메타 되읽어 `alignment: 7` 확인 |
 | 스프라이트 전환 전 텍스처 높이를 읽으면 NPOT 값 | 407×749인데 `tex.height`가 512. `textureType = Sprite` + `npotScale = None` 먼저 걸고 리임포트 후 다시 읽는다 |
@@ -98,6 +99,18 @@
 ---
 
 ## 이력
+
+### 2026-08-30 — 화면 상단 레이아웃 패스 1차 (DESIGN §7-4 일부)
+
+M11 5단계가 남긴 슬롯·트랙 시각 이슈 중 큰 지오메트리 변경 없이 되는 것만 처리. 카메라 리프레임은 안 함(밸런스 재검증 이후로 미룸).
+
+- **성급 배지 위치:** 캐릭터 정강이(로컬 y −0.345) → **머리 위(`StarTopY = 0.40`)**. `UnitSlotView.Awake`에서 `sortingOrder`와 같이 지정. 정강이에 겹치면 캐릭터 무늬처럼 읽혔다.
+- **슬롯 타일 금색 톤 다운:** `SlotTile.png`의 금색 픽셀만 채도(−55%)·명도(×0.82) 낮춤 — mean (177,141,89) → (145,131,110). 돌 판·회색은 안 건드림. `Docs/tools/slottile_tone.py` 신규(카드 툴과 같은 패턴, 원본은 git). 15칸 깔았을 때 금색이 시끄럽던 것 완화.
+- **상세 문구 이동:** `DetailPlate`·`PendingLabel`을 화면 top(anchoredPos y 862, 스크린 y≈1822 — 트랙 상단 밴드 + HUD와 겹침)에서 **그리드 바로 아래(y 220, 스크린 y≈1180)**로. RectTransform 2개만.
+- **트랙 명도:** `TrackLoop` SpriteRenderer 색 흰색 → (0.78, 0.78, 0.80). 돌 밴드가 살짝 물러나 위에 얹히는 라벨 대비가 나아지고 보드가 조금 더 분리돼 보인다.
+- **`TrackMargin 0.9`는 안 건드렸다** — 가운데 칸이 트랙에서 정확히 2.4, 최단 사거리 2.5가 여기서 나온다(반복 함정 "사거리는 자유롭게 못 내린다"). 줄이면 전 유닛 사거리 유효성이 바뀌어 밸런스 재검증 대상. "15칸이 링 안 작은 섬" 인상은 수용.
+- **미해결:** HUD(라이프·라운드)가 여전히 트랙 상단 밴드 위 — 실제 렌더(어두운 톤)에서 읽히는지 확인 필요, 안 되면 라벨에 아웃라인. 카메라 리프레임(보드를 화면에서 내려 상단 공간 확보 + 라벨 5그룹 재배치)은 밸런스 확정 후 §7-4 본 패스에서.
+- **검증:** 컴파일 0건, EditMode 219/219, 플레이 모드에서 8유닛 배치해 배지·톤·문구 위치 스크린샷 확인. 씬 diff 3줄(anchoredPos ×2, color ×1).
 
 ### 2026-08-30 — M11 5단계: 배경·트랙 아트 4장 + 동반 코드 완료 (M11 종료)
 

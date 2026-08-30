@@ -21,6 +21,9 @@ namespace PokerDefense.UI
         const float ArtScale = 0.85f;
         const float ArtBottomY = -0.46f;
 
+        // 유닛의 별 표시 위치 오프셋
+        const float StarTopY = 0.40f;
+
         // 폭이 넓은 유닛이 슬롯 타일을 넘지 않도록 이 폭에 맞춰 기준 배율을 낮춤
         const float ArtMaxWidth = 0.9f;
 
@@ -69,6 +72,7 @@ namespace PokerDefense.UI
             starLabel.outlineWidth = 0.25f;
             // 유닛 아트(sortingOrder 3)에 가리지 않도록 더 위로 올림
             starLabel.sortingOrder = 6;
+            starLabel.transform.localPosition = new Vector3(0f, StarTopY, 0f);
             sharedMuzzleSprite = muzzle.sprite;
         }
 
