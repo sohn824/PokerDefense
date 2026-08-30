@@ -14,13 +14,15 @@ namespace PokerDefense.UI
      */
     public sealed class UnitSlotView : MonoBehaviour
     {
-        static readonly Color EmptyColor = new Color(0.24f, 0.25f, 0.29f);
         static readonly Color PlaceableColor = new Color(1f, 1f, 1f, 0.22f);
         static readonly Color SelectedColor = new Color(1f, 0.82f, 0.15f, 0.45f);
 
         // 아트는 칸 높이의 85%로 두고 발끝을 칸 바닥에 붙임
         const float ArtScale = 0.85f;
         const float ArtBottomY = -0.46f;
+
+        // 폭이 넓은 유닛이 슬롯 타일을 넘지 않도록 이 폭에 맞춰 기준 배율을 낮춤
+        const float ArtMaxWidth = 0.9f;
 
         // 발사 반동 연출용 상수
         const float RecoilMaxSeconds = 0.10f;
@@ -36,7 +38,6 @@ namespace PokerDefense.UI
         const float MuzzleScale = 0.40f;
         const float MuzzleBackExtraY = 0.04f;
 
-        [SerializeField] SpriteRenderer background;
         [SerializeField] SpriteRenderer highlight;
 
         [Tooltip("유닛 아트")]
@@ -49,6 +50,9 @@ namespace PokerDefense.UI
         [SerializeField] Collider2D hitbox;
 
         UnitInstance current;
+
+        // 현재 아트 스프라이트를 칸에 맞춘 기준 배율 (좁은 유닛은 ArtScale 그대로)
+        float artFitScale = ArtScale;
 
         // 총구가 여럿인 유닛이 쓰는 muzzle 렌더러 풀
         // [0]은 씬에 있는 muzzle이고 나머지는 처음 쓸 때 복제해서 붙임
@@ -63,6 +67,8 @@ namespace PokerDefense.UI
         {
             starLabel.outlineColor = new Color32(0, 0, 0, 255);
             starLabel.outlineWidth = 0.25f;
+            // 유닛 아트(sortingOrder 3)에 가리지 않도록 더 위로 올림
+            starLabel.sortingOrder = 6;
             sharedMuzzleSprite = muzzle.sprite;
         }
 
@@ -77,7 +83,6 @@ namespace PokerDefense.UI
 
             if (unit == null)
             {
-                background.color = EmptyColor;
                 art.enabled = false;
                 HideMuzzles();
                 starLabel.text = string.Empty;
@@ -90,9 +95,9 @@ namespace PokerDefense.UI
             }
 
             starLabel.text = new string('★', unit.Star);
-            background.color = EmptyColor;
             art.enabled = true;
             art.sprite = unit.Definition.ArtFor(AimDirection.Down);
+            FitArtToCell();
             ApplyArtTransform(0f);
         }
 
@@ -105,6 +110,7 @@ namespace PokerDefense.UI
             }
 
             art.sprite = current.Definition.ArtFor(direction);
+            FitArtToCell();
 
             float punch = 0f;
 
@@ -124,7 +130,7 @@ namespace PokerDefense.UI
             // 아트 scale을 계산하고 그 때 쓴 scale을 반환함
             float artScale = ApplyArtTransform(punch);
             // 반동으로 커진 만큼 muzzle 이펙트도 밀어줌
-            ApplyMuzzle(direction, secondsSinceShot, shotCount, artScale / ArtScale);
+            ApplyMuzzle(direction, secondsSinceShot, shotCount, artScale / artFitScale);
         }
 
         void ApplyMuzzle(AimDirection direction, float secondsSinceShot, int shotCount, float artGrowth)
@@ -251,15 +257,29 @@ namespace PokerDefense.UI
             return muzzlePool[index];
         }
 
+        // 아트 스프라이트가 타일 슬롯을 넘지 않도록 폭에 맞춰 기준 배율을 낮춤
+        // 스프라이트가 바뀔 때(Show·SetAim)마다 호출 (좁은 유닛은 ArtScale 그대로)
+        void FitArtToCell()
+        {
+            if (art.sprite == null)
+            {
+                artFitScale = ArtScale;
+                return;
+            }
+
+            float spriteWidth = art.sprite.rect.width / art.sprite.pixelsPerUnit;
+            artFitScale = Mathf.Min(ArtScale, ArtMaxWidth / spriteWidth);
+        }
+
         // 호흡과 반동을 합친 크기로 아트를 키우고, 그때 쓴 스케일을 반환
-        // 화염이 총구에 붙어있게 하기 위해서는 아트가 커진 배율(반환값 / ArtScale)만큼 화염도 밀어야 함
+        // 화염이 총구에 붙어있게 하기 위해서는 아트가 커진 배율(반환값 / artFitScale)만큼 화염도 밀어야 함
         float ApplyArtTransform(float punch)
         {
             // 호흡 상수를 time에 따라 Sin으로 흔들어서 아트가 살짝 커졌다 작아졌다 하도록 함
             float breath = Mathf.Sin(Time.time * BreathSpeed) * BreathAmount;
 
             // 호흡과 반동(punch)을 합쳐서 스케일을 계산 (둘의 계수를 합쳐서 아트를 그만큼 키움)
-            float scale = ArtScale * (1f + punch + breath);
+            float scale = artFitScale * (1f + punch + breath);
             art.transform.localPosition = new Vector3(0f, ArtBottomY, 0f);
             art.transform.localScale = new Vector3(scale, scale, 1f);
 
