@@ -5,9 +5,10 @@ namespace PokerDefense.Poker
 {
     /**
      * Deck
-     * 
+     *
      * 조커를 제외한 Card 52장 덱
      * 라운드마다 seed를 받아 새로 생성
+     * excluded로 넘긴 카드는 덱에서 빠진다 (플레이어가 상점 카드를 들고 있는 동안 — DESIGN §13.3)
      */
     public sealed class Deck
     {
@@ -16,17 +17,45 @@ namespace PokerDefense.Poker
         readonly List<Card> cards = new List<Card>(FullSize);
         int nextIndex;
 
-        public Deck(int seed)
+        public Deck(int seed, IReadOnlyList<Card> excluded = null)
         {
+            cards.AddRange(BuildCards(excluded));
+            Shuffle(new Random(seed));
+        }
+
+        // 52장 전체에서 excluded를 뺀 목록 (셔플 안 함)
+        // 상점 진열도 이 목록에서 뽑는다 (ShopOffer — DESIGN §13.2)
+        public static List<Card> BuildCards(IReadOnlyList<Card> excluded = null)
+        {
+            var list = new List<Card>(FullSize);
+
             foreach (Suit suit in Enum.GetValues(typeof(Suit)))
             {
                 for (Rank rank = Rank.Two; rank <= Rank.Ace; rank++)
                 {
-                    cards.Add(new Card(rank, suit));
+                    var card = new Card(rank, suit);
+
+                    if (excluded == null || Contains(excluded, card) == false)
+                    {
+                        list.Add(card);
+                    }
                 }
             }
 
-            Shuffle(new Random(seed));
+            return list;
+        }
+
+        static bool Contains(IReadOnlyList<Card> list, Card card)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i] == card)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public int Remaining => cards.Count - nextIndex;

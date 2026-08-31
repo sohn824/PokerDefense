@@ -25,3 +25,5 @@ MonoBehaviour:
   - category: 3
     weight: 10
   sellPrices: 010000000200000004000000
+  shopCardPrice: 4
+  heldCardCapacity: 3

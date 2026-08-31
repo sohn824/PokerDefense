@@ -132,9 +132,10 @@ namespace PokerDefense.EditorTools
                 return;
             }
 
-            if (flow.Offer != null && flow.Offer.Count > 0)
+            // 카드 상점은 지금은 그냥 닫는다 (구매 전략은 Phase 6 재밸런싱에서 붙인다 — DESIGN §13.7)
+            if (flow.ShopCards != null)
             {
-                flow.ChoosePerk(flow.Offer[0]);
+                flow.CloseShop();
                 return;
             }
 

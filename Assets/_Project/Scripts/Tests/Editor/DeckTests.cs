@@ -56,6 +56,30 @@ namespace PokerDefense.Tests
             Assert.Throws<InvalidOperationException>(() => deck.Draw());
         }
 
+        [Test]
+        public void 제외한_카드는_덱에_없다()
+        {
+            var excluded = new[]
+            {
+                new Card(Rank.Ace, Suit.Spade),
+                new Card(Rank.King, Suit.Heart),
+            };
+            var deck = new Deck(seed: 1, excluded);
+
+            Assert.AreEqual(50, deck.Remaining);
+
+            var drawn = DrawAll(deck);
+            CollectionAssert.DoesNotContain(drawn, excluded[0]);
+            CollectionAssert.DoesNotContain(drawn, excluded[1]);
+        }
+
+        [Test]
+        public void 빈_제외_목록이면_52장_그대로다()
+        {
+            var deck = new Deck(seed: 1, new Card[0]);
+            Assert.AreEqual(52, deck.Remaining);
+        }
+
         static List<Card> DrawAll(Deck deck)
         {
             var cards = new List<Card>(52);

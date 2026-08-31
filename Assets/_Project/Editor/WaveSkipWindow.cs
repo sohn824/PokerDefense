@@ -88,9 +88,9 @@ namespace PokerDefense.EditorTools
                 return "이미 게임이 끝났습니다.";
             }
 
-            if (flow.Offer != null)
+            if (flow.ShopCards != null)
             {
-                return "특전 선택 대기 중입니다. 특전을 먼저 골라주세요.";
+                return "카드 상점이 열려 있습니다. 상점을 먼저 닫아주세요.";
             }
 
             if (flow.CanDevSkip == false)

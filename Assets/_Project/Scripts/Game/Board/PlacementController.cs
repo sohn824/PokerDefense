@@ -41,8 +41,7 @@ namespace PokerDefense.Game
         // true일 경우 들고 있는 유닛을 놓을 자리가 아예 없는 상태
         public bool IsStuck => Pending != null && board.CanAccept(Pending) == false;
 
-        public int SupportSummonCost
-            => stage.Stage.Perks.SupportSummonCost(stage.Economy.SupportSummonCost);
+        public int SupportSummonCost => stage.Economy.SupportSummonCost;
 
         // 지원 소환은 대기 유닛을 먼저 처리한 뒤에만 가능하다. 라운드당 횟수 제한이 있다
         public bool CanSupportSummon => Pending == null

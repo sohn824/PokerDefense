@@ -8,7 +8,7 @@ namespace PokerDefense.Game
     /**
      * EconomyDefinition
      *
-     * Chip 경제 수치 데이터
+     * 게임 내 Chip 경제 수치 데이터
      */
     [CreateAssetMenu(menuName = "PokerDefense/Economy Definition", fileName = "Economy")]
     public sealed class EconomyDefinition : ScriptableObject
@@ -22,8 +22,8 @@ namespace PokerDefense.Game
             public int weight;
         }
 
-        [Header("유지 보너스 (남은 교체 횟수에 비례해 Chip을 받는다)")]
-        [Tooltip("교체 0장일 때 받는 Chip (1장 쓸 때마다 1씩 줄어듦)")]
+        [Header("교체를 사용하지 않았을 때 받을 수 있는 보너스 칩 최대치")]
+        [Tooltip("(1장 쓸 때마다 1씩 줄어듦)")]
         [SerializeField] int holdBonusMax = 4;
 
         [Header("지원 소환 코스트")]
@@ -38,9 +38,18 @@ namespace PokerDefense.Game
         [Header("유닛 판매 가격")]
         [SerializeField] int[] sellPrices = { 1, 2, 4 };
 
+        [Header("카드 상점")]
+        [Tooltip("상점 카드 1장 가격 (우선 균일)")]
+        [SerializeField] int shopCardPrice = 4;
+
+        [Tooltip("보유 카드 상한")]
+        [SerializeField] int heldCardCapacity = 3;
+
         public int SupportSummonCost => supportSummonCost;
         public int SupportSummonsPerRound => supportSummonsPerRound;
         public IReadOnlyList<SupportEntry> SupportPool => supportPool;
+        public int ShopCardPrice => shopCardPrice;
+        public int HeldCardCapacity => heldCardCapacity;
 
         // 남은 교체 횟수에 대한 유지 보너스
         public int HoldBonusFor(int usedExchanges)

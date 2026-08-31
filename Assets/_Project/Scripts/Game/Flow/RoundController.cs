@@ -5,10 +5,11 @@ using UnityEngine;
 
 namespace PokerDefense.Game
 {
-    /// <summary>
-    /// RoundContext를 씬에서 구동한다. UI는 이 컴포넌트의 이벤트를 구독하고 입력만 되돌려준다.
-    /// Game은 UI를 모른다 (DESIGN §2).
-    /// </summary>
+    /**
+     * RoundContext를 씬에서 구동하는 클래스
+     * UI는 이 컴포넌트의 이벤트를 구독하고 입력만 되돌려줌
+     * Game은 UI를 모른다
+     */
     public sealed class RoundController : MonoBehaviour
     {
         readonly System.Random seedSource = new System.Random();
@@ -25,25 +26,34 @@ namespace PokerDefense.Game
 
         public int UsedExchanges => round == null ? 0 : round.UsedExchanges;
 
-        // 라운드가 아직 안 열렸으면 Draw로 본다
+        // 라운드가 아직 안 열렸으면 Draw Phase로 본다
         public RoundPhase Phase => round == null ? RoundPhase.Draw : round.Phase;
 
-        // 지금 확정하면 어떤 족보가 되는지. 교체 중에도 볼 수 있어야 유지 보너스를 판단할 수 있다
-        // HandEvaluator는 순수 함수라 아무 때나 불러도 된다 (DESIGN §9.1)
+        // 지금 확정하면 어떤 족보가 되는지 표시용
         public HandResult PreviewHand() => HandEvaluator.Evaluate(round.Hand);
 
-        // 라운드를 여는 주체는 GameFlowController다. 여기서 스스로 시작하면 루프 주인이 둘이 된다
-        /// <summary>새 라운드. 덱을 새로 셔플하고 5장 뽑는다 (DESIGN §3.2 — 라운드마다 새 덱).</summary>
-        public void StartRound()
+        // 새 라운드가 시작될 때 호출 (호출부는 GameFlowController)
+        // 덱을 새로 셔플하고 5장 뽑는다
+        // heldCards(상점 보유 카드)는 이 라운드 덱에서 빠진다
+        public void StartRound(IReadOnlyList<Card> heldCards = null)
         {
-            round = new RoundContext(seedSource.Next());
+            round = new RoundContext(seedSource.Next(), heldCards);
             round.Draw();
 
             PhaseChanged?.Invoke(round.Phase);
             HandChanged?.Invoke(round.Hand);
         }
 
-        /// <summary>고른 자리만 교체한다. 페이즈는 Exchange에 머물러 여러 번 부를 수 있다.</summary>
+        // 상점 보유 카드 한 장을 손패 자리에 놓음
+        // 인벤토리에서 빼는 것은 호출부(StageController) 책임
+        public void PlaceHeldCard(int handIndex, Card card)
+        {
+            round.PlaceHeldCard(handIndex, card);
+
+            HandChanged?.Invoke(round.Hand);
+        }
+
+        // 고른 자리의 카드 교체
         public void ExchangeCards(IReadOnlyList<int> indices)
         {
             round.Exchange(indices);
@@ -51,9 +61,7 @@ namespace PokerDefense.Game
             HandChanged?.Invoke(round.Hand);
         }
 
-        /// <summary>
-        /// 교체를 끝낸다. Evaluate는 종료 조건이 "즉시"라(DESIGN §1) 이어서 바로 판정한다.
-        /// </summary>
+        // 교체를 끝내고 족보 확정
         public void ConfirmHand()
         {
             round.FinishExchange();
@@ -64,16 +72,16 @@ namespace PokerDefense.Game
         }
 
 #if UNITY_EDITOR
-        // 라운드를 다시 열지 않고 손패만 갈아끼운다. 루프의 주인은 여전히 GameFlowController다
         public bool CanForceHand => round != null && round.Phase == RoundPhase.Exchange;
 
-        /// <summary>개발 전용. 원하는 5장을 손에 쥐여 준다. 확정은 평소대로 누른다.</summary>
+        // 개발 전용
+        // 원하는 족보의 5장으로 손패 강제 교체
         public void DevForceHand(IReadOnlyList<Card> cards)
         {
             round.ForceHand(cards);
 
             HandChanged?.Invoke(round.Hand);
         }
-#endif
+#endif //UNITY_EDITOR
     }
 }

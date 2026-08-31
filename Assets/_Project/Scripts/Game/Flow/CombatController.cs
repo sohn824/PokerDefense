@@ -46,7 +46,7 @@ namespace PokerDefense.Game
                 return;
             }
 
-            combat = new CombatContext(placement.Board, Stage.CurrentWave, Stage.Perks);
+            combat = new CombatContext(placement.Board, Stage.CurrentWave);
             CombatStarted?.Invoke(combat);
         }
 

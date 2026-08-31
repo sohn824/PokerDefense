@@ -270,5 +270,22 @@ namespace PokerDefense.Tests
 
             Assert.Throws<InvalidOperationException>(() => new SupportSummon(economy, table, seed: 1));
         }
+
+        // 새 [SerializeField]는 기존 에셋에서 0으로 들어온다 (HISTORY 반복 함정). 실제 에셋에 값이 있는지 가드한다.
+        [Test]
+        public void 상점_에셋_수치가_비어_있지_않다()
+        {
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:EconomyDefinition");
+            Assert.IsNotEmpty(guids, "EconomyDefinition 에셋이 없다");
+
+            foreach (string guid in guids)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var economy = UnityEditor.AssetDatabase.LoadAssetAtPath<EconomyDefinition>(path);
+
+                Assert.Greater(economy.ShopCardPrice, 0, $"{path}: shopCardPrice가 0");
+                Assert.Greater(economy.HeldCardCapacity, 0, $"{path}: heldCardCapacity가 0");
+            }
+        }
     }
 }

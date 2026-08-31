@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using PokerDefense.Poker;
 using UnityEngine;
 
 namespace PokerDefense.Game
@@ -15,9 +17,9 @@ namespace PokerDefense.Game
     {
         [SerializeField] StageDefinition definition;
         [SerializeField] EconomyDefinition economy;
-        [SerializeField] PerkTable perkTable;
 
-        // 라이프나 Chip이 바뀌었다. HUD가 구독한다
+        // 라이프나 Chip이 바뀌었을 때 호출되는 이벤트
+        // HUD가 구독
         public event Action Changed;
 
         StageContext stage;
@@ -28,29 +30,20 @@ namespace PokerDefense.Game
          * Awake에서 만들지 않는다. 다른 컴포넌트의 Awake가 먼저 돌 수 있고
          * 그 순서는 씬 설정에 달려 있어 코드만 봐서는 알 수 없다 - 처음 묻는 쪽이 만들게 한다
          */
-        public StageContext Stage => stage ?? (stage = new StageContext(definition, perkTable));
+        public StageContext Stage => stage ?? (stage = new StageContext(definition, economy.HeldCardCapacity));
 
-        // 결과 화면용 성과 기록 (DESIGN §9.6). 규칙에 관여하지 않아 StageContext와 분리했다
+        // 상점 보유 카드
+        public IReadOnlyList<Card> HeldCards => Stage.HeldCards;
+
+        // 결과 화면용 성과 기록
         public RunStats Stats { get; } = new RunStats();
 
         public EconomyDefinition Economy => economy;
 
-        public PerkTable PerkTable => perkTable;
-
         /**
-         * 특전까지 반영한 유지 보너스
-         *
-         * 지급하는 쪽(GameFlowController)과 미리 보여주는 쪽(RoundScreen)이
-         * 반드시 같은 수를 내야 하므로 조합을 여기 한 곳에 둔다
+         * 유지 보너스 (교체 장수에 반비례해서 줄어들음)
          */
-        public int HoldBonusFor(int usedExchanges)
-            => Stage.Perks.HoldBonus(economy.HoldBonusFor(usedExchanges), usedExchanges);
-
-        public void AddPerk(PerkId id)
-        {
-            Stage.Perks.Add(id);
-            Changed?.Invoke();
-        }
+        public int HoldBonusFor(int usedExchanges) => economy.HoldBonusFor(usedExchanges);
 
         public void AddChip(int amount)
         {
@@ -78,6 +71,38 @@ namespace PokerDefense.Game
         public bool TryUseJoker()
         {
             if (Stage.TryUseJoker() == false)
+            {
+                return false;
+            }
+
+            Changed?.Invoke();
+            return true;
+        }
+
+        // 상점에서 카드 한 장 구매
+        // 인벤토리가 꽉 찼거나 Chip이 모자라면 false를 반환하고 아무것도 안 바뀜
+        public bool TryBuyShopCard(Card card)
+        {
+            if (Stage.CanHoldMoreCards == false)
+            {
+                return false;
+            }
+
+            // TrySpendChip이 Stats 기록과 Changed 이벤트 통지도 수행
+            if (TrySpendChip(economy.ShopCardPrice) == false)
+            {
+                return false;
+            }
+
+            Stage.TryAddHeldCard(card);
+            Changed?.Invoke();
+            return true;
+        }
+
+        // 손패에 놓아 인벤토리 보유 카드를 소모한다
+        public bool RemoveHeldCard(Card card)
+        {
+            if (Stage.TryRemoveHeldCard(card) == false)
             {
                 return false;
             }

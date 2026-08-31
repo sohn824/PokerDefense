@@ -11,20 +11,21 @@
 
 ## 현재 상태 요약
 
-- **진행 단계:** M0~M10 완료. **M11(아트 교체) 완료** — 유닛 13종·적 7종·이펙트 6장·카드 5장·배경/트랙 4장 + 동반 코드 전부 스프라이트로 대체(검증 조건 DESIGN §8). 슬롯 레이아웃·트랙 여백 재검토는 DESIGN §7-4로 미룸. 아트 이력·스펙은 [ART_REQUEST.md](ART_REQUEST.md)
+- **진행 단계:** M0~M11 완료. **M12 진행 중** — 딜러 특전을 카드 상점으로 대체. **Phase 1~5 완료**(상점 구현 + 특전 시스템 전면 삭제, EditMode 214/214), **Phase 6 재밸런싱만 남음**. 설계·단계는 DESIGN §13. 슬롯 레이아웃·트랙 여백(§7-4)은 Phase 6과 함께.
+- **M11(아트 교체):** 유닛 13종·적 7종·이펙트 6장·카드 5장·배경/트랙 4장 + 동반 코드 전부 스프라이트. 아트 이력·스펙은 [ART_REQUEST.md](ART_REQUEST.md)
 - **코드:** `Scripts/Poker/`, `Scripts/Game/`(Flow·Board·Units·Enemies·Data), `Scripts/UI/`, `Scripts/Tests/Editor/`
-- **데이터:** 유닛 13종(정식명 `원페어 건슬링어`, 공격 패턴 5종을 나눠 씀) + `HandUnitTable` + `CardVisualSet`, 적 7종(Grunt·Runner·Swarm·Brute·MiniBoss·Boss·FinalBoss = 5타입 전부 사용. MiniBoss W5 전용, Boss W10·20·30·40·50, FinalBoss W50 전용) + 웨이브 50개 + `Stage_1` + `Economy` + `PerkTable`(특전 6종)
+- **데이터:** 유닛 13종(정식명 `원페어 건슬링어`, 공격 패턴 5종을 나눠 씀) + `HandUnitTable` + `CardVisualSet`, 적 7종(Grunt·Runner·Swarm·Brute·MiniBoss·Boss·FinalBoss = 5타입 전부 사용. MiniBoss W5 전용, Boss W10·20·30·40·50, FinalBoss W50 전용) + 웨이브 50개 + `Stage_1` + `Economy`
 - **씬:** `Boot.unity`(빌드 0, 카메라만), `Game.unity`(빌드 1). 보드·적은 월드 스페이스, 카드 UI와 HUD만 uGUI
 - **렌더링:** URP 2D. Game 뷰 Portrait 1080x1920, 카메라 직교 크기 6.6, 보드 중심 월드 y=3.4
 - **어셈블리:** asmdef 없음. 게임 코드 `Assembly-CSharp`, 테스트 `Assembly-CSharp-Editor`(폴더명이 `Editor`여야 EditMode로 분류됨)
 - **테스트:** EditMode **219/219 통과**
 - **개발 도구:** `DevMode > 족보 소환`(교체 단계에서 원하는 족보를 손패에 쥐여 줌 — 족보 13종 ↔ 유닛 13종이 1:1) / `DevMode > 웨이브 스킵`(전투 없이 현재 웨이브를 클리어 처리하고 다음/지정 웨이브로). 게임 코드에는 `#if UNITY_EDITOR` 진입점만, 카드표·창은 `Assembly-CSharp-Editor`
 - **전투:** 겨냥 대상은 언제나 사거리 내 가장 앞선 적 1기. 패턴은 그 한 발이 몇 기를 함께 때리는가만 정한다 — DESIGN §10.1
-- **루프:** 50라운드 자동 진행 → 결과 화면 → 씬 리로드 재시작. 플레이어 입력 지점은 확정 / 전투 시작 / 보스 클리어 시 특전 선택 셋 — DESIGN §1
-- **특전:** 10·20·30·40 보스 클리어 시 3중 택1. 특전이 바꾸는 값은 전부 `PerkSet` 하나에 묻는다 — DESIGN §11.1
+- **루프:** 50라운드 자동 진행 → 결과 화면 → 씬 리로드 재시작. 플레이어 입력 지점은 확정 / 전투 시작 / 상점 웨이브(5·10·…) 닫기 셋 — DESIGN §1
+- **카드 상점:** 5웨이브마다 등장, 랜덤 4장 중 Chip으로 구매 → 보유 카드(상한 3)가 되어 교체 단계에서 손패에 배치(유지 보너스 안 깎음) — DESIGN §13. **딜러 특전 시스템은 M12에서 삭제** (§11)
 - **보드 조작(이동·머지·판매·조커)은 전투 중에도 열려 있다.** 지원 소환만 `Place` 페이즈 전용 — DESIGN §1
 - **Chip 경제:** 유지 보너스(교체를 덜 쓸수록 +Chip, 상한 3) / 판매 / 지원 소환 6 Chip(라운드당 1회) — DESIGN §9
-- **스테이지:** 50웨이브, 시작 라이프 12, 웨이브당 라이프 피해 상한 5(보스가 남으면 무조건 상한), 보스 클리어 시 Joker 1개 + 특전 — DESIGN §9.5
+- **스테이지:** 50웨이브, 시작 라이프 12, 웨이브당 라이프 피해 상한 5(보스가 남으면 무조건 상한), 보스 클리어 시 Joker 1개 — DESIGN §9.5
 - **UI는 한글.** 폰트 Maplestory(Light 기본 / Bold 굵기 연결), TMP Dynamic 아틀라스
 - **슬롯에는 유닛 아트와 성급(★)만.** 13종 전부 아트가 채워져 플레이스홀더 색·이름 라벨 폴백은 걷어냈다 — DESIGN §10.3
 - **유닛 아트는 방향별 4장, 모션은 코드가 낸다**(발사 반동 스케일 +6% + 대기 호흡). 조준 방향은 `CombatContext`가 유닛을 키로 기록 — DESIGN §10.4
@@ -99,6 +100,23 @@
 ---
 
 ## 이력
+
+### 2026-08-30 — M12 착수: 딜러 특전 → 카드 상점 (계획)
+
+- **결정:** 상위 족보(스트레이트+)에 단판 도달이 사실상 불가능하고, 노리면 교체를 쏟아 유지 보너스가 무너진다. 특전은 4번째 선택이 죽어 있다(§9.5). **미지근한 두 시스템을 카드 상점 하나로 합친다.** 설계 전문 DESIGN §13.
+- **핵심 규칙:** 상점 카드로 손패를 고쳐도 자리별 교체권·유지 보너스를 안 깎는다. Chip을 상점에서 미리 지불해 손패를 개선하는 경로 — 이게 아니면 상점이 "비싼 교체"라 무의미.
+- **범위 좁히기:** 경제 특전 4종은 상점이 대체. 전투 특전 2종(신병 훈련·고참)은 유닛 ★ 계수에 흡수 후 재밸런싱으로 확정 → 전투 재밸런싱을 "경제 특전 → 상점"으로 축소.
+- **검토에서 사용자 제안을 수정한 점:** ① "완전 랜덤 카드" → "제시된 4장 중 선택"(결정이 남게). ② "보유 카드는 덱에서 빠짐"은 라운드마다 새 셔플이라(§3.2) 확률 영향 미미 — 테마용으로만 유지, 상한 3장. ③ 밸런스와 한 묶음(기존 "B" 재검증을 M12에 병합). ④ dev 토글로 특전과 병행 프로토타입 → 플레이테스트 후 특전 제거 확정.
+- **단계(DESIGN §13.7):** RoundContext 리팩터(잠금↔교체카운터 분리, `PlaceHeldCard`, 덱 제외) → StageContext 보유카드+상점 롤 → 상점 UI+트레이 → dev 병행 플레이테스트(go/no-go) → 특전 제거 → 재밸런싱.
+- **Phase 1 완료:** `RoundContext`에 `exchangedCount`를 새로 두어 자리 잠금(`locked`)과 분리 — `UsedExchanges`가 이제 이 카운터를 본다(상점 배치는 자리를 잠그되 안 셈). `PlaceHeldCard(index, card)` 추가. `RoundContext(seed, heldCards)`·`Deck(seed, excluded)`로 보유 카드를 덱에서 제외. 기존 흐름 무변화(교체만 할 땐 값이 동일). 테스트 +12, **EditMode 231/231**.
+- **Phase 2 완료:** `StageContext`에 보유 카드 인벤토리(`HeldCards`/`CanHoldMoreCards`/`TryAddHeldCard`/`TryRemoveHeldCard`, 상한은 ctor 인자 기본 3). `ShopOffer`(순수) 신설 — `Roll(held)`가 held 뺀 52장에서 4장 추첨(시드 결정적). `Deck.BuildCards(excluded)` static 추출해 덱·상점이 공유. `EconomyDefinition`에 `shopCardPrice 4`·`heldCardCapacity 3` + `Economy.asset`에 명시 값 + 에셋 가드 테스트(HISTORY 함정). 테스트 +11, **EditMode 242/242**.
+- **Phase 3a 완료 (흐름 배선, UI 없음):** `RoundController.StartRound(heldCards)`·`PlaceHeldCard`. `StageController`가 `HeldCardCapacity` 주입, `TryBuyShopCard`(상한·Chip 체크 후 구매)·`RemoveHeldCard`·`HeldCards`. `GameFlowController`: `ShopOffer` 보유, `AdvanceRound`가 `RoundNumber % 5 == 0 && < TotalWaves`면 `shopPending` 표시 → **특전 선택이 끝난 뒤** `ResumeFlow`가 상점을 연다(`ShopCards`/`ShopOpened`/`CloseShop`). `CanDevSkip`에 `ShopCards == null` 추가. 플레이 모드 검증: 웨이브5 클리어 → 특전 → 상점 4장 → 구매(상한 3에서 4번째 거부) → CloseShop → 다음 라운드 손패에 보유 카드 안 나옴 → `PlaceHeldCard`가 `UsedExchanges` 안 올림(교체는 정상으로 셈). **EditMode 242/242.**
+- **발견(내 변경 아님):** `Stage_1.asset`의 `perkReward`가 웨이브 5·10·15·20·30·40에 켜져 있다 — DESIGN §9.5의 "10·20·30·40"과 불일치(2026-08-23 "5·10·15 주기→10" 변경 때 데이터 미갱신 추정). Phase 5에서 특전 제거 시 무의미해지나, 그 전까지 상점 웨이브(5·10·…·45)와 겹친다. 겹칠 때 "특전 먼저, 상점 다음"으로 처리됨.
+- **Phase 3b 완료 (UI):** `ShopScreen`(전면 패널, `PerkScreen`과 같은 구조 — `flow.ShopOpened` 구독, 진열 4장 = `CardView` 재사용, 산 카드는 선택 프레임 표시, `닫기` → `CloseShop`). `RoundScreen`: 화면 하단에 `HeldCardTray`(보유 카드 0~3장, 축소 `CardView`), 교체 단계 & 보유>0일 때만 표시. **2탭 배치:** 트레이 카드 탭 → `armedHeld` 무장(교체-선택 전부 해제) → 손패 칸 탭 → `PlaceHeldCard` + `RemoveHeldCard`. 무장 중 상태 문구 "손패 칸을 눌러 카드를 놓으세요 (교체 아님)". `Game.unity`에 `ShopPanel`(PerkPanel 복제 후 개조)·`HeldCardTray` 신규 — 씬 재직렬화로 diff가 큼(±수천 줄, TMP 머티리얼 누수는 없음 확인).
+- **검증:** 플레이 모드에서 실제 버튼 클릭 경로로 전 과정 확인 — 웨이브5 → 특전 버튼 → 상점 4장 → 카드 버튼으로 구매(Chip·상한) → 닫기 → 라운드6 트레이에 보유 카드 → 트레이 탭 무장 → 손패 칸 탭 배치(`UsedExchanges` 안 오름, 자리 잠김, 인벤토리 소모) → 이후 실제 교체는 정상 카운트. **EditMode 242/242.** 폰트 아틀라스 churn은 `git checkout`으로 되돌림.
+- **Phase 4 생략:** 상점이 이미 특전과 병행 동작함을 확인 → dev 토글 없이 사용자가 특전 제거를 확정.
+- **Phase 5 완료 (특전 전면 삭제, 2026-08-31):** 파일 삭제 `PerkSet`·`PerkTable`·`PerkOffer`·`PerkId`·`PerkCategory`·`PerkScreen`·`PerkCategoryNames`·`PerkTests` + `PerkTable.asset`. 참조 제거 `StageContext`(`Perks`·`WaveEndChip`)·`StageController`(`perkTable`·`AddPerk`, `HoldBonusFor`는 `economy` 직결)·`GameFlowController`(`Offer`·`PerkOffered`·`ChoosePerk`·특전 분기·`ResumeFlow`/`shopPending` 인라인화)·`CombatContext`(`perks`·`AttackPowerOf` → `unit.AttackPower`)·`CombatController`·`PlacementController`·`BoardScreen`(`perkLabel`·`ShowPerks`) + Editor 툴 2개. 씬에서 `PerkPanel`·`PerkLabel` GO + `PerkScreen` 컴포넌트 삭제. **전투 특전은 흡수 안 함**(★ 계수가 공격력·속도를 둘 다 곱해 공격력만 +X%를 못 넣음) — 성급 유닛 DPS가 내려가고 Phase 6이 조정. `WaveDefinition.perkReward`는 死 필드로 남김. `PerkTests` 28개 삭제로 **EditMode 242→214/214**. 플레이 모드에서 특전 패널 없이 상점만 뜨는 것 + 조커 보상·상점 전 흐름 확인.
+- **다음은 Phase 6 (마지막):** 재밸런싱 — 특전 제거로 내려간 DPS + 상점 경제를 `BalanceSimRunner` + 플레이테스트로 조정. 상점 가격·유닛 ★ 계수·웨이브 밀도·`perkReward` 死 필드 정리 + 상단 레이아웃 패스(§7-4).
 
 ### 2026-08-30 — 화면 상단 레이아웃 패스 1차 (DESIGN §7-4 일부)
 

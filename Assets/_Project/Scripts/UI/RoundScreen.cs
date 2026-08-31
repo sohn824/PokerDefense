@@ -29,7 +29,14 @@ namespace PokerDefense.UI
         [SerializeField] Button confirmButton;
         [SerializeField] TMP_Text confirmLabel;
 
+        [Tooltip("상점에서 산 보유 카드 Tray")]
+        [SerializeField] GameObject heldTray;
+        [SerializeField] CardView[] heldCardViews;
+
         RoundPhase phase;
+
+        // 배치하려고 고른 트레이 카드 (null이면 평소의 교체-선택 모드)
+        CardView armedHeld;
 
         void Awake()
         {
@@ -37,6 +44,12 @@ namespace PokerDefense.UI
             {
                 cardViews[i].Bind(cardVisuals);
                 cardViews[i].Clicked += OnCardClicked;
+            }
+
+            for (int i = 0; i < heldCardViews.Length; i++)
+            {
+                heldCardViews[i].Bind(cardVisuals);
+                heldCardViews[i].Clicked += OnHeldClicked;
             }
 
             exchangeButton.onClick.AddListener(OnExchange);
@@ -56,6 +69,7 @@ namespace PokerDefense.UI
                 categoryLabel.text = string.Empty;
             }
 
+            RefreshTray();
             Refresh();
         }
 
@@ -67,6 +81,7 @@ namespace PokerDefense.UI
                 cardViews[i].SetSelected(false);
             }
 
+            RefreshTray();
             Refresh();
         }
 
@@ -86,8 +101,84 @@ namespace PokerDefense.UI
 
         void OnCardClicked(CardView card)
         {
+            // 트레이 카드를 고른 상태면 이 손패 칸에 놓는다 (교체 선택 토글이 아니라)
+            if (armedHeld != null)
+            {
+                PlaceArmedOn(card);
+                return;
+            }
+
             card.SetSelected(!card.Selected);
             Refresh();
+        }
+
+        // 트레이 카드 탭 - 배치할 카드를 고르거나(무장) 다시 눌러 해제
+        void OnHeldClicked(CardView trayCard)
+        {
+            if (armedHeld == trayCard)
+            {
+                armedHeld = null;
+            }
+            else
+            {
+                // 배치 모드로 들어가면 교체 선택은 버린다
+                for (int i = 0; i < cardViews.Length; i++)
+                {
+                    cardViews[i].SetSelected(false);
+                }
+
+                armedHeld = trayCard;
+            }
+
+            RefreshTray();
+            Refresh();
+        }
+
+        void PlaceArmedOn(CardView handCard)
+        {
+            int slot = System.Array.IndexOf(cardViews, handCard);
+            int trayIndex = System.Array.IndexOf(heldCardViews, armedHeld);
+
+            if (slot < 0 || controller.IsLocked(slot) || trayIndex < 0 || trayIndex >= stage.HeldCards.Count)
+            {
+                return;
+            }
+
+            Card held = stage.HeldCards[trayIndex];
+
+            armedHeld = null;
+            stage.RemoveHeldCard(held);
+            // HandChanged -> ShowHand 가 RefreshTray + Refresh 를 부른다
+            controller.PlaceHeldCard(slot, held);
+        }
+
+        // 보유 카드 트레이를 현재 상태에 맞춘다
+        void RefreshTray()
+        {
+            IReadOnlyList<Card> held = stage.HeldCards;
+            bool show = phase == RoundPhase.Exchange && held.Count > 0;
+
+            heldTray.SetActive(show);
+
+            if (show == false)
+            {
+                armedHeld = null;
+            }
+
+            for (int i = 0; i < heldCardViews.Length; i++)
+            {
+                bool filled = show && i < held.Count;
+                heldCardViews[i].gameObject.SetActive(filled);
+
+                if (filled == false)
+                {
+                    continue;
+                }
+
+                heldCardViews[i].Show(held[i]);
+                heldCardViews[i].SetSelected(heldCardViews[i] == armedHeld);
+                heldCardViews[i].SetInteractable(true);
+            }
         }
 
         void OnExchange()
@@ -145,6 +236,12 @@ namespace PokerDefense.UI
 
             categoryLabel.text = HandCategoryNames.Of(preview.Category);
             confirmLabel.text = bonus > 0 ? $"확정 +{bonus}" : "확정";
+
+            if (armedHeld != null)
+            {
+                statusLabel.text = "손패 칸을 눌러 카드를 놓으세요 (교체 아님)";
+                return;
+            }
 
             statusLabel.text = left == 0
                 ? $"확정하면 {unit.DisplayName} 소환 - 더 바꿀 카드가 없습니다"

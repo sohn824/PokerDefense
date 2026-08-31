@@ -35,9 +35,6 @@ namespace PokerDefense.UI
         [SerializeField] Button jokerButton;
         [SerializeField] TMP_Text jokerLabel;
 
-        [Tooltip("고른 특전 표시")]
-        [SerializeField] TMP_Text perkLabel;
-
         [Tooltip("유닛 아트의 조준 방향·반동을 얻는 컨트롤러")]
         [SerializeField] CombatController combat;
 
@@ -274,8 +271,6 @@ namespace PokerDefense.UI
             supportButton.interactable = placement.CanSupportSummon;
             supportLabel.text = $"지원 소환 {placement.SupportSummonCost}";
 
-            ShowPerks();
-
             // 조커는 고른 유닛에만 쓴다. 고르기 전에는 대상이 없어 버튼을 띄울 이유가 없다
             bool jokerOffered = pending == null && selected != NoSelection;
             jokerButton.gameObject.SetActive(jokerOffered);
@@ -307,27 +302,6 @@ namespace PokerDefense.UI
             ShowDetail(null, "족보를 확정하면 유닛이 소환됩니다");
         }
 
-        // 고른 특전 표시
-        void ShowPerks()
-        {
-            var owned = stage.Stage.Perks.Owned;
-
-            if (owned.Count == 0)
-            {
-                perkLabel.text = string.Empty;
-                return;
-            }
-
-            string names = stage.PerkTable.GetEntry(owned[0]).displayName;
-
-            for (int i = 1; i < owned.Count; i++)
-            {
-                names += " · " + stage.PerkTable.GetEntry(owned[i]).displayName;
-            }
-
-            perkLabel.text = "특전  " + names;
-        }
-
         /**
          * 유닛 상세 정보 표시
          *
@@ -345,8 +319,7 @@ namespace PokerDefense.UI
 
             string suffix = string.IsNullOrEmpty(hint) ? string.Empty : "  -  " + hint;
 
-            // 특전이 붙은 공격력을 표시
-            float power = stage.Stage.Perks.AttackPowerOf(unit);
+            float power = unit.AttackPower;
 
             pendingLabel.text =
                 $"{unit.Definition.DisplayName} {new string('★', unit.Star)}{suffix}\n" +

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using PokerDefense.Poker;
 
 namespace PokerDefense.Game
 {
@@ -6,13 +8,17 @@ namespace PokerDefense.Game
      * StageContext
      *
      * 한 판(스테이지) 동안 유지되는 상태 - 웨이브 진행, 라이프, Chip
-     * 전투 하나보다 오래 살고 스테이지가 끝나면 전부 사라진다 (메타 성장 없음)
-     * 클리어하면 다음 웨이브로, 시간 초과면 남은 적 수만큼 라이프가 깎인다 (DESIGN §5.4)
+     * 스테이지가 끝나면 전부 사라진다
+     * 클리어하면 다음 웨이브로 진행
+     * 시간 초과면 남은 적 수만큼 라이프가 깎임
      */
     public sealed class StageContext
     {
         readonly StageDefinition definition;
-        public StageContext(StageDefinition definition, PerkTable perks = null)
+        readonly List<Card> heldCards = new List<Card>();
+        readonly int heldCardCapacity;
+
+        public StageContext(StageDefinition definition, int heldCardCapacity = 3)
         {
             if (definition == null)
             {
@@ -20,15 +26,38 @@ namespace PokerDefense.Game
             }
 
             this.definition = definition;
+            this.heldCardCapacity = heldCardCapacity;
             Life = definition.StartingLife;
             Chip = definition.StartingChip;
-            Perks = perks == null ? PerkSet.Empty : new PerkSet(perks);
         }
 
         public int Life { get; private set; }
 
-        // 이번 판에 고른 딜러 특전 (특전이 바꾸는 값들은 전부 여기를 거쳐서 계산)
-        public PerkSet Perks { get; }
+        // 상점에서 산 카드
+        // 스테이지 동안 유지되고 상한이 있다
+        public IReadOnlyList<Card> HeldCards => heldCards;
+
+        public bool CanHoldMoreCards => heldCards.Count < heldCardCapacity;
+
+        // 상점 카드를 인벤토리에 넣는다
+        // 꽉 찼으면 false를 돌려주고 아무것도 바뀌지 않는다
+        public bool TryAddHeldCard(Card card)
+        {
+            if (heldCards.Count >= heldCardCapacity)
+            {
+                return false;
+            }
+
+            heldCards.Add(card);
+            return true;
+        }
+
+        // 인벤토리에 있는 카드를 손패에 놓을 때 인벤토리에서 뺀다
+        // 없으면 false
+        public bool TryRemoveHeldCard(Card card)
+        {
+            return heldCards.Remove(card);
+        }
 
         // 스테이지 안에서만 쓰는 보너스 재화
         public int Chip { get; private set; }
@@ -49,7 +78,7 @@ namespace PokerDefense.Game
 
         /**
          * 전투 결과를 반영하고 다음 웨이브로 넘긴다
-         * unresolvedEnemies는 아직 안 나온 적까지 포함한 잔여 수다
+         * unresolvedEnemies는 아직 안 나온 적까지 포함한 잔여 적 수
          */
         public void ApplyResult(CombatOutcome outcome, int unresolvedEnemies, int unresolvedBosses)
         {
@@ -76,9 +105,6 @@ namespace PokerDefense.Game
             {
                 Jokers += CurrentWave.JokerReward;
             }
-
-            // 이자는 웨이브가 끝나면 받는다. 클리어했는지는 보지 않는다 (Interest 특전)
-            Chip += Perks.WaveEndChip(Chip);
 
             WaveIndex++;
         }
@@ -116,7 +142,8 @@ namespace PokerDefense.Game
             Chip += amount;
         }
 
-        /// <summary>Chip이 모자라면 false를 돌려주고 아무것도 바뀌지 않는다.</summary>
+        // Chip 소모 시도
+        // Chip이 모자라면 false를 반환하고 아무것도 바뀌지 않음
         public bool TrySpendChip(int amount)
         {
             if (amount < 0)

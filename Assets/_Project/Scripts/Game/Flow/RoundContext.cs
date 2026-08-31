@@ -6,9 +6,12 @@ namespace PokerDefense.Game
 {
     /**
      * RoundContext
-     * 
+     *
      * 라운드 하나의 흐름
      * 카드 드로우 -> 카드 교체 (카드 하나당 한번씩 가능, 교체한 자리는 잠김) -> 족보 판정 순서로 진행
+     *
+     * heldCards로 넘긴 상점 보유 카드는 이 라운드 덱에서 빠지고
+     * PlaceHeldCard로 손패 자리에 놓을 수 있음
      */
     public sealed class RoundContext
     {
@@ -16,11 +19,15 @@ namespace PokerDefense.Game
 
         readonly Deck deck; // 전체 덱
         readonly Card[] hand = new Card[HandSize]; // 5장 손패
-        readonly bool[] locked = new bool[HandSize]; // 교체해서 잠긴 자리인지 여부
+        readonly bool[] locked = new bool[HandSize]; // 교체 or 상점 카드 배치로 잠긴 자리인지 여부
 
-        public RoundContext(int seed)
+        // 실제로 교체한 장수. 자리 잠금(locked)과 분리
+        // (상점 카드 배치도 자리를 잠그지만 유지 보너스는 실제로 교체했을 때만 줄여야 하기 때문)
+        int exchangedCount;
+
+        public RoundContext(int seed, IReadOnlyList<Card> heldCards = null)
         {
-            deck = new Deck(seed);
+            deck = new Deck(seed, heldCards);
         }
 
         public RoundPhase Phase { get; private set; } = RoundPhase.Draw;
@@ -30,11 +37,11 @@ namespace PokerDefense.Game
         // 손패 족보 - Evaluate로 판정하기 전에는 의미 없는 값
         public HandResult Result { get; private set; }
 
-        // 이번 라운드에 이미 교체해서 더는 바꿀 수 없는 자리인지 판별
+        // 이번 라운드에 이미 교체했거나 상점 카드를 놓아 더는 바꿀 수 없는 자리인지 판별
         public bool IsLocked(int index) => locked[index];
 
-        // 이번 라운드에 실제로 교체한 장수 (보너스 Chip 계산에 사용)
-        public int UsedExchanges => HandSize - ExchangeableCount;
+        // 이번 라운드에 실제로 교체한 장수 (유지 보너스 계산에 사용 — 상점 카드 배치는 안 셈)
+        public int UsedExchanges => exchangedCount;
 
         // 아직 바꿀 수 있는 손패 자리 수
         public int ExchangeableCount
@@ -87,6 +94,27 @@ namespace PokerDefense.Game
                 hand[index] = deck.Draw();
                 locked[index] = true;
             }
+
+            exchangedCount += indices.Count;
+        }
+
+        // 상점 보유 카드 한 장을 손패 자리에 놓는다
+        public void PlaceHeldCard(int index, Card card)
+        {
+            Require(RoundPhase.Exchange);
+
+            if (index < 0 || index >= HandSize)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $"손패 범위를 벗어난 인덱스 입니다: {index}");
+            }
+
+            if (locked[index])
+            {
+                throw new InvalidOperationException($"이미 교체했거나 상점 카드를 놓은 자리입니다: {index}");
+            }
+
+            hand[index] = card;
+            locked[index] = true;
         }
 
         // Exchange Phase를 끝내고 Evaluate Phase로 넘김
