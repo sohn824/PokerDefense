@@ -33,15 +33,11 @@ namespace PokerDefense.Game
         [Tooltip("이 웨이브를 클리어하면 받는 Joker 수 (보스 웨이브 전용)")]
         [SerializeField] int jokerReward;
 
-        [Tooltip("이 웨이브를 클리어하면 딜러 특전을 고른다 (보스 웨이브 전용)")]
-        [SerializeField] bool perkReward;
-
         [SerializeField] SpawnEntry[] entries;
 
         public int WaveNumber => waveNumber;
         public float TimeLimit => timeLimit;
         public int JokerReward => jokerReward;
-        public bool PerkReward => perkReward;
         public IReadOnlyList<SpawnEntry> Entries => entries;
 
         public int TotalEnemyCount

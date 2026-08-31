@@ -230,7 +230,7 @@ public static class HandEvaluator
 | `UnitDefinition` | id, 표시명, 공격력, 공격속도, 사거리, 성급 배수(★1/★2/★3), 공격 패턴 + 패턴 수치(Multi 타겟 수 / Splash 반경 / Pierce 관통 길이), **방향별 아트 4장**(§10.4) |
 | `HandUnitTable` | `HandCategory → UnitDefinition` 매핑 1개 (에셋 1개, 전역) |
 | `EnemyDefinition` | id, 표시명, 플레이스홀더 색, 최대HP, 이동속도, 타입, 방향별 아트 4장, 표시 배율(`visualScale`) |
-| `WaveDefinition` | 스폰 엔트리 리스트(적, 수량, 간격, 시작 지연), 제한시간, 웨이브 번호, Joker 보상 (`perkReward` 필드는 M12에서 死 — §11) |
+| `WaveDefinition` | 스폰 엔트리 리스트(적, 수량, 간격, 시작 지연), 제한시간, 웨이브 번호, Joker 보상 |
 | `StageDefinition` | `WaveDefinition` 순서 리스트, 시작 라이프, 시작 Chip, 웨이브당 라이프 피해 상한 |
 | `EconomyDefinition` | 유지 보너스 상한, 지원 소환 비용·확률·횟수, 판매 가격, 상점 카드 가격·보유 상한 (§13) |
 | `CardVisualSet` | 손패 카드 스프라이트 묶음 (에셋 1개, 전역). 프레임·하이라이트 + 무늬 4장. **수치가 아니라 표시용** — `RoundScreen`이 `CardView` 5장에 물려준다 (§10.4의 카드 아트) |
@@ -478,7 +478,7 @@ M10까지는 **플레이스홀더 도형/색상 스프라이트**로 진행했�
 | 5 | 41~49 | 신규. Brute 비중 42%→54%, 최대 밀집 | 단일 유닛 캐리로는 버티기 힘든 구간 |
 | | **50 최종 보스** | Final Boss ×3 + Boss ×6 + 소량 | 클리어. 보상 없음(마지막 라운드라 쓸 곳이 없음) |
 
-**카드 상점은 5웨이브마다 등장한다**(5·10·…·45, 50 제외 — §13.2). `WaveDefinition.perkReward`는 M12에서 死 필드가 됐고, 그 값이 5·10·15·20·30·40에 켜져 있어(§9.5의 Joker 주기 10·20·30·40과도 불일치) 웨이브 데이터 정리는 Phase 6 항목이다.
+**카드 상점은 5웨이브마다 등장한다**(5·10·…·45, 50 제외 — §13.2). `WaveDefinition.perkReward` 필드와 웨이브 에셋의 `perkReward` 키(5·10·15·20·30·40에 켜져 있어 §9.5의 Joker 주기 10·20·30·40과도 불일치했다)는 M12 Phase 6에서 제거했다.
 
 Joker 보상은 `WaveDefinition.jokerReward`에 적는다. **웨이브를 클리어해야 들어오고**, 시간 초과로 넘어가면 받지 못한다.
 
@@ -648,7 +648,7 @@ Slow·Poison·Stun 같은 상태이상은 넣지 않는다.
 
 특전 시스템(`PerkSet`·`PerkTable`·`PerkOffer`·`PerkScreen`)은 전부 삭제하고 **카드 상점(§13)**으로 대체했다. 경제 특전 4종(뚝심·위로금·흥정·이자)의 역할은 상점이 대신하고, 전투 특전 2종(신병 훈련 ★1 +20% / 고참 ★2+ +15%)은 흡수하지 않고 그냥 제거했다 — `UnitDefinition.MultiplierFor(Star)`가 공격력·공격속도를 둘 다 곱해 "공격력만 +X%"인 특전을 계수에 넣을 수 없다. 그만큼 성급 유닛 DPS가 내려가고 **Phase 6 재밸런싱**(§13.7)이 조정한다. 삭제 내역은 [HISTORY.md](HISTORY.md).
 
-`WaveDefinition.perkReward` 필드는 아직 코드에 남아 있으나 아무도 안 읽는다(死). 웨이브 데이터 정리(그 값이 5·10·15·20·30·40에 켜져 있어 §9.5의 "10·20·30·40"과도 불일치)는 Phase 6 항목.
+`WaveDefinition.perkReward` 필드와 웨이브 에셋 50개의 `perkReward` 키는 Phase 6에서 삭제했다(그 값이 5·10·15·20·30·40에 켜져 있어 §9.5의 "10·20·30·40"과도 불일치했다).
 
 ---
 
@@ -699,7 +699,7 @@ Slow·Poison·Stun 같은 상태이상은 넣지 않는다.
 - **경제 특전 4종**(뚝심·위로금·흥정·이자)은 상점이 대체. `PerkSet`·`PerkTable`·`PerkOffer`·`PerkId`·`PerkScreen`·`PerkCategoryNames`·`PerkTests` + `PerkTable.asset` 삭제. `StageContext`·`StageController`·`GameFlowController`·`CombatContext`·`CombatController`·`PlacementController`·`BoardScreen` + Editor 툴(`WaveSkipWindow`·`BalanceSimRunner`)에서 참조 제거. 씬에서 `PerkPanel`·`PerkLabel` 삭제.
 - **전투 특전 2종**(신병 훈련 ★1 +20% / 고참 ★2+ +15%)은 **흡수하지 않고 그냥 제거**했다 — `MultiplierFor(Star)`가 공격력·공격속도를 둘 다 곱해 "공격력만 +X%"를 계수에 못 넣는다. 성급 유닛 DPS가 그만큼 내려가고 Phase 6이 조정한다.
 - §1 입력 지점: "보스 클리어 특전 선택" → "상점 웨이브(5·10·…) 닫기"로 바뀜.
-- `WaveDefinition.perkReward`는 死 필드로 남김(§11). 웨이브 데이터 정리는 Phase 6.
+- `WaveDefinition.perkReward` 필드 + 웨이브 에셋 50개의 `perkReward` 키는 Phase 6에서 삭제(§11).
 
 ### 13.6 검증
 
@@ -714,5 +714,5 @@ Slow·Poison·Stun 같은 상태이상은 넣지 않는다.
 3. ~~흐름 배선 + UI (`ShopScreen`, `RoundScreen` 트레이, 2탭 배치, `Game.unity` 배선).~~ **완료.**
 4. ~~dev 토글로 특전과 병행 플레이테스트.~~ **생략** — 상점이 이미 특전과 병행 동작함을 확인, 사용자가 제거를 확정.
 5. ~~특전 시스템 제거.~~ **완료 (214/214, 2026-08-31).**
-6. **재밸런싱 패스 (남음)** — 특전 제거로 내려간 DPS 곡선 + 상점 경제를 `BalanceSimRunner` + 플레이테스트로 조정. 상점 가격·유닛 ★ 계수·웨이브 밀도·`perkReward` 死 필드 정리. 상단 레이아웃 패스(§7-4)도 여기서.
+6. **재밸런싱 패스 (진행 중)** — `perkReward` 死 필드·웨이브 에셋 키 정리 **완료 (2026-09-01)**. 남음: 특전 제거로 내려간 DPS 곡선 + 상점 경제를 `BalanceSimRunner` + 플레이테스트로 조정(상점 가격·유닛 ★ 계수·웨이브 밀도). 상단 레이아웃 패스(§7-4)도 여기서.
 | 스테이지 | 50웨이브가 지루하지 않은가? 10·20·30·40 보스가 실제로 벽으로 느껴지는가? 조커를 어디에 쓸지 고민하는가? |

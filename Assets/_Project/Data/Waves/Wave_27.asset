@@ -15,7 +15,6 @@ MonoBehaviour:
   waveNumber: 27
   timeLimit: 46
   jokerReward: 0
-  perkReward: 0
   entries:
   - enemy: {fileID: 11400000, guid: 6b1f4c07d29a4d34b8e5c0a71f3d92c8, type: 2}
     count: 68

@@ -56,7 +56,7 @@
 | 에디터 켠 채 패키지 제거 → `Library/ScriptAssemblies`에 고아 DLL | 수동 삭제 후 리프레시 |
 | 컨트롤러 안 거치고 `GridBoard` 직접 변경 → 화면 굳음 | `PlacementController` 이벤트가 안 나가서다. 검증 스크립트에서 자주 걸린다 |
 | **슬롯 인덱스로 든 전투 상태는 유닛이 움직이면 어긋난다** | 공격 쿨다운이 그랬다 — 빈 칸으로 옮기면 그 칸의 0을 물려받아 연사(10배). **유닛을 키로** 들 것 |
-| **기존 에셋에 `[SerializeField]` 필드를 새로 넣으면 C# 초기값이 아니라 0** | YAML에 키가 없으면 `default(T)`. 필드 추가 시 기존 에셋에 값을 명시적으로 써넣고, **비어 있지 않은지 검사하는 에셋 가드 테스트**를 붙인다(`visualScale`·`multiSpread`·`perkReward`가 그랬다) |
+| **기존 에셋에 `[SerializeField]` 필드를 새로 넣으면 C# 초기값이 아니라 0** | YAML에 키가 없으면 `default(T)`. 필드 추가 시 기존 에셋에 값을 명시적으로 써넣고, **비어 있지 않은지 검사하는 에셋 가드 테스트**를 붙인다(`visualScale`·`multiSpread`가 그랬다) |
 | **`Awake`에서 만든 것을 다른 컴포넌트의 `Awake`가 읽으면 순서에 걸린다** | 실행 순서는 씬 설정에 달려 코드만 봐선 안 보인다. **처음 묻는 쪽이 만들게**(지연 생성) |
 | **enum 값을 중간에 끼우면 기존 에셋이 조용히 어긋난다** | 에셋은 enum을 정수로 든다. `EnemyType`은 뒤에만 붙이고(Normal 0 / Swarm 1 / Boss 2 / Runner 3 / Tank 4) 정수 값 고정 테스트 |
 | `Tick(0.05f)`를 N번 돌려도 정확히 N×0.05초가 안 됨 | 부동소수 누적이라 살짝 못 미쳐 제한시간 판정을 안 지난다. 한 스텝 더 돌린다 |
@@ -116,7 +116,9 @@
 - **검증:** 플레이 모드에서 실제 버튼 클릭 경로로 전 과정 확인 — 웨이브5 → 특전 버튼 → 상점 4장 → 카드 버튼으로 구매(Chip·상한) → 닫기 → 라운드6 트레이에 보유 카드 → 트레이 탭 무장 → 손패 칸 탭 배치(`UsedExchanges` 안 오름, 자리 잠김, 인벤토리 소모) → 이후 실제 교체는 정상 카운트. **EditMode 242/242.** 폰트 아틀라스 churn은 `git checkout`으로 되돌림.
 - **Phase 4 생략:** 상점이 이미 특전과 병행 동작함을 확인 → dev 토글 없이 사용자가 특전 제거를 확정.
 - **Phase 5 완료 (특전 전면 삭제, 2026-08-31):** 파일 삭제 `PerkSet`·`PerkTable`·`PerkOffer`·`PerkId`·`PerkCategory`·`PerkScreen`·`PerkCategoryNames`·`PerkTests` + `PerkTable.asset`. 참조 제거 `StageContext`(`Perks`·`WaveEndChip`)·`StageController`(`perkTable`·`AddPerk`, `HoldBonusFor`는 `economy` 직결)·`GameFlowController`(`Offer`·`PerkOffered`·`ChoosePerk`·특전 분기·`ResumeFlow`/`shopPending` 인라인화)·`CombatContext`(`perks`·`AttackPowerOf` → `unit.AttackPower`)·`CombatController`·`PlacementController`·`BoardScreen`(`perkLabel`·`ShowPerks`) + Editor 툴 2개. 씬에서 `PerkPanel`·`PerkLabel` GO + `PerkScreen` 컴포넌트 삭제. **전투 특전은 흡수 안 함**(★ 계수가 공격력·속도를 둘 다 곱해 공격력만 +X%를 못 넣음) — 성급 유닛 DPS가 내려가고 Phase 6이 조정. `WaveDefinition.perkReward`는 死 필드로 남김. `PerkTests` 28개 삭제로 **EditMode 242→214/214**. 플레이 모드에서 특전 패널 없이 상점만 뜨는 것 + 조커 보상·상점 전 흐름 확인.
-- **다음은 Phase 6 (마지막):** 재밸런싱 — 특전 제거로 내려간 DPS + 상점 경제를 `BalanceSimRunner` + 플레이테스트로 조정. 상점 가격·유닛 ★ 계수·웨이브 밀도·`perkReward` 死 필드 정리 + 상단 레이아웃 패스(§7-4).
+- **Phase 6 진행 중 (재밸런싱, 마지막):**
+  - **死 데이터 정리 완료 (2026-09-01):** `WaveDefinition.perkReward` 필드·프로퍼티·툴팁 제거(읽는 코드 0건이었음), 웨이브 에셋 50개에서 `perkReward` 키 삭제(5·10·15·20·30·40에 `1`이 켜져 있어 §9.5 Joker 주기 10·20·30·40과 불일치했다 — 2026-08-23 주기 변경 때 데이터 미갱신). 코드·에셋 참조 0건 확인, **EditMode 214/214**.
+  - **남음:** 특전 제거로 내려간 DPS + 상점 경제를 `BalanceSimRunner` + 플레이테스트로 조정(상점 가격·유닛 ★ 계수·웨이브 밀도). 상단 레이아웃 패스(§7-4).
 
 ### 2026-08-30 — 화면 상단 레이아웃 패스 1차 (DESIGN §7-4 일부)
 
