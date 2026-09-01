@@ -25,10 +25,10 @@ MonoBehaviour:
     interval: 5
     startDelay: 30
   - enemy: {fileID: 11400000, guid: d0aca76ef896fb74e95222ca3006bf95, type: 2}
-    count: 25
+    count: 29
     interval: 1.5
     startDelay: 55
   - enemy: {fileID: 11400000, guid: 52f861e302c310f4cab346e08b81eb60, type: 2}
-    count: 20
+    count: 23
     interval: 0.8
     startDelay: 80

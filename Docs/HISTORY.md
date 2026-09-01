@@ -118,7 +118,12 @@
 - **Phase 5 완료 (특전 전면 삭제, 2026-08-31):** 파일 삭제 `PerkSet`·`PerkTable`·`PerkOffer`·`PerkId`·`PerkCategory`·`PerkScreen`·`PerkCategoryNames`·`PerkTests` + `PerkTable.asset`. 참조 제거 `StageContext`(`Perks`·`WaveEndChip`)·`StageController`(`perkTable`·`AddPerk`, `HoldBonusFor`는 `economy` 직결)·`GameFlowController`(`Offer`·`PerkOffered`·`ChoosePerk`·특전 분기·`ResumeFlow`/`shopPending` 인라인화)·`CombatContext`(`perks`·`AttackPowerOf` → `unit.AttackPower`)·`CombatController`·`PlacementController`·`BoardScreen`(`perkLabel`·`ShowPerks`) + Editor 툴 2개. 씬에서 `PerkPanel`·`PerkLabel` GO + `PerkScreen` 컴포넌트 삭제. **전투 특전은 흡수 안 함**(★ 계수가 공격력·속도를 둘 다 곱해 공격력만 +X%를 못 넣음) — 성급 유닛 DPS가 내려가고 Phase 6이 조정. `WaveDefinition.perkReward`는 死 필드로 남김. `PerkTests` 28개 삭제로 **EditMode 242→214/214**. 플레이 모드에서 특전 패널 없이 상점만 뜨는 것 + 조커 보상·상점 전 흐름 확인.
 - **Phase 6 진행 중 (재밸런싱, 마지막):**
   - **死 데이터 정리 완료 (2026-09-01):** `WaveDefinition.perkReward` 필드·프로퍼티·툴팁 제거(읽는 코드 0건이었음), 웨이브 에셋 50개에서 `perkReward` 키 삭제(5·10·15·20·30·40에 `1`이 켜져 있어 §9.5 Joker 주기 10·20·30·40과 불일치했다 — 2026-08-23 주기 변경 때 데이터 미갱신). 코드·에셋 참조 0건 확인, **EditMode 214/214**.
-  - **남음:** 특전 제거로 내려간 DPS + 상점 경제를 `BalanceSimRunner` + 플레이테스트로 조정(상점 가격·유닛 ★ 계수·웨이브 밀도). 상단 레이아웃 패스(§7-4).
+  - **밸런스 재검증 (2026-09-02):** `BalanceSimRunner`로 자동 플레이 시뮬레이션 10차 반복. **50웨이브 확장(2026-08-23)이 밸런스 재검증을 못 받아 곡선 자체가 망가져 있었다** — 특전 제거보다 이게 더 컸다. 손댄 것:
+    - **웨이브 곡선 전면 재조정 (Wave_11~50):** HP/s 수요(총 HP ÷ 제한시간)로 곡선을 잡음. ① W11→12 3.2배 절벽 제거(201→85). ② 보스 웨이브(15·20·30·40)는 그대로 두되 다음 웨이브를 낮춰 톱니 해소. ③ Brute 폭주(14→112마리) 완화(→~75). 목표 곡선: W11~30 62→470, W31~49 490→740, W50 결승 ~400(보스 자체가 벽). W1 오프너도 소폭 완화(Grunt 5→4). 파이썬 스크립트로 `count`만 재계산, 구성·간격·보스 마릿수 불변.
+    - **라이프 모델 완화 (A):** `Stage_1.asset` 시작 라이프 12→20, `maxLifeDamagePerWave` 5→3. 클리어/시간초과가 이분법이라(중간 누수 없음) 한 번 밀리면 3웨이브 만에 게임오버였다 — 이제 ~3/웨이브로 천천히 흘린다. `StageDefinition.cs` 코드 기본값은 안 건드림(CombatTests가 의존).
+    - **`BalanceSimRunner` 상점 전략 (B):** 상점을 그냥 닫던 것 → Chip 여유분으로 카드 구매(이미 든 숫자 우선, `greedy_summon`은 지원 소환 한 번치 유보) + 교체 후 보유 카드를 손패에 배치(페어·플러시 확장). `shopVisits`·`cardsBought`·`heldPlaced` 계측을 summary에 추가.
+  - **시뮬 결과 (iter8 곡선):** `greedy_summon`(적극 플레이) 50/50 클리어 라이프 12~18 안정. `no_exchange`(방치) W41 사망. **`greedy`(기계적 중간 플레이)는 7런 중 4런 클리어(라이프 8·10·17·18) / 3런 W38~42 사망 — 57% 동전 던지기.** 원인: **덱 운으로 보드 DPS가 3배 요동**(같은 곡선에 "라이프 17 클리어"와 "W32 전멸"이 공존) + 이분법 라이프 모델이 이를 증폭. 웨이브 튜닝은 여기서 한계 — 보드 편차 자체를 줄이려면 포커·머지·경제를 손봐야 함(웨이브 밖). EditMode 214/214.
+  - **남음:** `greedy` 바닥을 올릴 경제 조정 후보(시작 Chip 0→3~6 / `shopCardPrice` 4→3 / `holdBonusMax` 3→4) → 사람 플레이테스트 → M10 4조건 최종 판정. 상단 레이아웃 패스(§7-4).
 
 ### 2026-08-30 — 화면 상단 레이아웃 패스 1차 (DESIGN §7-4 일부)
 

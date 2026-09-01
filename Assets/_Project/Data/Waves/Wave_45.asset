@@ -17,10 +17,10 @@ MonoBehaviour:
   jokerReward: 0
   entries:
   - enemy: {fileID: 11400000, guid: 71de88334ad5ea94a9f3a351f9968735, type: 2}
-    count: 96
+    count: 51
     interval: 0.298
     startDelay: 0
   - enemy: {fileID: 11400000, guid: d0aca76ef896fb74e95222ca3006bf95, type: 2}
-    count: 88
+    count: 47
     interval: 0.325
     startDelay: 6.24

@@ -17,6 +17,6 @@ MonoBehaviour:
   jokerReward: 0
   entries:
   - enemy: {fileID: 11400000, guid: 52f861e302c310f4cab346e08b81eb60, type: 2}
-    count: 5
+    count: 4
     interval: 1
     startDelay: 0

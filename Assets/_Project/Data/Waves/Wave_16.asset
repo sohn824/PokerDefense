@@ -17,14 +17,14 @@ MonoBehaviour:
   jokerReward: 0
   entries:
   - enemy: {fileID: 11400000, guid: 6b1f4c07d29a4d34b8e5c0a71f3d92c8, type: 2}
-    count: 20
+    count: 17
     interval: 0.29
     startDelay: 0
   - enemy: {fileID: 11400000, guid: 71de88334ad5ea94a9f3a351f9968735, type: 2}
-    count: 27
+    count: 22
     interval: 0.16
     startDelay: 12
   - enemy: {fileID: 11400000, guid: d0aca76ef896fb74e95222ca3006bf95, type: 2}
-    count: 5
+    count: 4
     interval: 1.3
     startDelay: 24

@@ -38,6 +38,9 @@ namespace PokerDefense.EditorTools
         static string logPath;
         static IReadOnlyList<Card> cachedHand;
         static float startedRealtime;
+        static int shopVisits;      // 상점이 열린 횟수
+        static int cardsBought;     // 상점에서 산 카드 수
+        static int heldPlaced;      // 보유 카드를 손패에 놓은 횟수 (손패 보정)
 
         static BalanceSimRunner()
         {
@@ -115,6 +118,9 @@ namespace PokerDefense.EditorTools
             Time.timeScale = SessionState.GetFloat(TimeScaleKey, 10f);
 
             cachedHand = null;
+            shopVisits = 0;
+            cardsBought = 0;
+            heldPlaced = 0;
             round.HandChanged += h => cachedHand = h;
             combat.CombatFinished += (outcome, unresolved) => LogWaveRow(outcome);
 
@@ -132,9 +138,10 @@ namespace PokerDefense.EditorTools
                 return;
             }
 
-            // 카드 상점은 지금은 그냥 닫는다 (구매 전략은 Phase 6 재밸런싱에서 붙인다 — DESIGN §13.7)
             if (flow.ShopCards != null)
             {
+                shopVisits++;
+                DoShopBuy();
                 flow.CloseShop();
                 return;
             }
@@ -248,7 +255,104 @@ namespace PokerDefense.EditorTools
                 round.ExchangeCards(exchange);
             }
 
+            PlaceHeldCards();
+
             round.ConfirmHand();
+        }
+
+        // 상점: Chip 여유가 있으면 보유 카드를 채운다.
+        // greedy_summon은 지원 소환 한 번치(SupportSummonCost)를 남겨 둔다.
+        // 이미 든 카드와 같은 숫자를 우선 사서(놓으면 확정 페어) 손패 편차를 줄인다.
+        static void DoShopBuy()
+        {
+            int price = stageCtrl.Economy.ShopCardPrice;
+            int reserve = strategy == "greedy_summon" ? stageCtrl.Economy.SupportSummonCost : 0;
+
+            var heldRanks = new HashSet<Rank>();
+            foreach (Card h in stageCtrl.HeldCards)
+            {
+                heldRanks.Add(h.Rank);
+            }
+
+            IEnumerable<Card> order = flow.ShopCards
+                .OrderBy(c => heldRanks.Contains(c.Rank) ? 0 : 1)
+                .ThenByDescending(c => (int)c.Rank);
+
+            foreach (Card card in order)
+            {
+                if (stageCtrl.Stage.CanHoldMoreCards == false)
+                {
+                    break;
+                }
+
+                if (stageCtrl.Stage.Chip - price < reserve)
+                {
+                    break;
+                }
+
+                if (stageCtrl.TryBuyShopCard(card))
+                {
+                    cardsBought++;
+                }
+            }
+        }
+
+        // 교체 뒤, 잠기지 않은 자리에 보유 카드를 놓아 세트/플러시를 키운다.
+        // 같은 숫자가 손패에 있으면 페어·트리플을 만들고, 없으면 같은 무늬 3장
+        // 이상일 때만 플러시를 노려 놓는다. 그 외에는 아껴 둔다.
+        static void PlaceHeldCards()
+        {
+            if (stageCtrl.HeldCards.Count == 0)
+            {
+                return;
+            }
+
+            foreach (Card held in new List<Card>(stageCtrl.HeldCards))
+            {
+                IReadOnlyList<Card> hand = cachedHand;
+                if (hand == null)
+                {
+                    return;
+                }
+
+                bool rankMatch = false;
+                int suitCount = 0;
+                for (int i = 0; i < hand.Count; i++)
+                {
+                    if (hand[i].Rank == held.Rank) rankMatch = true;
+                    if (hand[i].Suit == held.Suit) suitCount++;
+                }
+
+                bool flushHelp = suitCount >= 3 && suitCount < hand.Count;
+
+                if (rankMatch == false && flushHelp == false)
+                {
+                    continue;
+                }
+
+                int target = -1;
+                int targetRank = int.MaxValue;
+                for (int i = 0; i < hand.Count; i++)
+                {
+                    if (round.IsLocked(i)) continue;
+                    if (hand[i].Rank == held.Rank) continue;          // 페어 상대는 남긴다
+                    if (flushHelp && hand[i].Suit == held.Suit) continue; // 플러시 기여 카드도 남긴다
+                    if ((int)hand[i].Rank < targetRank)
+                    {
+                        targetRank = (int)hand[i].Rank;
+                        target = i;
+                    }
+                }
+
+                if (target < 0)
+                {
+                    continue;
+                }
+
+                stageCtrl.RemoveHeldCard(held);
+                round.PlaceHeldCard(target, held);
+                heldPlaced++;
+            }
         }
 
         // 같은 숫자가 2장 이상 모이면 그 그룹(들)을 남기고 나머지를 교체.
@@ -369,7 +473,7 @@ namespace PokerDefense.EditorTools
 
             string best = stageCtrl.Stats.BestUnit != null ? stageCtrl.Stats.BestUnit.ToString() : "none";
             File.AppendAllText(logPath + ".summary.txt",
-                $"{runId},{strategy},{reason},wave={stage.WaveIndex}/{stage.TotalWaves},life={stage.Life},summons={stageCtrl.Stats.Summons},bestHand={stageCtrl.Stats.BestHand},bestUnit={best},chipSpent={stageCtrl.Stats.ChipSpent}\n");
+                $"{runId},{strategy},{reason},wave={stage.WaveIndex}/{stage.TotalWaves},life={stage.Life},summons={stageCtrl.Stats.Summons},bestHand={stageCtrl.Stats.BestHand},bestUnit={best},chipSpent={stageCtrl.Stats.ChipSpent},shopVisits={shopVisits},cardsBought={cardsBought},heldPlaced={heldPlaced}\n");
 
             Time.timeScale = 1f;
             SessionState.SetBool(ActiveKey, false);
