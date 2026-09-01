@@ -68,6 +68,8 @@ namespace PokerDefense.UI
         [Tooltip("Splash 공용 폭발 이펙트")]
         [SerializeField] Sprite splashSprite;
         [SerializeField] TMP_Text lifeLabel;
+        [SerializeField] TMP_Text chipLabel;
+        [SerializeField] TMP_Text jokerLabel;
         [SerializeField] TMP_Text waveLabel;
         [SerializeField] TMP_Text combatLabel;
         [SerializeField] Button startButton;
@@ -589,9 +591,16 @@ namespace PokerDefense.UI
         void UpdateLabels()
         {
             StageContext stage = controller.Stage;
-            lifeLabel.text = stage.Jokers > 0
-                ? $"라이프 {stage.Life}   Chip {stage.Chip}   조커 {stage.Jokers}"
-                : $"라이프 {stage.Life}   Chip {stage.Chip}";
+            lifeLabel.text = $"<color=#FF6B6E>♥</color> {stage.Life}";
+            chipLabel.text = $"<color=#FFD76B>◆</color> {stage.Chip}";
+
+            bool hasJoker = stage.Jokers > 0;
+            jokerLabel.gameObject.SetActive(hasJoker);
+
+            if (hasJoker)
+            {
+                jokerLabel.text = $"<color=#C9A3FF>★</color> {stage.Jokers}";
+            }
 
             if (stage.IsGameOver)
             {
@@ -603,7 +612,7 @@ namespace PokerDefense.UI
             }
             else
             {
-                waveLabel.text = $"라운드 {stage.CurrentWave.WaveNumber}";
+                waveLabel.text = $"라운드 {stage.CurrentWave.WaveNumber}/{stage.TotalWaves}";
             }
 
             startButton.interactable = controller.CanStart;

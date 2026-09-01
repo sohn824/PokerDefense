@@ -6,12 +6,14 @@
 - **레거시 정리:** 이후 작업으로 완전히 대체돼 현재 코드·설계와 무관해진 항목은 삭제한다. 뒤집힌 이유가 지금도 의미 있으면 최신 항목에 한 줄로 흡수시킨다.
 - **현재 상태 요약**과 **반복 함정**은 항상 최신이어야 한다. 이력을 읽지 않아도 이 둘로 상태를 파악할 수 있어야 한다.
 - 설계 내용은 여기 쓰지 않는다. [DESIGN.md](DESIGN.md)가 유일한 설계 출처다.
+- 완성도·게임필 개선 아이디어는 [POLISH.md](POLISH.md)에 백로그로 둔다. 착수·완료 시 이 문서에 기록하고 POLISH.md에서 지운다.
 
 ---
 
 ## 현재 상태 요약
 
-- **진행 단계:** M0~M11 완료. **M12 진행 중** — 딜러 특전을 카드 상점으로 대체. **Phase 1~5 완료**(상점 구현 + 특전 시스템 전면 삭제, EditMode 214/214), **Phase 6 재밸런싱만 남음**. 설계·단계는 DESIGN §13. 슬롯 레이아웃·트랙 여백(§7-4)은 Phase 6과 함께.
+- **진행 단계:** M0~M11 완료. **M12 진행 중** — 딜러 특전을 카드 상점으로 대체. **Phase 1~5 완료**(상점 구현 + 특전 시스템 전면 삭제, EditMode 214/214), **Phase 6 재밸런싱**(웨이브 곡선·라이프 모델 재조정 완료, `greedy` 경제 조정 남음)만 남음. 설계·단계는 DESIGN §13.
+- **화면 상단 레이아웃 (§7-4):** M12와 별개로 진행 중. **Phase A 완료(2026-09-02)** — HUD 바 + 카메라 리프레임. **Phase B(아트 필요) 남음** — `TrackLoop` 아레나화. 백로그는 [POLISH.md](POLISH.md).
 - **M11(아트 교체):** 유닛 13종·적 7종·이펙트 6장·카드 5장·배경/트랙 4장 + 동반 코드 전부 스프라이트. 아트 이력·스펙은 [ART_REQUEST.md](ART_REQUEST.md)
 - **코드:** `Scripts/Poker/`, `Scripts/Game/`(Flow·Board·Units·Enemies·Data), `Scripts/UI/`, `Scripts/Tests/Editor/`
 - **데이터:** 유닛 13종(정식명 `원페어 건슬링어`, 공격 패턴 5종을 나눠 씀) + `HandUnitTable` + `CardVisualSet`, 적 7종(Grunt·Runner·Swarm·Brute·MiniBoss·Boss·FinalBoss = 5타입 전부 사용. MiniBoss W5 전용, Boss W10·20·30·40·50, FinalBoss W50 전용) + 웨이브 50개 + `Stage_1` + `Economy`
@@ -100,6 +102,15 @@
 ---
 
 ## 이력
+
+### 2026-09-02 — 화면 상단 레이아웃 Phase A (DESIGN §7-4, [POLISH.md](POLISH.md) 1번)
+
+- **문제:** HUD(`LifeLabel`·`WaveLabel`)가 화면 y≈99%(트랙 상단 밴드 위)에 배경 없이 떠 있어 라이프 텍스트가 좌측 잘림 + 안 읽힘. 보드(월드 y 2.4~4.4)가 화면 68~83%에 몰려 상단이 답답했다.
+- **HUD 바 신설:** `RoundScreen` 안에 `HudBar`(상단 고정, 반투명 다크 패널, 높이 150px) 추가. 기존 `LifeLabel`·`WaveLabel`을 이 안으로 재배치(좌/우 정렬)하고 `ChipLabel`·`JokerLabel`(조커 0이면 비활성) 신규 — 넷 다 아이콘+숫자 위젯(`♥`·`◆`·`★`, `CardText`처럼 이미 커버되는 글리프만 사용). `CombatScreen`에 필드 3개 추가, `UpdateLabels()`가 항목별로 텍스트를 씀(라운드는 `N/TotalWaves`로 변경, 총 웨이브 수가 보이게).
+- **카메라 리프레임:** `Main Camera` Y 0 → **1.0**. 월드 지오메트리·사거리·적 경로는 전부 불변이라 **밸런스 영향 없음** — 순수 화면 구도 값. `Background`(월드 (0,0) 고정, 화면 꽉 채움)도 Y 1.0으로 같이 옮겨 상단에 틈이 안 생기게 동기화.
+- **함정 재발:** `GameObject.Find("Background")`가 루트 `Background`가 아니라 `Board/Slot13/Background`(슬롯 타일 자식, 같은 이름)를 잡아 그 슬롯 위치가 튐 — 반복 함정 표에 있는 이름 충돌 패턴. `SceneManager.GetActiveScene().GetRootGameObjects()`로 루트만 걸러 잡고, 슬롯 쪽은 `localPosition = zero`로 복구. HUD 위젯 3개(라이프·Chip·조커) 박스가 처음엔 겹쳐 배치돼(28~168 / 178~318 / 300~420) 재배치(24~174 / 190~340 / 356~476, 16px 간격)로 수정.
+- **검증:** 플레이 모드 스크린샷으로 확인 — HUD 안 잘림·안 겹침, 보드가 HUD 바 아래로 내려와 트랙 상단에 여백 확보, 배치→전투 진입까지 라이프·Chip 갱신 정상(전투 중 스크린샷: 라이프 20, Chip 3, 조커 위젯 비활성). **EditMode 214/214.** 씬 저장 후 TMP 폰트 아틀라스 churn(반복 함정) 발생 → `git checkout`으로 되돌림.
+- **남음 (Phase B, 아트 필요):** `TrackLoop`이 "구멍 뚫린 액자"라 15칸이 그 구멍에 뜬 섬처럼 보이는 문제는 카메라·HUD로 해결 안 됨. 아레나 레인 + 중앙 단상 구조로 아트 교체 필요 — 프롬프트는 POLISH.md.
 
 ### 2026-08-30 — M12 착수: 딜러 특전 → 카드 상점 (계획)
 
