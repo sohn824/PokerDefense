@@ -13,7 +13,7 @@
 ## 현재 상태 요약
 
 - **진행 단계:** M0~M11 완료. **M12 진행 중** — 딜러 특전을 카드 상점으로 대체. **Phase 1~5 완료**(상점 구현 + 특전 시스템 전면 삭제, EditMode 214/214), **Phase 6 재밸런싱**(웨이브 곡선·라이프 모델 재조정 완료, `greedy` 경제 조정 남음)만 남음. 설계·단계는 DESIGN §13.
-- **화면 상단 레이아웃 (§7-4):** M12와 별개로 진행 중. **Phase A 완료(2026-09-02)** — HUD 바 + 카메라 리프레임. **Phase B(아트 필요) 남음** — `TrackLoop` 아레나화. 백로그는 [POLISH.md](POLISH.md).
+- **화면 상단 레이아웃 (§7-4):** M12와 별개. **Phase A(HUD 바 + 카메라) · Phase B(TrackLoop·ArenaDais·SlotTile 아트) 완료(2026-09-02).** 다음 폴리싱은 [POLISH.md](POLISH.md) 3번(성공·실패 연출)부터.
 - **M11(아트 교체):** 유닛 13종·적 7종·이펙트 6장·카드 5장·배경/트랙 4장 + 동반 코드 전부 스프라이트. 아트 이력·스펙은 [ART_REQUEST.md](ART_REQUEST.md)
 - **코드:** `Scripts/Poker/`, `Scripts/Game/`(Flow·Board·Units·Enemies·Data), `Scripts/UI/`, `Scripts/Tests/Editor/`
 - **데이터:** 유닛 13종(정식명 `원페어 건슬링어`, 공격 패턴 5종을 나눠 씀) + `HandUnitTable` + `CardVisualSet`, 적 7종(Grunt·Runner·Swarm·Brute·MiniBoss·Boss·FinalBoss = 5타입 전부 사용. MiniBoss W5 전용, Boss W10·20·30·40·50, FinalBoss W50 전용) + 웨이브 50개 + `Stage_1` + `Economy`
@@ -110,7 +110,12 @@
 - **카메라 리프레임:** `Main Camera` Y 0 → **1.0**. 월드 지오메트리·사거리·적 경로는 전부 불변이라 **밸런스 영향 없음** — 순수 화면 구도 값. `Background`(월드 (0,0) 고정, 화면 꽉 채움)도 Y 1.0으로 같이 옮겨 상단에 틈이 안 생기게 동기화.
 - **함정 재발:** `GameObject.Find("Background")`가 루트 `Background`가 아니라 `Board/Slot13/Background`(슬롯 타일 자식, 같은 이름)를 잡아 그 슬롯 위치가 튐 — 반복 함정 표에 있는 이름 충돌 패턴. `SceneManager.GetActiveScene().GetRootGameObjects()`로 루트만 걸러 잡고, 슬롯 쪽은 `localPosition = zero`로 복구. HUD 위젯 3개(라이프·Chip·조커) 박스가 처음엔 겹쳐 배치돼(28~168 / 178~318 / 300~420) 재배치(24~174 / 190~340 / 356~476, 16px 간격)로 수정.
 - **검증:** 플레이 모드 스크린샷으로 확인 — HUD 안 잘림·안 겹침, 보드가 HUD 바 아래로 내려와 트랙 상단에 여백 확보, 배치→전투 진입까지 라이프·Chip 갱신 정상(전투 중 스크린샷: 라이프 20, Chip 3, 조커 위젯 비활성). **EditMode 214/214.** 씬 저장 후 TMP 폰트 아틀라스 churn(반복 함정) 발생 → `git checkout`으로 되돌림.
-- **남음 (Phase B, 아트 필요):** `TrackLoop`이 "구멍 뚫린 액자"라 15칸이 그 구멍에 뜬 섬처럼 보이는 문제는 카메라·HUD로 해결 안 됨. 아레나 레인 + 중앙 단상 구조로 아트 교체 필요 — 프롬프트는 POLISH.md.
+- **Phase B (아트, 2026-09-02):** 세 장을 새로 교체·추가.
+  - `TrackLoop.png` 교체 — 밋밋한 자갈 링 → 횃불 켜진 전투 피트(코너 화로 글로우·배너·핏자국). 크기·PPU 동일이라 `.meta`·씬 무변경. 적 이동 경로(밸런스 락)가 보이는 돌 레인 위에 정확히 얹히는 것 확인. 투명 창이 슬롯 그리드보다 살짝 작아 연석이 바깥 슬롯을 ~20~54px 덮지만 슬롯 타일(sorting 0)·유닛(3+)이 위에 그려져 안 보임.
+  - `ArenaDais.png` 신규 — 팔각 2단 석재 단상 + 청록 마법진 이음새. `Board/ArenaDais`, localPos 0, PPU 250(월드 6.0×4.2), **sortingOrder -15**(Background -100 앞, TrackLoop -10 뒤). 임포트 자동 `.meta`가 Default·PPU 100·NPOT 켜짐으로 나와 수정(반복 함정).
+  - `SlotTile.png` 교체 — 불투명 회색 슬래브 → **석재 소켓 프레임**(바깥 테두리만 불투명, 중앙 알파 0, 네 모서리 청록 젬). 이걸로 단상의 발광 이음새가 칸 사이로 비쳐 중앙이 "밋밋한 회색"에서 "마법 소환진 위 그리드"로 바뀜. 크기·PPU 동일이라 씬 무변경. 배치 명료도 유지(프레임이 칸을 정의). `SlotHighlight`(배치 가능 흰 α0.22)는 조금 옅어 보이나 유지 — 안 보이는 수준은 아님.
+  - 검증: 플레이 모드 스크린샷(빈 칸·유닛 배치·배치 단계). EditMode 영향 없음(씬·아트만).
+- **남음:** POLISH.md 3번(성공·실패 연출)부터. §7-4는 사실상 마무리(트랙 여백을 아레나·단상으로 연출 완료).
 
 ### 2026-08-30 — M12 착수: 딜러 특전 → 카드 상점 (계획)
 
