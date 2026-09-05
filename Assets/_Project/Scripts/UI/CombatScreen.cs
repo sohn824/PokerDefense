@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using PokerDefense.Game;
 using TMPro;
@@ -58,6 +59,12 @@ namespace PokerDefense.UI
         static readonly Color BarBackColor = new Color(0.06f, 0.06f, 0.08f, 0.9f);
         static readonly Color BarFillColor = new Color(0.40f, 0.85f, 0.35f);
 
+        // 웨이브 실패 연출용 상수
+        const float FailFlashSeconds = 0.45f;
+        const float FailFlashPeakAlpha = 0.4f;
+        const float LifePopSeconds = 0.35f;
+        const float LifePopScale = 1.4f;
+
         [SerializeField] CombatController controller;
         [SerializeField] Transform boardRoot;
         [SerializeField] Sprite enemySprite;
@@ -67,6 +74,9 @@ namespace PokerDefense.UI
 
         [Tooltip("Splash 공용 폭발 이펙트")]
         [SerializeField] Sprite splashSprite;
+
+        [Tooltip("웨이브 실패 시 붉게 번쩍이는 전체 화면 이펙트")]
+        [SerializeField] Image failFlash;
         [SerializeField] TMP_Text lifeLabel;
         [SerializeField] TMP_Text chipLabel;
         [SerializeField] TMP_Text jokerLabel;
@@ -98,6 +108,9 @@ namespace PokerDefense.UI
         float lastSplashSeen;
 
         string lastOutcome = string.Empty;
+
+        Coroutine failFlashRoutine;
+        Coroutine lifePopRoutine;
 
         void Awake()
         {
@@ -204,9 +217,58 @@ namespace PokerDefense.UI
             {
                 int damage = controller.Stage.LifeDamageFor(unresolved, controller.Combat.UnresolvedBosses);
                 lastOutcome = $"시간 초과 - {unresolved}마리 남음, 라이프 -{damage}";
+
+                if (damage > 0)
+                {
+                    RestartCoroutine(ref failFlashRoutine, PlayFailFlash());
+                    RestartCoroutine(ref lifePopRoutine, PlayLifePop());
+                }
             }
 
             ClearViews();
+        }
+
+        void RestartCoroutine(ref Coroutine routine, IEnumerator body)
+        {
+            if (routine != null)
+            {
+                StopCoroutine(routine);
+            }
+
+            routine = StartCoroutine(body);
+        }
+
+        // 시간 초과 실패를 붉은 화면 번쩍임으로 표현하는 코루틴
+        IEnumerator PlayFailFlash()
+        {
+            Color color = failFlash.color;
+
+            for (float t = 0f; t < FailFlashSeconds; t += Time.deltaTime)
+            {
+                color.a = (1f - t / FailFlashSeconds) * FailFlashPeakAlpha;
+                failFlash.color = color;
+                yield return null;
+            }
+
+            color.a = 0f;
+            failFlash.color = color;
+        }
+
+        // 라이프 감소를 라이프 라벨이 순간적으로 커졌다가
+        // 원래 크기로 돌아오는 연출로 강조하는 코루틴
+        IEnumerator PlayLifePop()
+        {
+            Transform label = lifeLabel.transform;
+
+            for (float t = 0f; t < LifePopSeconds; t += Time.deltaTime)
+            {
+                float ratio = t / LifePopSeconds;
+                float scale = 1f + (LifePopScale - 1f) * Mathf.Sin(ratio * Mathf.PI);
+                label.localScale = new Vector3(scale, scale, 1f);
+                yield return null;
+            }
+
+            label.localScale = Vector3.one;
         }
 
         void Update()

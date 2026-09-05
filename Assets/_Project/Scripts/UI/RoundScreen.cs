@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using PokerDefense.Game;
 using PokerDefense.Poker;
@@ -33,10 +34,30 @@ namespace PokerDefense.UI
         [SerializeField] GameObject heldTray;
         [SerializeField] CardView[] heldCardViews;
 
+        [Tooltip("상위 족보 확정 시 번쩍이는 전체 화면 이펙트")]
+        [SerializeField] Image celebrateFlash;
+        [Tooltip("상위 족보 확정 시 뜨는 축포 이펙트")]
+        [SerializeField] TMP_Text celebrateStamp;
+
+        // 상위 족보로 인정하는 최소 희귀도
+        static readonly int CelebrateRarityThreshold = HandRarity.RankOf(HandCategory.Straight);
+
+        const float CelebratePopSeconds = 0.18f;
+        const float CelebratePopScale = 1.15f;
+        const float CelebrateSettleSeconds = 0.35f;
+        const float CelebrateHoldSeconds = 0.55f;
+        const float CelebrateFadeSeconds = 0.35f;
+        const float CelebrateFlashPeakAlpha = 0.4f;
+
+        // PlayCelebration 코루틴이 돌고 있으면
+        // 중간에 멈추고 새로 시작해야 하므로
+        // 코루틴 참조 핸들을 들고 있음
+        Coroutine celebrateRoutine;
+
         RoundPhase phase;
 
-        // 배치하려고 고른 트레이 카드 (null이면 평소의 교체-선택 모드)
-        CardView armedHeld;
+        // 배치하려고 고른 트레이 카드 (상점에서 구매한 카드 중)
+        CardView selectedTrayCard;
 
         void Awake()
         {
@@ -60,6 +81,7 @@ namespace PokerDefense.UI
             controller.Evaluated += ShowResult;
         }
 
+        // 페이즈 전환 반영 - Exchange로 돌아오면 이전 라운드 축포 이펙트를 정리
         void ShowPhase(RoundPhase newPhase)
         {
             phase = newPhase;
@@ -67,12 +89,21 @@ namespace PokerDefense.UI
             if (phase == RoundPhase.Exchange)
             {
                 categoryLabel.text = string.Empty;
+
+                if (celebrateRoutine != null)
+                {
+                    StopCoroutine(celebrateRoutine);
+                    celebrateRoutine = null;
+                }
+
+                celebrateStamp.gameObject.SetActive(false);
             }
 
             RefreshTray();
             Refresh();
         }
 
+        // 손패 5장 뷰 갱신
         void ShowHand(IReadOnlyList<Card> hand)
         {
             for (int i = 0; i < cardViews.Length; i++)
@@ -85,6 +116,7 @@ namespace PokerDefense.UI
             Refresh();
         }
 
+        // 족보 확정 결과 표시 - 상위 족보면 축포 코루틴 시작
         void ShowResult(HandResult result)
         {
             categoryLabel.text = HandCategoryNames.Of(result.Category);
@@ -97,27 +129,99 @@ namespace PokerDefense.UI
             }
 
             statusLabel.text = keyCards.ToString();
+
+            if (HandRarity.RankOf(result.Category) >= CelebrateRarityThreshold)
+            {
+                UnitDefinition unit = unitTable.GetDefinition(result.Category);
+                string banner = $"{HandCategoryNames.Of(result.Category)}!\n{unit.DisplayName} 소환";
+
+                if (celebrateRoutine != null)
+                {
+                    StopCoroutine(celebrateRoutine);
+                }
+
+                celebrateRoutine = StartCoroutine(PlayCelebration(banner));
+            }
+        }
+
+        // 상위 족보 확정 축포 코루틴
+        // (화면 플래시 + 배너 팝인 -> 유지 -> 페이드아웃)
+        IEnumerator PlayCelebration(string banner)
+        {
+            // 배너 텍스트를 켜고 알파를 1로 초기화
+            celebrateStamp.text = banner;
+            celebrateStamp.gameObject.SetActive(true);
+
+            Color textColor = celebrateStamp.color;
+            textColor.a = 1f;
+            celebrateStamp.color = textColor;
+
+            Color flashColor = celebrateFlash.color;
+
+            // 배너 팝인: 배너가 scale 0 ~ 1.15로 튀어나오며 동시에 화면 플래시 알파가 0에서 최대까지 밝아짐
+            for (float t = 0f; t < CelebratePopSeconds; t += Time.deltaTime)
+            {
+                float scale = Mathf.Lerp(0f, CelebratePopScale, t / CelebratePopSeconds);
+                celebrateStamp.transform.localScale = new Vector3(scale, scale, 1f);
+                flashColor.a = Mathf.Lerp(0f, CelebrateFlashPeakAlpha, t / CelebratePopSeconds);
+                celebrateFlash.color = flashColor;
+                yield return null;
+            }
+
+            // 1.15배로 오버된 배너가 1배로 가라앉고, 플래시는 0으로 페이드아웃
+            for (float t = 0f; t < CelebrateSettleSeconds; t += Time.deltaTime)
+            {
+                float scale = Mathf.Lerp(CelebratePopScale, 1f, t / CelebrateSettleSeconds);
+                celebrateStamp.transform.localScale = new Vector3(scale, scale, 1f);
+                flashColor.a = Mathf.Lerp(CelebrateFlashPeakAlpha, 0f, t / CelebrateSettleSeconds);
+                celebrateFlash.color = flashColor;
+                yield return null;
+            }
+
+            // 위에서 t가 CelebrateSettleSeconds에 도달하지 않고 끝나므로
+            // 마지막 프레임에서 Lerp 목표값 직전에서 끝남
+            // 따라서 정확한 목표값으로 보정
+            celebrateStamp.transform.localScale = Vector3.one;
+            flashColor.a = 0f;
+            celebrateFlash.color = flashColor;
+
+            // 배너 유지 (값 갱신 없이 그대로 대기만)
+            yield return new WaitForSeconds(CelebrateHoldSeconds);
+
+            // 배너 페이드 아웃
+            for (float t = 0f; t < CelebrateFadeSeconds; t += Time.deltaTime)
+            {
+                textColor.a = Mathf.Lerp(1f, 0f, t / CelebrateFadeSeconds);
+                celebrateStamp.color = textColor;
+                yield return null;
+            }
+
+            // 재생 종료
+            // (배너를 끄고 celebrateRoutine을 null로 되돌려 다음 코루틴 트리거를 받을 수 있게 함)
+            celebrateStamp.gameObject.SetActive(false);
+            celebrateRoutine = null;
         }
 
         void OnCardClicked(CardView card)
         {
-            // 트레이 카드를 고른 상태면 이 손패 칸에 놓는다 (교체 선택 토글이 아니라)
-            if (armedHeld != null)
+            // 트레이 카드를 고른 상태면 클릭한 손패 칸에 놓는다
+            if (selectedTrayCard != null)
             {
-                PlaceArmedOn(card);
+                PlaceSelectedTrayCardOn(card);
                 return;
             }
 
+            // 아니면 그냥 클릭한 카드 선택/해제 토글
             card.SetSelected(!card.Selected);
             Refresh();
         }
 
-        // 트레이 카드 탭 - 배치할 카드를 고르거나(무장) 다시 눌러 해제
+        // 트레이 카드 탭 - 배치할 카드를 고르거나(선택) 다시 눌러 해제
         void OnHeldClicked(CardView trayCard)
         {
-            if (armedHeld == trayCard)
+            if (selectedTrayCard == trayCard)
             {
-                armedHeld = null;
+                selectedTrayCard = null;
             }
             else
             {
@@ -127,17 +231,17 @@ namespace PokerDefense.UI
                     cardViews[i].SetSelected(false);
                 }
 
-                armedHeld = trayCard;
+                selectedTrayCard = trayCard;
             }
 
             RefreshTray();
             Refresh();
         }
 
-        void PlaceArmedOn(CardView handCard)
+        void PlaceSelectedTrayCardOn(CardView handCard)
         {
             int slot = System.Array.IndexOf(cardViews, handCard);
-            int trayIndex = System.Array.IndexOf(heldCardViews, armedHeld);
+            int trayIndex = System.Array.IndexOf(heldCardViews, selectedTrayCard);
 
             if (slot < 0 || controller.IsLocked(slot) || trayIndex < 0 || trayIndex >= stage.HeldCards.Count)
             {
@@ -146,7 +250,7 @@ namespace PokerDefense.UI
 
             Card held = stage.HeldCards[trayIndex];
 
-            armedHeld = null;
+            selectedTrayCard = null;
             stage.RemoveHeldCard(held);
             // HandChanged -> ShowHand 가 RefreshTray + Refresh 를 부른다
             controller.PlaceHeldCard(slot, held);
@@ -162,7 +266,7 @@ namespace PokerDefense.UI
 
             if (show == false)
             {
-                armedHeld = null;
+                selectedTrayCard = null;
             }
 
             for (int i = 0; i < heldCardViews.Length; i++)
@@ -176,7 +280,7 @@ namespace PokerDefense.UI
                 }
 
                 heldCardViews[i].Show(held[i]);
-                heldCardViews[i].SetSelected(heldCardViews[i] == armedHeld);
+                heldCardViews[i].SetSelected(heldCardViews[i] == selectedTrayCard);
                 heldCardViews[i].SetInteractable(true);
             }
         }
@@ -237,7 +341,7 @@ namespace PokerDefense.UI
             categoryLabel.text = HandCategoryNames.Of(preview.Category);
             confirmLabel.text = bonus > 0 ? $"확정 +{bonus}" : "확정";
 
-            if (armedHeld != null)
+            if (selectedTrayCard != null)
             {
                 statusLabel.text = "손패 칸을 눌러 카드를 놓으세요 (교체 아님)";
                 return;
