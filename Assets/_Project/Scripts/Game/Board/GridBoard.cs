@@ -285,6 +285,29 @@ namespace PokerDefense.Game
             return true;
         }
 
+        // 그리드에 있는 서로 다른(머지 불가능한) 두 유닛의 자리를 맞바꿈
+        public bool TrySwapSlots(int from, int to)
+        {
+            if (from < 0 || from >= SlotCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(from), $"슬롯 범위를 벗어남: {from}");
+            }
+            if (to < 0 || to >= SlotCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(to), $"슬롯 범위를 벗어남: {to}");
+            }
+
+            if (from == to || slots[from] == null || slots[to] == null)
+            {
+                return false;
+            }
+
+            UnitInstance temp = slots[from];
+            slots[from] = slots[to];
+            slots[to] = temp;
+            return true;
+        }
+
         // 짝 없이 성급만 한 단계 올림. Joker 전용이며 최대 성급이면 거부 (DESIGN §5.2.1)
         public bool TryPromoteAt(int index)
         {

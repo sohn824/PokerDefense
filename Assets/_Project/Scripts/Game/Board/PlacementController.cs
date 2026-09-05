@@ -137,6 +137,18 @@ namespace PokerDefense.Game
             return true;
         }
 
+        // 그리드에 있는 서로 다른 두 유닛의 자리를 맞바꾸기
+        public bool TrySwapSlots(int from, int to)
+        {
+            if (board.TrySwapSlots(from, to) == false)
+            {
+                return false;
+            }
+
+            BoardChanged?.Invoke();
+            return true;
+        }
+
         // 보드의 유닛을 팔아 Chip으로 바꾸기
         public bool TrySellSlot(int index)
         {

@@ -179,10 +179,21 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 선택한 그리드 슬롯이 빈 칸이면 이동, 머지 가능하면 머지
-            bool moved = placement.Board[slot.Index] == null
-                ? placement.TryMoveSlot(selected, slot.Index)
-                : placement.TryMergeSlots(selected, slot.Index);
+            // 선택한 그리드 슬롯이 빈 칸이면 이동, 머지 가능하면 머지, 그 외엔 자리 교환
+            bool moved;
+
+            if (placement.Board[slot.Index] == null)
+            {
+                moved = placement.TryMoveSlot(selected, slot.Index);
+            }
+            else if (placement.Board.CanMergeSlots(selected, slot.Index))
+            {
+                moved = placement.TryMergeSlots(selected, slot.Index);
+            }
+            else
+            {
+                moved = placement.TrySwapSlots(selected, slot.Index);
+            }
 
             selected = NoSelection;
 
@@ -252,13 +263,11 @@ namespace PokerDefense.UI
                 }
                 else
                 {
-                    // 이미 배치된 유닛을 고른 상태에서는 이동/머지 가능한 슬롯들을 하이라이트
+                    // 이미 배치된 유닛을 고른 상태에서는 자신 외 모든 칸을 하이라이트
+                    // (이동/머지/자리교환 모두 가능)
                     bool isSelected = i == selected;
-                    bool actionable = isSelected
-                                      || board[i] == null
-                                      || board.CanMergeSlots(selected, i);
-                    slots[i].SetHighlight(actionable, isSelected);
-                    slots[i].SetInteractable(actionable);
+                    slots[i].SetHighlight(true, isSelected);
+                    slots[i].SetInteractable(true);
                 }
             }
 
@@ -291,7 +300,6 @@ namespace PokerDefense.UI
 
             if (selected != NoSelection)
             {
-                // 이동·머지는 고른 순간 칸이 강조되므로(§9.4) 문구로 또 설명하지 않는다
                 sellButton.gameObject.SetActive(true);
                 sellLabel.text = "판매";
                 ShowDetail(placement.Board[selected], string.Empty);
@@ -299,7 +307,7 @@ namespace PokerDefense.UI
             }
 
             sellButton.gameObject.SetActive(false);
-            ShowDetail(null, "족보를 확정하면 유닛이 소환됩니다");
+            ShowDetail(null, "확정하면 유닛이 소환됩니다");
         }
 
         /**

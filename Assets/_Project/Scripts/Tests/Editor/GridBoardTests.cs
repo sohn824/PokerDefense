@@ -429,6 +429,65 @@ namespace PokerDefense.Tests
         }
 
         [Test]
+        public void 서로_다른_유닛이_있는_칸끼리는_자리를_교환한다()
+        {
+            var board = new GridBoard();
+            var archerUnit = Archer();
+            var knightUnit = Knight();
+            board.TryPlace(0, archerUnit);
+            board.TryPlace(1, knightUnit);
+
+            Assert.IsTrue(board.TrySwapSlots(0, 1));
+            Assert.AreSame(knightUnit, board[0]);
+            Assert.AreSame(archerUnit, board[1]);
+        }
+
+        [Test]
+        public void 교환해도_점유_칸_수는_그대로다()
+        {
+            var board = new GridBoard();
+            board.TryPlace(0, Archer());
+            board.TryPlace(1, Knight());
+
+            board.TrySwapSlots(0, 1);
+
+            Assert.AreEqual(2, board.OccupiedCount);
+        }
+
+        [Test]
+        public void 같은_슬롯끼리는_교환되지_않는다()
+        {
+            var board = new GridBoard();
+            var unit = Archer();
+            board.TryPlace(0, unit);
+
+            Assert.IsFalse(board.TrySwapSlots(0, 0));
+            Assert.AreSame(unit, board[0]);
+        }
+
+        [Test]
+        public void 빈_칸이_섞이면_교환되지_않는다()
+        {
+            var board = new GridBoard();
+            var unit = Archer();
+            board.TryPlace(0, unit);
+
+            Assert.IsFalse(board.TrySwapSlots(0, 1), "상대 칸이 비어 있다");
+            Assert.IsFalse(board.TrySwapSlots(1, 0), "출발 칸이 비어 있다");
+            Assert.AreSame(unit, board[0]);
+            Assert.AreEqual(1, board.OccupiedCount);
+        }
+
+        [TestCase(-1, 0)]
+        [TestCase(0, 15)]
+        public void 범위를_벗어난_슬롯_교환은_예외를_던진다(int from, int to)
+        {
+            var board = new GridBoard();
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => board.TrySwapSlots(from, to));
+        }
+
+        [Test]
         public void TakeAt은_슬롯을_비우고_유닛을_돌려준다()
         {
             var board = new GridBoard();
