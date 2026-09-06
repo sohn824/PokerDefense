@@ -44,6 +44,9 @@ namespace PokerDefense.UI
         // (OnPlaced에서 조커 승급음과 일반 머지음을 구분하는 데 사용)
         bool usingJoker;
 
+        // ActionBarController가 판매·조커 버튼 노출을 정할 때 참조한다
+        public bool HasSelection => selected != NoSelection;
+
         void Awake()
         {
             for (int i = 0; i < slots.Length; i++)
@@ -319,15 +322,15 @@ namespace PokerDefense.UI
             UpdateLabels(pending);
         }
 
-        // UI 버튼과 안내 문구 갱신
+        // 버튼 interactable·라벨 문구·안내 문구를 갱신한다
+        // 버튼을 아예 보일지 말지는 ActionBarController가 단계별로 정한다
         void UpdateLabels(UnitInstance pending)
         {
             supportButton.interactable = placement.CanSupportSummon;
             supportLabel.text = $"지원 소환 {placement.SupportSummonCost}";
 
-            // 조커는 고른 유닛에만 쓴다. 고르기 전에는 대상이 없어 버튼을 띄울 이유가 없다
+            // 조커는 고른 유닛에만 쓸 수 있음
             bool jokerOffered = pending == null && selected != NoSelection;
-            jokerButton.gameObject.SetActive(jokerOffered);
 
             if (jokerOffered)
             {
@@ -337,7 +340,6 @@ namespace PokerDefense.UI
 
             if (pending != null)
             {
-                sellButton.gameObject.SetActive(true);
                 sellLabel.text = "소환 유닛 판매";
                 ShowDetail(pending, placement.IsStuck ? "놓을 자리가 없습니다 - 판매하세요" : "칸을 눌러 배치");
                 return;
@@ -345,13 +347,11 @@ namespace PokerDefense.UI
 
             if (selected != NoSelection)
             {
-                sellButton.gameObject.SetActive(true);
                 sellLabel.text = "판매";
                 ShowDetail(placement.Board[selected], string.Empty);
                 return;
             }
 
-            sellButton.gameObject.SetActive(false);
             ShowDetail(null, "확정하면 유닛이 소환됩니다");
         }
 
