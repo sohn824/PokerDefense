@@ -65,6 +65,9 @@ namespace PokerDefense.UI
         const float LifePopSeconds = 0.35f;
         const float LifePopScale = 1.4f;
 
+        // 같은 전투음이 한 프레임에 몰려도 한 번만 울리도록 두는 최소 간격
+        const float CombatSfxMinGap = 0.05f;
+
         [SerializeField] CombatController controller;
         [SerializeField] Transform boardRoot;
         [SerializeField] Sprite enemySprite;
@@ -111,6 +114,10 @@ namespace PokerDefense.UI
 
         Coroutine failFlashRoutine;
         Coroutine lifePopRoutine;
+
+        // 마지막으로 착탄음 / 처치음을 낸 시각 (CombatSfxMinGap 간격 확인용)
+        float lastImpactSfxAt = -1f;
+        float lastDeathSfxAt = -1f;
 
         void Awake()
         {
@@ -287,6 +294,7 @@ namespace PokerDefense.UI
             if (combat != null)
             {
                 IReadOnlyList<CombatContext.HitEvent> recent = combat.RecentHits;
+                bool anyNewHit = false;
 
                 for (int i = 0; i < recent.Count; i++)
                 {
@@ -296,6 +304,30 @@ namespace PokerDefense.UI
                     }
 
                     Spawn(recent[i].Position, recent[i].Source);
+                    anyNewHit = true;
+
+                    // 발사음은 유닛마다, 착탄음은 Splash·Pierce만 즉시. 일반 착탄음은 아래에서 한 번으로 묶는다
+                    if (recent[i].Source != null)
+                    {
+                        AudioManager.Instance?.Play(AudioManager.FireCue(recent[i].Source));
+
+                        AttackPattern pattern = recent[i].Source.Pattern;
+
+                        if (pattern == AttackPattern.Splash)
+                        {
+                            AudioManager.Instance?.Play(AudioManager.Sfx.ImpactSplash);
+                        }
+                        else if (pattern == AttackPattern.Pierce)
+                        {
+                            AudioManager.Instance?.Play(AudioManager.Sfx.ImpactPierce);
+                        }
+                    }
+                }
+
+                if (anyNewHit && Time.time - lastImpactSfxAt >= CombatSfxMinGap)
+                {
+                    AudioManager.Instance?.Play(AudioManager.Sfx.ImpactHit);
+                    lastImpactSfxAt = Time.time;
                 }
 
                 lastHitSeen = combat.ElapsedTime;
@@ -569,8 +601,20 @@ namespace PokerDefense.UI
 
             for (int i = 0; i < gone.Count; i++)
             {
+                if (gone[i].IsAlive == false && gone[i].Definition.Type == EnemyType.Boss)
+                {
+                    AudioManager.Instance?.Play(AudioManager.Sfx.EnemyDeathBig);
+                }
+
                 Destroy(views[gone[i]].Root.gameObject);
                 views.Remove(gone[i]);
+            }
+
+            // 이번 프레임에 죽은 적이 있으면 일반 처치음을 한 번만 낸다
+            if (gone.Count > 0 && Time.time - lastDeathSfxAt >= CombatSfxMinGap)
+            {
+                AudioManager.Instance?.Play(AudioManager.Sfx.EnemyDeath);
+                lastDeathSfxAt = Time.time;
             }
         }
 

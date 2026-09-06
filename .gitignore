@@ -68,3 +68,27 @@ crashlytics-build.properties
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local generation outputs: audio backups, previews, validation, UI captures.
+# Runtime audio in Assets/_Project/Audio and generators in Tools/Audio stay tracked.
+/Artifacts/
+
+# Python-generated cache files
+__pycache__/
+*.py[cod]
+
+# Machine-local assistant permissions
+/.claude/settings.local.json
+
+# Unselected voice audition tooling and its local-only license copy.
+# Keep the license with any distributed voice samples/choir renders in Artifacts.
+/Tools/Audio/VOICE_LICENSE.txt
+/Tools/Audio/fetch_voice_candidates.py
+
+# Retired arrangements: every Game music slot now references bgm_combat.
+/Assets/_Project/Audio/bgm_plan.wav
+/Assets/_Project/Audio/bgm_plan.wav.meta
+/Assets/_Project/Audio/bgm_boss.wav
+/Assets/_Project/Audio/bgm_boss.wav.meta
+/Assets/_Project/Audio/bgm_result.wav
+/Assets/_Project/Audio/bgm_result.wav.meta

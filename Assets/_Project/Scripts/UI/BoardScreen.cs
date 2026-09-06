@@ -40,6 +40,10 @@ namespace PokerDefense.UI
 
         int selected = NoSelection;
 
+        // 조커로 성급을 올리는 중인지
+        // (OnPlaced에서 조커 승급음과 일반 머지음을 구분하는 데 사용)
+        bool usingJoker;
+
         void Awake()
         {
             for (int i = 0; i < slots.Length; i++)
@@ -112,6 +116,11 @@ namespace PokerDefense.UI
         // selected 상태를 초기화하고 Refresh를 호출해 UI 상태 갱신
         void OnPendingChanged(UnitInstance pending)
         {
+            if (pending != null)
+            {
+                AudioManager.Instance?.Play(AudioManager.Sfx.UnitSummon);
+            }
+
             selected = NoSelection;
             Refresh();
         }
@@ -120,6 +129,29 @@ namespace PokerDefense.UI
         // selected 상태를 초기화하고 Refresh를 호출해 UI 상태 갱신
         void OnPlaced(int index, PlacementResult result)
         {
+            if (result == PlacementResult.Placed)
+            {
+                AudioManager.Instance?.Play(AudioManager.Sfx.UnitPlace);
+            }
+            else if (result == PlacementResult.Merged)
+            {
+                // 조커 승급도 Merged로 들어오므로 먼저 갈라내고, 나머지는 합쳐진 성급에 맞는 효과음 선택
+                int star = placement.Board[index] != null ? placement.Board[index].Star : 2;
+
+                if (usingJoker)
+                {
+                    AudioManager.Instance?.Play(AudioManager.Sfx.JokerPromote);
+                }
+                else if (star >= 3)
+                {
+                    AudioManager.Instance?.Play(AudioManager.Sfx.MergeStar3);
+                }
+                else
+                {
+                    AudioManager.Instance?.Play(AudioManager.Sfx.MergeStar2);
+                }
+            }
+
             selected = NoSelection;
             Refresh();
         }
@@ -208,27 +240,40 @@ namespace PokerDefense.UI
         {
             if (placement.Pending != null)
             {
-                placement.TrySellPending();
+                if (placement.TrySellPending())
+                {
+                    AudioManager.Instance?.Play(AudioManager.Sfx.ChipGain);
+                }
+
                 return;
             }
 
             if (selected != NoSelection)
             {
-                placement.TrySellSlot(selected);
+                if (placement.TrySellSlot(selected))
+                {
+                    AudioManager.Instance?.Play(AudioManager.Sfx.ChipGain);
+                }
+
                 selected = NoSelection;
             }
         }
 
         void OnSupportSummon()
         {
-            placement.TrySupportSummon();
+            if (placement.TrySupportSummon())
+            {
+                AudioManager.Instance?.Play(AudioManager.Sfx.UnitSummon);
+            }
         }
 
         void OnUseJoker()
         {
             if (selected != NoSelection)
             {
+                usingJoker = true;
                 placement.TryUseJoker(selected);
+                usingJoker = false;
             }
         }
 
@@ -310,11 +355,8 @@ namespace PokerDefense.UI
             ShowDetail(null, "확정하면 유닛이 소환됩니다");
         }
 
-        /**
-         * 유닛 상세 정보 표시
-         *
-         * 슬롯에는 Sprite와 성급만 표시하고 이름, 공격력 등의 상세 정보는 전부 여기서 표시
-         */
+        // 유닛 상세 정보 표시
+        // 슬롯에는 Sprite와 성급만 표시하고 이름, 공격력 등의 상세 정보는 전부 여기서 표시
         void ShowDetail(UnitInstance unit, string hint)
         {
             detailPlate.SetActive(unit != null);

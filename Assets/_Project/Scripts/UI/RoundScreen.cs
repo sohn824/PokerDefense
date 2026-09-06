@@ -97,6 +97,9 @@ namespace PokerDefense.UI
                 }
 
                 celebrateStamp.gameObject.SetActive(false);
+
+                // 새 손패가 깔릴 때 딜 사운드를 한 번 재생
+                AudioManager.Instance?.Play(AudioManager.Sfx.CardDeal);
             }
 
             RefreshTray();
@@ -120,6 +123,22 @@ namespace PokerDefense.UI
         void ShowResult(HandResult result)
         {
             categoryLabel.text = HandCategoryNames.Of(result.Category);
+
+            // 확정 족보 등급에 따라 팡파레를 3단계로 나눠 재생
+            int rarity = HandRarity.RankOf(result.Category);
+
+            if (rarity >= HandRarity.RankOf(HandCategory.FourOfAKind))
+            {
+                AudioManager.Instance?.Play(AudioManager.Sfx.HandHigh);
+            }
+            else if (rarity >= HandRarity.RankOf(HandCategory.Straight))
+            {
+                AudioManager.Instance?.Play(AudioManager.Sfx.HandMid);
+            }
+            else
+            {
+                AudioManager.Instance?.Play(AudioManager.Sfx.HandLow);
+            }
 
             var keyCards = new System.Text.StringBuilder("키카드");
 
@@ -212,6 +231,7 @@ namespace PokerDefense.UI
             }
 
             // 아니면 그냥 클릭한 카드 선택/해제 토글
+            AudioManager.Instance?.Play(AudioManager.Sfx.CardSelect);
             card.SetSelected(!card.Selected);
             Refresh();
         }
@@ -219,6 +239,8 @@ namespace PokerDefense.UI
         // 트레이 카드 탭 - 배치할 카드를 고르거나(선택) 다시 눌러 해제
         void OnHeldClicked(CardView trayCard)
         {
+            AudioManager.Instance?.Play(AudioManager.Sfx.CardSelect);
+
             if (selectedTrayCard == trayCard)
             {
                 selectedTrayCard = null;
@@ -254,6 +276,7 @@ namespace PokerDefense.UI
             stage.RemoveHeldCard(held);
             // HandChanged -> ShowHand 가 RefreshTray + Refresh 를 부른다
             controller.PlaceHeldCard(slot, held);
+            AudioManager.Instance?.Play(AudioManager.Sfx.CardFlip);
         }
 
         // 보유 카드 트레이를 현재 상태에 맞춘다
@@ -298,6 +321,11 @@ namespace PokerDefense.UI
             }
 
             controller.ExchangeCards(indices);
+
+            if (indices.Count > 0)
+            {
+                AudioManager.Instance?.Play(AudioManager.Sfx.Exchange);
+            }
         }
 
         // 카드 조작 가능 여부, 버튼 상태, 안내 문구를 현재 상태에 맞추기
