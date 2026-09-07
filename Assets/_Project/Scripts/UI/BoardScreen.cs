@@ -105,6 +105,13 @@ namespace PokerDefense.UI
             Collider2D hit = Physics2D.OverlapPoint(worldPoint);
             if (hit == null)
             {
+                // 빈 배경을 누르면 유닛 선택을 해제한다
+                if (selected != NoSelection)
+                {
+                    selected = NoSelection;
+                    Refresh();
+                }
+
                 return;
             }
 
@@ -195,7 +202,12 @@ namespace PokerDefense.UI
             // 배치 대기 중인 유닛이 있으면 배치 시도
             if (placement.Pending != null)
             {
-                placement.TryPlace(slot.Index);
+                if (placement.TryPlace(slot.Index) == false)
+                {
+                    // 못 놓는 칸을 누르면 안내 문구만 띄우고 return
+                    pendingLabel.text = "여기엔 놓을 수 없습니다 · 같은 유닛·성급 칸에만 겹칠 수 있습니다";
+                }
+
                 return;
             }
 
@@ -231,11 +243,14 @@ namespace PokerDefense.UI
                 moved = placement.TrySwapSlots(selected, slot.Index);
             }
 
-            selected = NoSelection;
-
-            // 이동이나 머지가 실패하면 선택 상태를 초기화하고 Refresh 호출
-            if (moved == false)
+            if (moved)
             {
+                selected = NoSelection;
+            }
+            else
+            {
+                // 슬롯을 클릭했는데 이동, 머지, 교환 모두 실패하면 안내 문구만 띄우고 선택 상태 유지
+                pendingLabel.text = "그 자리에는 할 수 없습니다";
                 Refresh();
             }
         }
@@ -298,10 +313,11 @@ namespace PokerDefense.UI
 
                 if (pending != null)
                 {
-                    // 대기 유닛이 있으면 배치 가능한 슬롯들을 하이라이트
+                    // 대기 유닛이 있으면 배치 가능한 슬롯을 하이라이트
                     bool placeable = board.CanPlaceAt(i, pending);
                     slots[i].SetHighlight(placeable, false);
-                    slots[i].SetInteractable(placeable);
+                    slots[i].SetInteractable(true);
+                    slots[i].SetActionHint(string.Empty);
                 }
                 else if (selected == NoSelection)
                 {
@@ -309,51 +325,116 @@ namespace PokerDefense.UI
                     bool hasUnit = board[i] != null;
                     slots[i].SetHighlight(board.HasMergePartner(i), false);
                     slots[i].SetInteractable(hasUnit);
+                    slots[i].SetActionHint(string.Empty);
                 }
                 else
                 {
-                    // 이미 배치된 유닛을 고른 상태에서는 자신 외 모든 칸을 하이라이트
-                    // (이동/머지/자리교환 모두 가능)
-                    bool isSelected = i == selected;
-                    slots[i].SetHighlight(true, isSelected);
+                    // 유닛을 고른 상태 - 각 칸을 누르면 무슨 일이 일어나는지 문구로 미리 보여주기
                     slots[i].SetInteractable(true);
+                    slots[i].SetHighlight(true, i == selected);
+                    slots[i].SetActionHint(HintFor(board, i));
                 }
             }
 
             UpdateLabels(pending);
         }
 
+        // 고른 유닛 기준으로 슬롯 i를 누르면 일어날 일을 안내하는 문구를 반환
+        string HintFor(GridBoard board, int i)
+        {
+            if (i == selected)
+            {
+                return "선택";
+            }
+
+            if (board[i] == null)
+            {
+                return "이동";
+            }
+
+            if (board.CanMergeSlots(selected, i))
+            {
+                return $"머지 ★{board[selected].Star + 1}";
+            }
+
+            return "교환";
+        }
+
         // 버튼 interactable·라벨 문구·안내 문구를 갱신한다
         // 버튼을 아예 보일지 말지는 ActionBarController가 단계별로 정한다
         void UpdateLabels(UnitInstance pending)
         {
+            // 비용·남은 횟수를 항상 노출하고, 못 쓰는 이유는 회색만이 아니라 문구로 보여준다
             randomSummonButton.interactable = placement.CanRandomSummon;
-            randomSummonLabel.text = $"랜덤 소환 {placement.RandomSummonCost}";
+            int summonsLeft = stage.Economy.RandomSummonsPerRound - placement.RandomSummonsUsed;
+            randomSummonLabel.text = placement.CanRandomSummon
+                ? $"랜덤 소환 · {placement.RandomSummonCost} Chip · 남은 {summonsLeft}회"
+                : $"랜덤 소환 · {RandomSummonBlockReason()}";
 
             // 조커는 고른 유닛에만 쓸 수 있음
             bool jokerOffered = pending == null && selected != NoSelection;
 
             if (jokerOffered)
             {
+                UnitInstance unit = placement.Board[selected];
                 jokerButton.interactable = placement.CanUseJokerOn(selected);
-                jokerLabel.text = $"조커 ★+1 ({stage.Stage.Jokers})";
+                jokerLabel.text = placement.CanUseJokerOn(selected)
+                    ? $"조커 ★{unit.Star} → ★{unit.Star + 1} · Joker {stage.Stage.Jokers}"
+                    : $"조커 · {JokerBlockReason(unit)}";
             }
 
             if (pending != null)
             {
-                sellLabel.text = "소환 유닛 판매";
+                sellLabel.text = $"소환 유닛 판매 +{stage.Economy.SellPriceFor(pending.Star)} Chip";
                 ShowDetail(pending, placement.IsStuck ? "놓을 자리가 없습니다 - 판매하세요" : "칸을 눌러 배치");
                 return;
             }
 
             if (selected != NoSelection)
             {
-                sellLabel.text = "판매";
+                sellLabel.text = $"판매 +{stage.Economy.SellPriceFor(placement.Board[selected].Star)} Chip";
                 ShowDetail(placement.Board[selected], string.Empty);
                 return;
             }
 
             ShowDetail(null, "확정하면 유닛이 소환됩니다");
+        }
+
+        // 랜덤 소환 버튼이 비활성인 이유
+        string RandomSummonBlockReason()
+        {
+            if (placement.RandomSummonsUsed >= stage.Economy.RandomSummonsPerRound)
+            {
+                return "남은 0회";
+            }
+
+            if (placement.Board.OccupiedCount >= GridBoard.SlotCount)
+            {
+                return "빈 칸 없음";
+            }
+
+            if (stage.Stage.Chip < placement.RandomSummonCost)
+            {
+                return $"Chip {stage.Stage.Chip}/{placement.RandomSummonCost}";
+            }
+
+            return $"{placement.RandomSummonCost} Chip";
+        }
+
+        // 조커 버튼이 비활성인 이유
+        string JokerBlockReason(UnitInstance unit)
+        {
+            if (unit.IsMaxStar)
+            {
+                return "이미 최대 성급";
+            }
+
+            if (stage.Stage.Jokers <= 0)
+            {
+                return "Joker 없음";
+            }
+
+            return "사용 불가";
         }
 
         // 유닛 상세 정보 표시

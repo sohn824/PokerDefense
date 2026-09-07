@@ -59,8 +59,13 @@ namespace PokerDefense.UI
         // 배치하려고 고른 트레이 카드 (상점에서 구매한 카드 중)
         CardView selectedTrayCard;
 
+        // 이번 라운드에 트레이 카드를 놓은 손패 자리 (교체로 잠긴 자리와 문구를 구분하려고 따로 센다)
+        bool[] heldPlacedSlots;
+
         void Awake()
         {
+            heldPlacedSlots = new bool[cardViews.Length];
+
             for (int i = 0; i < cardViews.Length; i++)
             {
                 cardViews[i].Bind(cardVisuals);
@@ -89,6 +94,7 @@ namespace PokerDefense.UI
             if (phase == RoundPhase.Exchange)
             {
                 categoryLabel.text = string.Empty;
+                System.Array.Clear(heldPlacedSlots, 0, heldPlacedSlots.Length);
 
                 if (celebrateRoutine != null)
                 {
@@ -106,13 +112,13 @@ namespace PokerDefense.UI
             Refresh();
         }
 
-        // 손패 5장 뷰 갱신
+        // 손패 5장 뷰 갱신 - 상태는 곧바로 부르는 Refresh가 다시 계산한다
         void ShowHand(IReadOnlyList<Card> hand)
         {
             for (int i = 0; i < cardViews.Length; i++)
             {
                 cardViews[i].Show(hand[i]);
-                cardViews[i].SetSelected(false);
+                cardViews[i].SetState(CardView.CardState.Normal);
             }
 
             RefreshTray();
@@ -230,9 +236,9 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 아니면 그냥 클릭한 카드 선택/해제 토글
+            // 아니면 교체 대상 선택/해제 토글
             AudioManager.Instance?.Play(AudioManager.Sfx.CardSelect);
-            card.SetSelected(!card.Selected);
+            card.SetState(card.Selected ? CardView.CardState.Normal : CardView.CardState.Pick);
             Refresh();
         }
 
@@ -250,7 +256,7 @@ namespace PokerDefense.UI
                 // 배치 모드로 들어가면 교체 선택은 버린다
                 for (int i = 0; i < cardViews.Length; i++)
                 {
-                    cardViews[i].SetSelected(false);
+                    cardViews[i].SetState(CardView.CardState.Normal);
                 }
 
                 selectedTrayCard = trayCard;
@@ -265,14 +271,22 @@ namespace PokerDefense.UI
             int slot = System.Array.IndexOf(cardViews, handCard);
             int trayIndex = System.Array.IndexOf(heldCardViews, selectedTrayCard);
 
-            if (slot < 0 || controller.IsLocked(slot) || trayIndex < 0 || trayIndex >= stage.HeldCards.Count)
+            if (slot < 0 || trayIndex < 0 || trayIndex >= stage.HeldCards.Count)
             {
+                return;
+            }
+
+            // 잠긴 자리를 누르면 카드·Chip을 소모하지 않고 이유만 알린다
+            if (controller.IsLocked(slot))
+            {
+                statusLabel.text = "이 자리는 이번 라운드에 이미 변경했습니다";
                 return;
             }
 
             Card held = stage.HeldCards[trayIndex];
 
             selectedTrayCard = null;
+            heldPlacedSlots[slot] = true;
             stage.RemoveHeldCard(held);
             // HandChanged -> ShowHand 가 RefreshTray + Refresh 를 부른다
             controller.PlaceHeldCard(slot, held);
@@ -303,13 +317,25 @@ namespace PokerDefense.UI
                 }
 
                 heldCardViews[i].Show(held[i]);
-                heldCardViews[i].SetSelected(heldCardViews[i] == selectedTrayCard);
+                heldCardViews[i].SetState(heldCardViews[i] == selectedTrayCard
+                    ? CardView.CardState.TrayPick
+                    : CardView.CardState.Normal);
                 heldCardViews[i].SetInteractable(true);
             }
         }
 
         void OnExchange()
         {
+            // 트레이 배치 모드에서는 이 버튼이 '선택 취소'로 쓰인다 (카드·Chip 소모 없음)
+            if (selectedTrayCard != null)
+            {
+                selectedTrayCard = null;
+                AudioManager.Instance?.Play(AudioManager.Sfx.CardSelect);
+                RefreshTray();
+                Refresh();
+                return;
+            }
+
             var indices = new List<int>();
 
             for (int i = 0; i < cardViews.Length; i++)
@@ -328,26 +354,56 @@ namespace PokerDefense.UI
             }
         }
 
-        // 카드 조작 가능 여부, 버튼 상태, 안내 문구를 현재 상태에 맞추기
+        // 카드 상태, 조작 가능 여부, 버튼 상태, 안내 문구를 현재 상태에 맞추기
         void Refresh()
         {
             bool exchanging = phase == RoundPhase.Exchange;
-            int selected = 0;
+            bool trayMode = selectedTrayCard != null;
+            int picked = 0;
 
             for (int i = 0; i < cardViews.Length; i++)
             {
-                // 잠긴 자리는 이번 라운드에 다시 못 바꾸므로 못 고르도록 함
-                cardViews[i].SetInteractable(exchanging && controller.IsLocked(i) == false);
+                CardView card = cardViews[i];
+                bool locked = controller.IsLocked(i);
 
-                if (cardViews[i].Selected)
+                // 배치 모드에서는 잠긴 자리도 눌러 안내를 받게 열어 둔다
+                card.SetInteractable(exchanging && (trayMode || locked == false));
+
+                if (heldPlacedSlots[i])
                 {
-                    selected++;
+                    card.SetState(CardView.CardState.Placed);
+                }
+                else if (locked)
+                {
+                    card.SetState(CardView.CardState.Locked);
+                }
+                else if (trayMode)
+                {
+                    card.SetState(CardView.CardState.Target);
+                }
+                else if (card.Selected)
+                {
+                    card.SetState(CardView.CardState.Pick);
+                    picked++;
+                }
+                else
+                {
+                    card.SetState(CardView.CardState.Normal);
                 }
             }
 
-            exchangeButton.interactable = exchanging && selected > 0;
             confirmButton.interactable = exchanging;
-            exchangeLabel.text = selected == 0 ? "교체" : $"교체 {selected}장";
+
+            if (trayMode)
+            {
+                exchangeButton.interactable = true;
+                exchangeLabel.text = "선택 취소";
+            }
+            else
+            {
+                exchangeButton.interactable = exchanging && picked > 0;
+                exchangeLabel.text = picked == 0 ? "교체" : $"교체 {picked}장";
+            }
 
             if (!exchanging)
             {
@@ -355,29 +411,43 @@ namespace PokerDefense.UI
                 return;
             }
 
-            ShowPreview();
+            ShowPreview(picked);
         }
 
-        // 프리뷰: 지금 확정하면 어떤 족보로 어떤 유닛이 나오고 유지 보너스 칩이 얼마인지 미리 보여줌
-        void ShowPreview()
+        // 프리뷰: 지금 확정하면 나올 족보·유닛, 그리고 현재 보너스와 '교체하면 바뀔' 예상 보너스를 나눠 보여줌
+        void ShowPreview(int picked)
         {
             HandResult preview = controller.PreviewHand();
             UnitDefinition unit = unitTable.GetDefinition(preview.Category);
-            int bonus = stage.HoldBonusFor(controller.UsedExchanges);
+            int currentBonus = stage.HoldBonusFor(controller.UsedExchanges);
             int left = controller.ExchangeableCount;
 
             categoryLabel.text = HandCategoryNames.Of(preview.Category);
-            confirmLabel.text = bonus > 0 ? $"확정 +{bonus}" : "확정";
+            confirmLabel.text = currentBonus > 0 ? $"확정 +{currentBonus}" : "확정";
 
             if (selectedTrayCard != null)
             {
-                statusLabel.text = "손패 칸을 눌러 카드를 놓으세요 (교체 아님)";
+                statusLabel.text = "손패 칸을 눌러 카드를 놓으세요 · 다시 눌러 취소";
                 return;
             }
 
-            statusLabel.text = left == 0
-                ? $"확정하면 {unit.DisplayName} 소환 - 더 바꿀 카드가 없습니다"
-                : $"확정하면 {unit.DisplayName} 소환 - 남은 교체 {left}칸 (자리당 1회)";
+            if (picked > 0)
+            {
+                int afterBonus = stage.HoldBonusFor(controller.UsedExchanges + picked);
+                statusLabel.text = $"{picked}장 교체 시 유지 보너스 +{currentBonus} → +{afterBonus}";
+                return;
+            }
+
+            if (left == 0)
+            {
+                statusLabel.text = $"확정하면 {unit.DisplayName} 소환 · 더 바꿀 카드 없음";
+                return;
+            }
+
+            // '자리당 1회' 규칙은 첫 교체 전에만 안내한다
+            statusLabel.text = controller.UsedExchanges == 0
+                ? $"확정하면 {unit.DisplayName} 소환 · 변경 가능 {left}장 (자리당 1회)"
+                : $"확정하면 {unit.DisplayName} 소환 · 변경 가능 {left}장";
         }
     }
 }

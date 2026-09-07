@@ -10,7 +10,7 @@ namespace PokerDefense.Tests
     /**
      * EconomyTests
      *
-     * Chip 경제 (DESIGN §9) — 유지 보너스 / 지갑 / 판매 가격 / 랜덤 소환 추첨
+     * Chip 경제 — 유지 보너스 / 지갑 / 판매 가격 / 랜덤 소환 추첨
      */
     public class EconomyTests
     {
@@ -271,7 +271,7 @@ namespace PokerDefense.Tests
             Assert.Throws<InvalidOperationException>(() => new RandomSummon(economy, table, seed: 1));
         }
 
-        // 새 [SerializeField]는 기존 에셋에서 0으로 들어온다 (HISTORY 반복 함정). 실제 에셋에 값이 있는지 가드한다.
+        // 새 [SerializeField]는 기존 에셋에서 0으로 들어온다 (반복 함정). 실제 에셋에 값이 있는지 가드한다.
         [Test]
         public void 상점_에셋_수치가_비어_있지_않다()
         {

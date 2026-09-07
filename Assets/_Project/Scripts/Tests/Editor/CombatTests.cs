@@ -454,7 +454,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 전투_중에_유닛을_옮겨도_연사가_되지_않는다()
         {
-            // 전투 중 배치 변경은 허용된 전략이다 (DESIGN §1)
+            // 전투 중 배치 변경은 허용된 전략이다
             // 쿨다운을 슬롯으로 들고 있으면 빈 칸으로 옮길 때마다 쿨다운 0을 물려받아 이동만으로 연사가 된다
             var unit = MakeUnit(10f, 1f, range: 100f);
             var enemy = MakeEnemy(1000000f, 0f);

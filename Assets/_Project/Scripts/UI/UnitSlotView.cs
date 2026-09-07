@@ -24,6 +24,9 @@ namespace PokerDefense.UI
         // 유닛의 별 표시 위치 오프셋
         const float StarTopY = 0.40f;
 
+        // 선택 후 각 칸에 뜨는 행동 문구(이동/머지/교환)의 위치 오프셋
+        const float ActionHintY = -0.12f;
+
         // 폭이 넓은 유닛이 슬롯 타일을 넘지 않도록 이 폭에 맞춰 기준 배율을 낮춤
         const float ArtMaxWidth = 0.9f;
 
@@ -52,6 +55,9 @@ namespace PokerDefense.UI
         [SerializeField] TextMeshPro starLabel;
         [SerializeField] Collider2D hitbox;
 
+        // 선택 후 이 칸을 누르면 무슨 일이 일어나는지 미리 보여주는 문구
+        TextMeshPro actionHint;
+
         UnitInstance current;
 
         // 현재 아트 스프라이트를 칸에 맞춘 기준 배율 (좁은 유닛은 ArtScale 그대로)
@@ -76,9 +82,46 @@ namespace PokerDefense.UI
             sharedMuzzleSprite = muzzle.sprite;
         }
 
+        // BoardScreen.Awake가 Awake 순서와 무관하게 Refresh 전에 불러 준다
+        // 프리팹이 없어 starLabel을 복제해 행동 문구용 라벨을 만든다 (폰트·머티리얼을 그대로 물려받음)
+        void BuildActionHint()
+        {
+            actionHint = Instantiate(starLabel, transform);
+            actionHint.name = "ActionHint";
+            actionHint.transform.localPosition = new Vector3(0f, ActionHintY, 0f);
+            actionHint.rectTransform.sizeDelta = new Vector2(1.8f, 0.5f);
+            actionHint.fontSize = starLabel.fontSize * 0.9f;
+            actionHint.color = new Color(1f, 0.96f, 0.72f);
+            actionHint.outlineColor = new Color32(0, 0, 0, 255);
+            actionHint.outlineWidth = 0.35f;
+            actionHint.alignment = TextAlignmentOptions.Center;
+            actionHint.sortingOrder = 8;
+            actionHint.enableWordWrapping = false;
+            actionHint.text = string.Empty;
+            actionHint.gameObject.SetActive(false);
+        }
+
         public void Bind(int index)
         {
             Index = index;
+
+            if (actionHint == null)
+            {
+                BuildActionHint();
+            }
+        }
+
+        // 빈 문자열이면 문구를 숨긴다
+        public void SetActionHint(string text)
+        {
+            bool show = string.IsNullOrEmpty(text) == false;
+
+            if (show)
+            {
+                actionHint.text = text;
+            }
+
+            actionHint.gameObject.SetActive(show);
         }
 
         public void Show(UnitInstance unit)

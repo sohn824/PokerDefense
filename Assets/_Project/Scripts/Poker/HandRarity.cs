@@ -7,7 +7,7 @@ namespace PokerDefense.Poker
      *
      * 족보를 "얼마나 나오기 어려운가"로 줄 세운다
      *
-     * HandCategory의 enum 순서는 강함이 아니다 (DESIGN §3.3) - 백스트레이트가 Straight 뒤에 있는 것이 그 예다
+     * HandCategory의 enum 순서는 강함이 아니다 - 백스트레이트가 Straight 뒤에 있는 것이 그 예다
      * 그래서 족보끼리 비교해야 하는 곳은 enum 값 대신 이 표를 쓴다
      *
      * 이 순서는 밸런스 값이 아니라 52장 덱에서 5장을 뽑는 조합 수로 정해지는 포커의 사실이라 Poker에 둔다

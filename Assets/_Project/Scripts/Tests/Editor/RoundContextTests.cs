@@ -150,7 +150,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 교체_후에도_손패에_중복이_없다()
         {
-            // 교체도 같은 덱에서 뽑으므로 이미 손에 있던 카드가 다시 나오면 안 된다 (DESIGN §3.2).
+            // 교체도 같은 덱에서 뽑으므로 이미 손에 있던 카드가 다시 나오면 안 된다.
             var round = Drawn();
             round.Exchange(new[] { 0, 1, 2, 3, 4 });
 
@@ -277,7 +277,7 @@ namespace PokerDefense.Tests
             Assert.AreEqual(RoundPhase.Place, round.Phase);
         }
 
-        // --- 상점 보유 카드 (DESIGN §13.4) ---
+        // --- 상점 보유 카드 ---
 
         static readonly Card ShopCard = new Card(Rank.Ace, Suit.Spade);
 

@@ -6,7 +6,7 @@ namespace PokerDefense.Game
     /**
      * RandomSummon
      *
-     * Chip으로 뽑는 랜덤 하위 유닛 (DESIGN §9.3)
+     * Chip으로 뽑는 랜덤 하위 유닛
      * 포커를 거치지 않는다. 포커는 "고등급 확정 소환", 이쪽은 "머지 재료 수급"이다
      *
      * System.Random을 주입받아 테스트에서 결과를 재현할 수 있다 - Deck과 같은 방식이다

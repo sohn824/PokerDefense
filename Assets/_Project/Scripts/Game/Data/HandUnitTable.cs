@@ -5,11 +5,11 @@ using UnityEngine;
 namespace PokerDefense.Game
 {
     /// <summary>
-    /// 족보 → 유닛 매핑. 에셋 1개만 두고 전역으로 쓴다 (DESIGN §4).
+    /// 족보 → 유닛 매핑. 에셋 1개만 두고 전역으로 쓴다.
     ///
     /// 이 테이블이 별도로 존재하는 이유는 **판정 결과와 보상 세기가 별개 축**이기 때문이다.
     /// 백스트레이트는 정통 포커에서 가장 약한 스트레이트지만 이 게임에서는 특수 유닛을 준다.
-    /// 그 연결을 코드가 아니라 데이터로 두어야 밸런싱을 코드 수정 없이 바꿀 수 있다 (DESIGN §3.3).
+    /// 그 연결을 코드가 아니라 데이터로 두어야 밸런싱을 코드 수정 없이 바꿀 수 있다.
     /// </summary>
     [CreateAssetMenu(menuName = "PokerDefense/Hand Unit Table", fileName = "HandUnitTable")]
     public sealed class HandUnitTable : ScriptableObject

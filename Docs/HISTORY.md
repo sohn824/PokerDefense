@@ -109,13 +109,47 @@
 
 ## 이력
 
-### 2026-09-07 — 지원 소환 → 랜덤 소환 개편 (미커밋)
+### 2026-09-07 — UX-05: 상점 선택→구매 흐름 (미커밋)
+
+- **탭 = 즉시 구매를 탭 = 선택으로 바꾸고, 하단 구매 버튼으로만 산다.** `ShopScreen`에 `selectedCard` + `BuyButton`(씬 신설) + `OnBuy()`. 카드 확인만으로는 Chip이 안 나간다. 구매 성공 시 선택을 풀어 연타가 다음 카드로 이어지지 않게 한다. 추가 확인 모달은 없다.
+- **보유 카드 실제 표시.** `HeldLabel`(씬 신설)에 `보유 카드 7◆ K◆ 2♥  (빈 1)` — 실제 숫자·무늬 + 빈 칸. 다음 손패 추천은 하지 않는다.
+- **구매 완료 상태.** `CardView.CardState.Bought` 추가(배지 "구매 완료", 축소·반투명). 상점에서 고른 카드는 `TrayPick` 재사용(배지 "선택"). `CardView.SetSelected`는 이제 안 쓰여서 제거.
+- **실행 불가 구분.** `Chip 부족` / `보유 카드 가득` / (이미 산 카드는 `구매 완료` 배지로 못 고름). 사유는 `infoLabel`과 구매 버튼 라벨에 문구로. 선택·정보 확인은 막지 않고 구매 실행만 막는다.
+- 상점 나가기 버튼 문구 `상점 나가기 (다음 라운드)`.
+- 검증: EditMode 233/233. Play Mode에서 DevSkip으로 상점(라운드 5) 진입 → 선택→구매(Chip 20→16, 보유 0→1, Slot=Bought), 보유 3/3 가득에서 선택은 되고 구매만 막힘을 리플렉션·스크린샷으로 확인. `Game.unity`에 `BuyButton`·`HeldLabel` 배선. 커밋·푸시 없음. 구매 버튼의 비활성 색상 통일은 UX-06.
+
+### 2026-09-07 — UX-04: 버튼 비용·사유 노출 (미커밋)
+
+- **버튼에 비용·반환액·남은 횟수를 항상 표시.** 랜덤 소환 `랜덤 소환 · {비용} Chip · 남은 {N}회`, 판매 `판매 +{반환액} Chip`, 조커 `조커 ★{N} → ★{N+1} · Joker {보유}` (DESIGN §15.5).
+- **비활성 사유를 회색만이 아니라 문구로.** 랜덤 소환: `Chip {현재}/{필요}` / `남은 0회` / `빈 칸 없음`. 조커: `Joker 없음` / `이미 최대 성급`. `BoardScreen.RandomSummonBlockReason()` · `JokerBlockReason()`.
+- **상점**: 못 살 때 `infoLabel`에 `· Chip 부족` / `· 보유 카드 가득` 사유를 붙인다. 카드 선택 → 구매 버튼 분리는 UX-05.
+- **연타·중복 소비**는 기존 `Try*` 반환값 가드 + 랜덤 소환 패널의 전체 화면 raycast 차단으로 이미 막힘을 확인(별도 "처리 중" 상태 불필요). 조커·판매도 성공 시 `selected`/`Pending`이 즉시 비워져 두 번째 탭이 무효.
+- 검증: EditMode 233/233. Play Mode에서 Chip 0/8, 사용 횟수 소진, Joker 유무·최대 성급에 따른 라벨을 리플렉션으로 확인. 씬 변경 없음. 커밋·푸시 없음. 긴 라벨이 좁은 버튼에서 줄바꿈되는 건 UX-06(버튼 높이·타이포 고정).
+
+### 2026-09-07 — UX-03: 보드 조작 예측·실패 처리 (미커밋)
+
+- **누르기 전 결과를 문구로 미리 보여준다 (DESIGN §15.5).** 유닛을 고르면 각 칸에 `이동` / `머지 ★N`(도착 성급) / `교환` / `선택`이 뜬다. `UnitSlotView`에 `actionHint`(starLabel 복제로 폰트 물려받음, `Bind`에서 생성)를 추가하고 `BoardScreen.Refresh`의 선택-상태 분기를 칸별 `HintFor(board, i)`로 세분화.
+- **실패 시 선택 유지.** `OnSlotClicked`가 이동/머지/교환 성공 시에만 `selected`를 비운다. 실패하면 선택을 남겨 다른 대상을 고를 수 있게 하고 "그 자리에는 할 수 없습니다"를 알린다.
+- **못 놓는 칸 이유 표시.** 대기 유닛이 있을 때 못 놓는 칸도 `SetInteractable(true)`로 열어 두고, `TryPlace` 실패 시 소비 없이 "여기엔 놓을 수 없습니다 · 같은 유닛·성급 칸에만 겹칠 수 있습니다"를 안내.
+- **빈 배경 탭으로 선택 해제.** `Update`에서 `OverlapPoint`가 아무것도 못 맞히면(그리고 UI 위가 아니면) 고른 유닛을 해제한다.
+- UI 터치가 보드로 통과하는 문제는 기존 `IsPointerOverGameObject()` 가드 + 랜덤 소환 패널의 전체 화면 차단으로 이미 막힌다. 실기기 터치 ID 검증은 미실시(수동 QA 대상).
+- 검증: EditMode 233/233. Play Mode에서 이동/머지 ★N/교환/선택 문구, 머지 성공 후 선택 해제, 못 놓는 칸 이유(대기 유닛 유지)를 리플렉션으로 확인. 씬 변경 없음(actionHint 런타임 생성). 커밋·푸시 없음.
+
+### 2026-09-07 — UX-02: 카드 상태 표시 (미커밋)
+
+- `CardView`에 `CardState` 6종(Normal / Pick / Locked / Placed / Target / TrayPick)을 넣고 **색이 아니라 크기·투명도·테두리·아래쪽 배지 문구**로 구분한다 (DESIGN §15.4). Pick·TrayPick은 1.08배 확대 + "교체"/"선택" 배지, Locked·Placed는 0.92배 축소 + 알파 0.5 + "교체 완료"/"배치 완료" 배지, Target은 테두리 + "여기 놓기". 배지는 프리팹이 없어 인스턴스마다 `Awake`에서 코드로 붙인다.
+- **교체(유지 보너스 깎임)와 트레이 배치(안 깎임)를 문구로 구분.** `RoundContext.locked`는 둘을 한 플래그로 묶으므로 `RoundScreen`이 `heldPlacedSlots`를 따로 세어 "배치 완료"를 "교체 완료"와 갈라 보여준다. 라운드 진입 시 리셋.
+- **보너스 프리뷰 분리.** 확정 버튼은 현재 보너스(`확정 +N`), 상황 카드는 고른 장수만큼 교체 시 예상치("N장 교체 시 유지 보너스 +X → +Y"). "남은 교체 N칸 (자리당 1회)" 상시 문구는 "변경 가능 N장"으로 줄이고 '자리당 1회'는 첫 교체 전에만 안내.
+- **트레이 취소.** 배치 모드에서 교체 버튼이 "선택 취소"로 바뀐다(재탭 취소도 유지). 잠긴 자리를 누르면 카드·Chip 소모 없이 "이미 변경했습니다"만 안내.
+- 검증: EditMode 233/233. Play Mode에서 6개 상태 전이(고르기 → 교체 완료, 트레이 선택 → 여기 놓기 → 배치 완료) + 취소가 재화·잠금을 건드리지 않음을 리플렉션으로 확인. 씬 변경 없음(배지는 런타임 생성). 커밋·푸시 없음.
+
+### 2026-09-07 — 지원 소환 → 랜덤 소환 개편
 
 - **명칭 전면 변경.** `SupportSummon`→`RandomSummon`, `TrySupportSummon`/`CanSupportSummon`/`SupportSummonCost`/`SupportSummonsUsed`, `EconomyDefinition`의 `supportPool`/`supportSummonCost`/`supportSummonsPerRound`(→`randomPool` 등, `FormerlySerializedAs`로 `Economy.asset` 자동 이전), UI의 `supportButton`/`supportLabel`/`OnSupportSummon`, `BalanceSimRunner`, `EconomyTests`까지. 버튼 문구 "랜덤 소환 6".
 - **전투 중 사용 개방.** 모델(`CanRandomSummon`)은 원래 `Phase == Place`만 봐서 이미 전투 중 허용됐고, `ActionBarController`가 Combat 단계에서 버튼을 숨기던 것을 노출로 바꿨다. `CombatContext.Attack()`이 매 Tick `board[slot]`을 라이브로 읽어 전투 중 추가한 유닛이 즉시 사격에 참여함을 확인. 라운드당 1회 제한은 준비+전투 합산 그대로(밸런스 근거 DESIGN §9.3) — 데이터 `randomSummonsPerRound: 1` 유지.
 - **자동 배치 → 배치 대기 + 슬롯머신 연출.** `TryRandomSummon`이 첫 빈 칸에 바로 놓던 것을 `Pending`으로 올리도록 바꿨다(포커 확정과 동일 흐름 — 플레이어가 칸을 고름). `PlacementController.RandomSummoned(UnitDefinition)` 이벤트, 새 `RandomSummonMachine`(Canvas 오버레이 패널 `RandomSummonPanel`)이 `[아트][이름]` 한 줄 항목 20개를 세로로 밀어 올리다 감속해 뽑힌 유닛에서 정지 후 페이드. 패널은 전체 화면 배경으로 그 사이 보드 탭만 막고 전투 시뮬은 안 멈춘다. 패널 캐비닛·레버·7-7-7 아트는 그레이박스(UX-06/아트 패스).
 - `ActionBarController`: 대기 유닛 존재 시 판매 버튼·안내 라벨을 `stage`와 무관하게 노출(전투 중 랜덤 소환 대기 유닛도 배치 안내가 뜨도록).
-- 검증: EditMode 233/233. Play Mode에서 릴이 뽑힌 유닛에서 정지, 닫히면 대기 유닛으로 배치, 전투 중 버튼 노출, 라운드당 1회 소진 후 비활성 확인. `Game.unity`에 `RandomSummonMachine` + `RandomSummonPanel` 배선. 폰트 아틀라스 되돌림. 커밋·푸시 없음.
+- 검증: EditMode 233/233. Play Mode에서 릴이 뽑힌 유닛에서 정지, 닫히면 대기 유닛으로 배치, 전투 중 버튼 노출, 라운드당 1회 소진 후 비활성 확인. `Game.unity`에 `RandomSummonMachine` + `RandomSummonPanel` 배선. 커밋 23d49c8.
 
 ### 2026-09-06 — 미채택 오디오 Git 제외
 

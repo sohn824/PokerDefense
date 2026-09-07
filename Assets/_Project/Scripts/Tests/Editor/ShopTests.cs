@@ -8,7 +8,7 @@ namespace PokerDefense.Tests
     /**
      * ShopTests
      *
-     * 카드 상점 진열 추첨 (DESIGN §13.2) — ShopOffer
+     * 카드 상점 진열 추첨 — ShopOffer
      * 보유 카드 인벤토리는 StageTests 참고
      */
     public class ShopTests

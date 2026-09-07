@@ -14,7 +14,7 @@ namespace PokerDefense.EditorTools
      *
      * 개발/밸런스 검증 전용. 정상적인 포커 드로우(치트 없음)로 스테이지를 끝까지 자동 플레이해
      * 라이프·성급 추이를 CSV로 남긴다. GUI 없이 StartRun 호출(주로 MCP execute_code)로만 제어한다.
-     * Time.timeScale로 CombatController.Update를 가속하는 기존 검증 방식(HISTORY 참고)을 그대로 따른다 —
+     * Time.timeScale로 CombatController.Update를 가속하는 기존 검증 방식을 그대로 따른다 —
      * combat.Tick을 직접 호출하지 않는다(CombatController와의 순서 어긋남으로 결과 유실 버그가 났던 적이 있음).
      */
     [InitializeOnLoad]

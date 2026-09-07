@@ -10,7 +10,7 @@ namespace PokerDefense.Tests
     /**
      * StageTests
      *
-     * 15웨이브 스테이지의 규칙 (DESIGN §5.4, §5.2.1, §9.6)
+     * 15웨이브 스테이지의 규칙
      * 라이프 피해 상한 / Joker 획득·사용 / 런 통계
      */
     public class StageTests
@@ -83,7 +83,7 @@ namespace PokerDefense.Tests
             return unit;
         }
 
-        // ---------- 라이프 피해 상한 (DESIGN §5.4) ----------
+        // ---------- 라이프 피해 상한 ----------
 
         [TestCase(3, 3)]
         [TestCase(5, 5)]
@@ -140,7 +140,7 @@ namespace PokerDefense.Tests
             Assert.AreEqual(15, stage.Life);
         }
 
-        // ---------- Joker (DESIGN §5.2.1) ----------
+        // ---------- Joker ----------
 
         [Test]
         public void 보스_웨이브를_클리어하면_Joker를_받는다()
@@ -216,7 +216,7 @@ namespace PokerDefense.Tests
             Assert.IsFalse(board.TryPromoteAt(1), "빈 칸에는 쓸 수 없다");
         }
 
-        // ---------- 런 통계 (DESIGN §9.6) ----------
+        // ---------- 런 통계 ----------
 
         [Test]
         public void 최고_족보는_enum_순서가_아니라_희귀도로_정해진다()
@@ -281,7 +281,7 @@ namespace PokerDefense.Tests
             Assert.AreEqual(12, stats.ChipSpent);
         }
 
-        // ---------- 상점 보유 카드 (DESIGN §13.3) ----------
+        // ---------- 상점 보유 카드 ----------
 
         StageContext StageWithCapacity(int capacity)
             => new StageContext(MakeStage(15, 5, MakeWave(1, 0)), capacity);

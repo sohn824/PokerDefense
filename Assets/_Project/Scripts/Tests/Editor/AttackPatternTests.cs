@@ -9,7 +9,7 @@ namespace PokerDefense.Tests
     /**
      * AttackPatternTests
      *
-     * M8 - 공격 패턴 5종과 적 타입 (DESIGN §10)
+     * M8 - 공격 패턴 5종과 적 타입
      *
      * 검증 조건인 "같은 총 DPS라도 보드 구성에 따라 클리어 여부가 갈림"을 마지막 절에서 고정한다
      */

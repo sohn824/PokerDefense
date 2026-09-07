@@ -11,7 +11,7 @@ namespace PokerDefense.Game
      * 게임 플로우 제어
      * 라운드 루프를 처리함 (자동으로 넘어가는 구간 처리, 플레이어 입력이 필요한 구간은 각각의 컨트롤러가 맡음)
      *
-     * 상점 웨이브(5·10·…)만 예외로 멈춤 (상점을 닫을 때까지 다음 라운드를 열지 않음 — DESIGN §13.2)
+     * 상점 웨이브(5·10·…)만 예외로 멈춤 (상점을 닫을 때까지 다음 라운드를 열지 않음)
      */
     public sealed class GameFlowController : MonoBehaviour
     {
@@ -25,7 +25,7 @@ namespace PokerDefense.Game
         // 교체 미사용 Chip 보너스를 받았을 때 호출하는 이벤트 (인자: 받은 Chip)
         public event Action<int> HoldBonusEarned;
 
-        // 카드 상점이 열렸을 때 호출하는 이벤트 (인자: 진열된 카드 4장) — DESIGN §13.2
+        // 카드 상점이 열렸을 때 호출하는 이벤트 (인자: 진열된 카드 4장)
         public event Action<IReadOnlyList<Card>> ShopOpened;
 
         // 상점이 등장하는 라운드 주기
@@ -105,7 +105,7 @@ namespace PokerDefense.Game
                 return;
             }
 
-            // 방금 클리어한 웨이브가 상점 웨이브면 상점을 열고 멈춘다 (5·10·…, 마지막 제외 — §13.2)
+            // 방금 클리어한 웨이브가 상점 웨이브면 상점을 열고 멈춘다 (5·10·…, 마지막 제외)
             if (outcome == CombatOutcome.Cleared
                 && RoundNumber % ShopEveryRounds == 0
                 && RoundNumber < stage.Stage.TotalWaves)

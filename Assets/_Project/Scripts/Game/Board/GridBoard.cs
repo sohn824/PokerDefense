@@ -308,7 +308,7 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // 짝 없이 성급만 한 단계 올림. Joker 전용이며 최대 성급이면 거부 (DESIGN §5.2.1)
+        // 짝 없이 성급만 한 단계 올림. Joker 전용이며 최대 성급이면 거부
         public bool TryPromoteAt(int index)
         {
             if (index < 0 || index >= SlotCount)
