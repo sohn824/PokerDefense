@@ -31,8 +31,8 @@
 - **전투:** 겨냥 대상은 언제나 사거리 내 가장 앞선 적 1기. 패턴은 그 한 발이 몇 기를 함께 때리는가만 정한다 — DESIGN §10.1
 - **루프:** 50라운드 자동 진행 → 결과 화면 → 씬 리로드 재시작. 플레이어 입력 지점은 확정 / 전투 시작 / 상점 웨이브(5·10·…) 닫기 셋 — DESIGN §1
 - **카드 상점:** 5웨이브마다 등장, 랜덤 4장 중 Chip으로 구매 → 보유 카드(상한 3)가 되어 교체 단계에서 손패에 배치(유지 보너스 안 깎음) — DESIGN §13. **딜러 특전 시스템은 M12에서 삭제** (§11)
-- **보드 조작(이동·머지·판매·조커)은 전투 중에도 열려 있다.** 지원 소환만 `Place` 페이즈 전용 — DESIGN §1
-- **Chip 경제:** 유지 보너스(교체를 덜 쓸수록 +Chip, 상한 3) / 판매 / 지원 소환 6 Chip(라운드당 1회) — DESIGN §9
+- **보드 조작(이동·머지·판매·조커·랜덤 소환)은 전투 중에도 열려 있다.** 랜덤 소환은 `Place` 페이즈(준비 + 전투) 안에서 라운드당 1회 — DESIGN §1·§9.3
+- **Chip 경제:** 유지 보너스(교체를 덜 쓸수록 +Chip, 상한 3) / 판매 / 랜덤 소환 6 Chip(라운드당 1회, 뽑힌 유닛은 룰렛 연출로 공개) — DESIGN §9
 - **스테이지:** 50웨이브, 시작 라이프 20, 웨이브당 라이프 피해 상한 3(보스가 남으면 무조건 상한), 중간 보스 클리어 시 Joker 1개 — DESIGN §5.4·9.5, Stage_1.asset 확인
 - **UI는 한글.** 폰트 Maplestory(Light 기본 / Bold 굵기 연결), TMP Dynamic 아틀라스
 - **슬롯에는 유닛 아트와 성급(★)만.** 13종 전부 아트가 채워져 플레이스홀더 색·이름 라벨 폴백은 걷어냈다 — DESIGN §10.3
@@ -108,6 +108,14 @@
 ---
 
 ## 이력
+
+### 2026-09-07 — 지원 소환 → 랜덤 소환 개편 (미커밋)
+
+- **명칭 전면 변경.** `SupportSummon`→`RandomSummon`, `TrySupportSummon`/`CanSupportSummon`/`SupportSummonCost`/`SupportSummonsUsed`, `EconomyDefinition`의 `supportPool`/`supportSummonCost`/`supportSummonsPerRound`(→`randomPool` 등, `FormerlySerializedAs`로 `Economy.asset` 자동 이전), UI의 `supportButton`/`supportLabel`/`OnSupportSummon`, `BalanceSimRunner`, `EconomyTests`까지. 버튼 문구 "랜덤 소환 6".
+- **전투 중 사용 개방.** 모델(`CanRandomSummon`)은 원래 `Phase == Place`만 봐서 이미 전투 중 허용됐고, `ActionBarController`가 Combat 단계에서 버튼을 숨기던 것을 노출로 바꿨다. `CombatContext.Attack()`이 매 Tick `board[slot]`을 라이브로 읽어 전투 중 추가한 유닛이 즉시 사격에 참여함을 확인. 라운드당 1회 제한은 준비+전투 합산 그대로(밸런스 근거 DESIGN §9.3) — 데이터 `randomSummonsPerRound: 1` 유지.
+- **자동 배치 → 배치 대기 + 슬롯머신 연출.** `TryRandomSummon`이 첫 빈 칸에 바로 놓던 것을 `Pending`으로 올리도록 바꿨다(포커 확정과 동일 흐름 — 플레이어가 칸을 고름). `PlacementController.RandomSummoned(UnitDefinition)` 이벤트, 새 `RandomSummonMachine`(Canvas 오버레이 패널 `RandomSummonPanel`)이 `[아트][이름]` 한 줄 항목 20개를 세로로 밀어 올리다 감속해 뽑힌 유닛에서 정지 후 페이드. 패널은 전체 화면 배경으로 그 사이 보드 탭만 막고 전투 시뮬은 안 멈춘다. 패널 캐비닛·레버·7-7-7 아트는 그레이박스(UX-06/아트 패스).
+- `ActionBarController`: 대기 유닛 존재 시 판매 버튼·안내 라벨을 `stage`와 무관하게 노출(전투 중 랜덤 소환 대기 유닛도 배치 안내가 뜨도록).
+- 검증: EditMode 233/233. Play Mode에서 릴이 뽑힌 유닛에서 정지, 닫히면 대기 유닛으로 배치, 전투 중 버튼 노출, 라운드당 1회 소진 후 비활성 확인. `Game.unity`에 `RandomSummonMachine` + `RandomSummonPanel` 배선. 폰트 아틀라스 되돌림. 커밋·푸시 없음.
 
 ### 2026-09-06 — 미채택 오디오 Git 제외
 

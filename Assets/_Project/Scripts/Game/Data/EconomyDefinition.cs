@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using PokerDefense.Poker;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PokerDefense.Game
 {
@@ -14,7 +15,7 @@ namespace PokerDefense.Game
     public sealed class EconomyDefinition : ScriptableObject
     {
         [Serializable]
-        public struct SupportEntry
+        public struct RandomSummonEntry
         {
             public HandCategory category;
 
@@ -26,14 +27,14 @@ namespace PokerDefense.Game
         [Tooltip("(1장 쓸 때마다 1씩 줄어듦)")]
         [SerializeField] int holdBonusMax = 4;
 
-        [Header("지원 소환 코스트")]
-        [SerializeField] int supportSummonCost = 6;
+        [Header("랜덤 소환 코스트")]
+        [SerializeField, FormerlySerializedAs("supportSummonCost")] int randomSummonCost = 6;
 
-        [Tooltip("라운드당 지원 소환 제한 횟수")]
-        [SerializeField] int supportSummonsPerRound = 2;
+        [Tooltip("라운드당 랜덤 소환 제한 횟수")]
+        [SerializeField, FormerlySerializedAs("supportSummonsPerRound")] int randomSummonsPerRound = 2;
 
-        [Tooltip("지원 소환에서 나올 손패 종류 풀")]
-        [SerializeField] SupportEntry[] supportPool;
+        [Tooltip("랜덤 소환에서 나올 손패 종류 풀")]
+        [SerializeField, FormerlySerializedAs("supportPool")] RandomSummonEntry[] randomPool;
 
         [Header("유닛 판매 가격")]
         [SerializeField] int[] sellPrices = { 1, 2, 4 };
@@ -45,9 +46,9 @@ namespace PokerDefense.Game
         [Tooltip("보유 카드 상한")]
         [SerializeField] int heldCardCapacity = 3;
 
-        public int SupportSummonCost => supportSummonCost;
-        public int SupportSummonsPerRound => supportSummonsPerRound;
-        public IReadOnlyList<SupportEntry> SupportPool => supportPool;
+        public int RandomSummonCost => randomSummonCost;
+        public int RandomSummonsPerRound => randomSummonsPerRound;
+        public IReadOnlyList<RandomSummonEntry> RandomPool => randomPool;
         public int ShopCardPrice => shopCardPrice;
         public int HeldCardCapacity => heldCardCapacity;
 

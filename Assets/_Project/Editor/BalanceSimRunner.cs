@@ -47,7 +47,7 @@ namespace PokerDefense.EditorTools
             EditorApplication.update += Tick;
         }
 
-        // strategy: "no_exchange"(교체 안 함) | "greedy"(같은 숫자/무늬 우선 유지) | "greedy_summon"(greedy + 지원 소환 적극 사용)
+        // strategy: "no_exchange"(교체 안 함) | "greedy"(같은 숫자/무늬 우선 유지) | "greedy_summon"(greedy + 랜덤 소환 적극 사용)
         public static void StartRun(string strategyId, string runIdentifier, string outputCsvPath, float timeScale = 10f)
         {
             SessionState.SetBool(ActiveKey, true);
@@ -169,9 +169,9 @@ namespace PokerDefense.EditorTools
                 }
             }
 
-            if (strategy == "greedy_summon" && placement.CanSupportSummon)
+            if (strategy == "greedy_summon" && placement.CanRandomSummon)
             {
-                placement.TrySupportSummon();
+                placement.TryRandomSummon();
                 return;
             }
 
@@ -261,12 +261,12 @@ namespace PokerDefense.EditorTools
         }
 
         // 상점: Chip 여유가 있으면 보유 카드를 채운다.
-        // greedy_summon은 지원 소환 한 번치(SupportSummonCost)를 남겨 둔다.
+        // greedy_summon은 랜덤 소환 한 번치(RandomSummonCost)를 남겨 둔다.
         // 이미 든 카드와 같은 숫자를 우선 사서(놓으면 확정 페어) 손패 편차를 줄인다.
         static void DoShopBuy()
         {
             int price = stageCtrl.Economy.ShopCardPrice;
-            int reserve = strategy == "greedy_summon" ? stageCtrl.Economy.SupportSummonCost : 0;
+            int reserve = strategy == "greedy_summon" ? stageCtrl.Economy.RandomSummonCost : 0;
 
             var heldRanks = new HashSet<Rank>();
             foreach (Card h in stageCtrl.HeldCards)

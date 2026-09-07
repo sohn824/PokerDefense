@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace PokerDefense.UI
@@ -30,8 +31,8 @@ namespace PokerDefense.UI
 
         [SerializeField] Button sellButton;
         [SerializeField] TMP_Text sellLabel;
-        [SerializeField] Button supportButton;
-        [SerializeField] TMP_Text supportLabel;
+        [SerializeField, FormerlySerializedAs("supportButton")] Button randomSummonButton;
+        [SerializeField, FormerlySerializedAs("supportLabel")] TMP_Text randomSummonLabel;
         [SerializeField] Button jokerButton;
         [SerializeField] TMP_Text jokerLabel;
 
@@ -55,7 +56,7 @@ namespace PokerDefense.UI
             }
 
             sellButton.onClick.AddListener(OnSell);
-            supportButton.onClick.AddListener(OnSupportSummon);
+            randomSummonButton.onClick.AddListener(OnRandomSummon);
             jokerButton.onClick.AddListener(OnUseJoker);
 
             // PlacementController 이벤트 구독
@@ -262,9 +263,9 @@ namespace PokerDefense.UI
             }
         }
 
-        void OnSupportSummon()
+        void OnRandomSummon()
         {
-            if (placement.TrySupportSummon())
+            if (placement.TryRandomSummon())
             {
                 AudioManager.Instance?.Play(AudioManager.Sfx.UnitSummon);
             }
@@ -326,8 +327,8 @@ namespace PokerDefense.UI
         // 버튼을 아예 보일지 말지는 ActionBarController가 단계별로 정한다
         void UpdateLabels(UnitInstance pending)
         {
-            supportButton.interactable = placement.CanSupportSummon;
-            supportLabel.text = $"지원 소환 {placement.SupportSummonCost}";
+            randomSummonButton.interactable = placement.CanRandomSummon;
+            randomSummonLabel.text = $"랜덤 소환 {placement.RandomSummonCost}";
 
             // 조커는 고른 유닛에만 쓸 수 있음
             bool jokerOffered = pending == null && selected != NoSelection;

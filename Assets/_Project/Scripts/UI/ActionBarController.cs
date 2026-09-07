@@ -1,5 +1,6 @@
 using PokerDefense.Game;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PokerDefense.UI
 {
@@ -24,7 +25,7 @@ namespace PokerDefense.UI
         [SerializeField] GameObject confirmButton;
         [SerializeField] GameObject exchangeButton;
         [SerializeField] GameObject startCombatButton;
-        [SerializeField] GameObject supportButton;
+        [SerializeField, FormerlySerializedAs("supportButton")] GameObject randomSummonButton;
         [SerializeField] GameObject sellButton;
         [SerializeField] GameObject jokerButton;
 
@@ -93,15 +94,16 @@ namespace PokerDefense.UI
             SetActive(confirmButton, stage == Stage.Exchange);
             SetActive(exchangeButton, stage == Stage.Exchange);
             SetActive(startCombatButton, stage == Stage.PlaceReady);
-            SetActive(supportButton, stage == Stage.PlaceReady);
-            SetActive(sellButton, stage == Stage.PlacePending || combatEdit);
+            SetActive(randomSummonButton, stage == Stage.PlaceReady || stage == Stage.Combat);
+            // 랜덤 소환은 전투 중에도 대기 유닛을 만들 수 있으므로 Pending 여부로 직접 판정한다
+            SetActive(sellButton, placement.Pending != null || combatEdit);
             SetActive(jokerButton, combatEdit);
 
             SetActive(handPanel, stage == Stage.Exchange);
             SetActive(situationCard, stage != Stage.Shop && stage != Stage.Result);
             SetActive(categoryLabel, stage == Stage.Exchange || stage == Stage.PlacePending);
             SetActive(statusLabel, stage == Stage.Exchange);
-            SetActive(pendingLabel, stage == Stage.PlacePending || stage == Stage.PlaceReady);
+            SetActive(pendingLabel, placement.Pending != null || stage == Stage.PlaceReady);
             SetActive(combatLabel, stage == Stage.Combat || stage == Stage.PlaceReady);
         }
 

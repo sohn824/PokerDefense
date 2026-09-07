@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Economy
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.EconomyDefinition
   holdBonusMax: 3
-  supportSummonCost: 6
-  supportSummonsPerRound: 1
-  supportPool:
+  randomSummonCost: 6
+  randomSummonsPerRound: 1
+  randomPool:
   - category: 0
     weight: 40
   - category: 1

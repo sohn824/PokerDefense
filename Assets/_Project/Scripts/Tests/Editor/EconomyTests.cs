@@ -10,7 +10,7 @@ namespace PokerDefense.Tests
     /**
      * EconomyTests
      *
-     * Chip 경제 (DESIGN §9) — 유지 보너스 / 지갑 / 판매 가격 / 지원 소환 추첨
+     * Chip 경제 (DESIGN §9) — 유지 보너스 / 지갑 / 판매 가격 / 랜덤 소환 추첨
      */
     public class EconomyTests
     {
@@ -44,13 +44,13 @@ namespace PokerDefense.Tests
             return unit;
         }
 
-        /// 기본값(유지 보너스 4, 소환 6 Chip, 라운드당 2회, 판매 1/2/4)에 지원 풀만 채운다
+        /// 기본값(유지 보너스 4, 소환 6 Chip, 라운드당 2회, 판매 1/2/4)에 랜덤 소환 풀만 채운다
         EconomyDefinition MakeEconomy(params (HandCategory category, int weight)[] pool)
         {
             var economy = Make<EconomyDefinition>();
             var so = new UnityEditor.SerializedObject(economy);
 
-            var entries = so.FindProperty("supportPool");
+            var entries = so.FindProperty("randomPool");
             entries.arraySize = pool.Length;
 
             for (int i = 0; i < pool.Length; i++)
@@ -180,10 +180,10 @@ namespace PokerDefense.Tests
             Assert.AreEqual(expected, economy.SellPriceFor(star));
         }
 
-        // ---------- 지원 소환 ----------
+        // ---------- 랜덤 소환 ----------
 
         [Test]
-        public void 지원_소환은_풀에_있는_유닛만_뽑는다()
+        public void 랜덤_소환은_풀에_있는_유닛만_뽑는다()
         {
             var high = MakeUnit("high");
             var pair = MakeUnit("pair");
@@ -195,7 +195,7 @@ namespace PokerDefense.Tests
                 (HandCategory.Straight, straight));
 
             var economy = MakeEconomy((HandCategory.HighCard, 40), (HandCategory.OnePair, 30));
-            var summon = new SupportSummon(economy, table, seed: 1);
+            var summon = new RandomSummon(economy, table, seed: 1);
 
             for (int i = 0; i < 200; i++)
             {
@@ -205,7 +205,7 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 지원_소환은_가중치를_따른다()
+        public void 랜덤_소환은_가중치를_따른다()
         {
             var high = MakeUnit("high");
             var pair = MakeUnit("pair");
@@ -213,7 +213,7 @@ namespace PokerDefense.Tests
 
             // 9 : 1 이면 하이카드가 압도적으로 많이 나와야 한다
             var economy = MakeEconomy((HandCategory.HighCard, 90), (HandCategory.OnePair, 10));
-            var summon = new SupportSummon(economy, table, seed: 42);
+            var summon = new RandomSummon(economy, table, seed: 42);
 
             int highCount = 0;
 
@@ -237,8 +237,8 @@ namespace PokerDefense.Tests
             var table = MakeTable((HandCategory.HighCard, high), (HandCategory.OnePair, pair));
             var economy = MakeEconomy((HandCategory.HighCard, 50), (HandCategory.OnePair, 50));
 
-            var a = new SupportSummon(economy, table, seed: 7);
-            var b = new SupportSummon(economy, table, seed: 7);
+            var a = new RandomSummon(economy, table, seed: 7);
+            var b = new RandomSummon(economy, table, seed: 7);
 
             for (int i = 0; i < 50; i++)
             {
@@ -254,7 +254,7 @@ namespace PokerDefense.Tests
             var table = MakeTable((HandCategory.HighCard, high), (HandCategory.OnePair, pair));
             var economy = MakeEconomy((HandCategory.HighCard, 10), (HandCategory.OnePair, 0));
 
-            var summon = new SupportSummon(economy, table, seed: 3);
+            var summon = new RandomSummon(economy, table, seed: 3);
 
             for (int i = 0; i < 100; i++)
             {
@@ -268,7 +268,7 @@ namespace PokerDefense.Tests
             var table = MakeTable((HandCategory.HighCard, MakeUnit("high")));
             var economy = MakeEconomy();
 
-            Assert.Throws<InvalidOperationException>(() => new SupportSummon(economy, table, seed: 1));
+            Assert.Throws<InvalidOperationException>(() => new RandomSummon(economy, table, seed: 1));
         }
 
         // 새 [SerializeField]는 기존 에셋에서 0으로 들어온다 (HISTORY 반복 함정). 실제 에셋에 값이 있는지 가드한다.

@@ -4,21 +4,21 @@ using System.Collections.Generic;
 namespace PokerDefense.Game
 {
     /**
-     * SupportSummon
+     * RandomSummon
      *
      * Chip으로 뽑는 랜덤 하위 유닛 (DESIGN §9.3)
      * 포커를 거치지 않는다. 포커는 "고등급 확정 소환", 이쪽은 "머지 재료 수급"이다
      *
      * System.Random을 주입받아 테스트에서 결과를 재현할 수 있다 - Deck과 같은 방식이다
      */
-    public sealed class SupportSummon
+    public sealed class RandomSummon
     {
         readonly EconomyDefinition economy;
         readonly HandUnitTable table;
         readonly Random random;
         readonly int totalWeight;
 
-        public SupportSummon(EconomyDefinition economy, HandUnitTable table, int seed)
+        public RandomSummon(EconomyDefinition economy, HandUnitTable table, int seed)
         {
             if (economy == null)
             {
@@ -34,7 +34,7 @@ namespace PokerDefense.Game
             this.table = table;
             random = new Random(seed);
 
-            IReadOnlyList<EconomyDefinition.SupportEntry> pool = economy.SupportPool;
+            IReadOnlyList<EconomyDefinition.RandomSummonEntry> pool = economy.RandomPool;
 
             // 에셋에서 배열을 안 채우면 null로 들어온다
             for (int i = 0; pool != null && i < pool.Count; i++)
@@ -47,14 +47,14 @@ namespace PokerDefense.Game
 
             if (totalWeight <= 0)
             {
-                throw new InvalidOperationException($"{economy.name}의 지원 소환 풀이 비어 있습니다.");
+                throw new InvalidOperationException($"{economy.name}의 랜덤 소환 풀이 비어 있습니다.");
             }
         }
 
         public UnitDefinition Draw()
         {
             int roll = random.Next(totalWeight);
-            IReadOnlyList<EconomyDefinition.SupportEntry> pool = economy.SupportPool;
+            IReadOnlyList<EconomyDefinition.RandomSummonEntry> pool = economy.RandomPool;
 
             for (int i = 0; i < pool.Count; i++)
             {
@@ -72,7 +72,7 @@ namespace PokerDefense.Game
             }
 
             // 가중치 합을 미리 구해두므로 여기에 닿지 않는다
-            throw new InvalidOperationException("지원 소환 추첨에 실패했습니다.");
+            throw new InvalidOperationException("랜덤 소환 추첨에 실패했습니다.");
         }
     }
 }
