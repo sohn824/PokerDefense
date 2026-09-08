@@ -109,6 +109,17 @@
 
 ## 이력
 
+### 2026-09-08 — UX-06: 공통 비주얼 정리 (미커밋)
+
+- **공통 토큰 한곳으로.** `UiStyle`(static) 신설 — 패널 바탕(`PanelBg`)·정보판(`Plate`)·모달 막(`Scrim`), 버튼 3역할(`ButtonPrimary`/`ButtonSecondary`/`ButtonDanger`)·비활성 바탕(`ButtonDisabled`), 본문 3단계·재화 금색, 타이포 4단계 상수(제목 72 / 행동 40 / 본문 34 / 보조 30), 간격 배수 8. 씬 세팅 코드와 런타임 위젯(`CardView` 배지)이 같은 값을 참조한다.
+- **버튼 통일.** 하단 액션 6종 + 상점 2종 + 결과 1종에 공통 둥근 9-slice 스프라이트(빌트인 `UISprite`) + `ButtonSkin` 컴포넌트. `ButtonSkin`이 역할색을 입히고 `Selectable.IsInteractable()`가 false면 바탕만 어두운 중립색으로 죽인다(라벨은 그대로 둬 비활성 사유 문구가 계속 읽힘 — Linear 색공간에서 `ColorTint` 비활성 틴트가 화면에 잘 안 실려서 명시적 컴포넌트로 대체). 라벨은 Bold + 단계별 크기, `enableWordWrapping = true` / `enableAutoSizing = false`(자동 축소로 겹침 숨김 금지). 주 행동은 초록 채움·큰 글자, 보조는 어두운 바탕·작은 글자.
+- **정보판이 돌바닥 위에 뜨지 않게.** `BoardScreen`이 유닛 상세일 때만 켜던 `detailPlate`(+ 필드) 제거 — 상황 카드 배경판을 상시 켜서 `situationCard`와 함께 뜨고 진다(교체·전투·배치 대기 모든 문구가 판 위에 얹힌다). `HandPanel`·`BottomActionArea`에도 같은 배경판(`HandPlate`/`BottomBarPlate`).
+- **긴 유닛명 대응.** 상황 카드에 `ContentSizeFitter`(세로 PreferredSize) + 라벨 고정 높이 해제 → 이름이 이름 영역에서 줄바꿈되며 카드·배경판이 같이 자란다. 가장 긴 이름("로열 스트레이트 플러시 소버린 ★★★ …")에서 잘림 없음 확인. 최소 높이 96 보장.
+- **패널 바탕 통일.** 상점·결과 = `PanelBg` 불투명, 랜덤 소환 = 스크림 + 안쪽 본문판 `Plate`.
+- **Safe Area.** `SafeAreaFitter` 신설 후 `RoundScreen`에 부착(에디터 Game뷰는 `Screen.safeArea`가 전체라 눈에 안 띔 — 실기기 확인 대상).
+- 검증: EditMode 233/233. Play Mode에서 준비·유닛 선택·배치 대기·전투·상점 상태를 스크린샷·리플렉션으로 확인. MCP 스크린샷은 Linear 버퍼를 감마 보정 없이 캡처해 실제 기기보다 밝게·연하게 보인다(색 대비는 기기에서 더 강함) — 픽셀 단위 색 검증은 미실시. 씬·`BoardScreen`·`CardView` 변경 + 스크립트 3종 신설. 커밋·푸시 없음.
+- 남은 그레이박스: 보조 버튼 테두리/외곽선, 실기기 Safe Area·360~430 폭 확인, 결과 화면 실플레이 확인(구조는 상점 패널과 동일), 눌림·처리 중 상태 시각 피드백.
+
 ### 2026-09-07 — UX-05: 상점 선택→구매 흐름 (미커밋)
 
 - **탭 = 즉시 구매를 탭 = 선택으로 바꾸고, 하단 구매 버튼으로만 산다.** `ShopScreen`에 `selectedCard` + `BuyButton`(씬 신설) + `OnBuy()`. 카드 확인만으로는 Chip이 안 나간다. 구매 성공 시 선택을 풀어 연타가 다음 카드로 이어지지 않게 한다. 추가 확인 모달은 없다.

@@ -140,7 +140,7 @@ namespace PokerDefense.UI
 
             if (held.Count == 0)
             {
-                return $"보유 카드 없음  (빈 {capacity})";
+                return $"보유 카드 없음  (빈 칸 {capacity})";
             }
 
             var text = new StringBuilder("보유 카드");
@@ -154,7 +154,7 @@ namespace PokerDefense.UI
 
             if (empty > 0)
             {
-                text.Append($"  (빈 {empty})");
+                text.Append($"  (빈 칸 {empty})");
             }
 
             return text.ToString();

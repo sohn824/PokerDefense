@@ -75,11 +75,11 @@ namespace PokerDefense.UI
             bgRT.anchorMin = new Vector2(0f, 0f);
             bgRT.anchorMax = new Vector2(1f, 0f);
             bgRT.pivot = new Vector2(0.5f, 0f);
-            bgRT.anchoredPosition = new Vector2(0f, 6f);
-            bgRT.sizeDelta = new Vector2(-12f, 36f);
+            bgRT.anchoredPosition = new Vector2(0f, UiStyle.Unit);
+            bgRT.sizeDelta = new Vector2(-12f, 44f);
 
             badgeBg = bg.AddComponent<Image>();
-            badgeBg.color = new Color(0.10f, 0.09f, 0.12f, 0.92f);
+            badgeBg.color = UiStyle.Plate;
             badgeBg.raycastTarget = false;
 
             GameObject text = new GameObject("Text", typeof(RectTransform));
@@ -92,9 +92,9 @@ namespace PokerDefense.UI
 
             badgeText = text.AddComponent<TextMeshProUGUI>();
             badgeText.font = rankLabel.font;
-            badgeText.fontSize = 22f;
+            badgeText.fontSize = UiStyle.CaptionSize;
             badgeText.alignment = TextAlignmentOptions.Center;
-            badgeText.color = Color.white;
+            badgeText.color = UiStyle.TextPrimary;
             badgeText.raycastTarget = false;
 
             bg.SetActive(false);

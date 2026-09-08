@@ -26,9 +26,6 @@ namespace PokerDefense.UI
         [SerializeField] UnitSlotView[] slots;
         [SerializeField] TMP_Text pendingLabel;
 
-        [Tooltip("상세 정보가 떠 있을 때만 보이는 배경판")]
-        [SerializeField] GameObject detailPlate;
-
         [SerializeField] Button sellButton;
         [SerializeField] TMP_Text sellLabel;
         [SerializeField, FormerlySerializedAs("supportButton")] Button randomSummonButton;
@@ -441,8 +438,6 @@ namespace PokerDefense.UI
         // 슬롯에는 Sprite와 성급만 표시하고 이름, 공격력 등의 상세 정보는 전부 여기서 표시
         void ShowDetail(UnitInstance unit, string hint)
         {
-            detailPlate.SetActive(unit != null);
-
             if (unit == null)
             {
                 pendingLabel.text = hint;
