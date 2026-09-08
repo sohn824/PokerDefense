@@ -15,12 +15,41 @@ namespace PokerDefense.Game
      */
     public sealed class GameFlowController : MonoBehaviour
     {
+        /**
+         * 전투 한 판을 마친 직후의 요약 (결과 비트 화면이 사용)
+         * lifeLost·jokerGained는 이미 StageContext에 반영된 값을 다시 계산한 것뿐이다
+         */
+        public readonly struct RoundSummary
+        {
+            public RoundSummary(int wave, bool cleared, int enemiesLeft, int lifeLost, int jokerGained, int nextAct)
+            {
+                Wave = wave;
+                Cleared = cleared;
+                EnemiesLeft = enemiesLeft;
+                LifeLost = lifeLost;
+                JokerGained = jokerGained;
+                NextAct = nextAct;
+            }
+
+            public int Wave { get; }
+            public bool Cleared { get; }
+            public int EnemiesLeft { get; }
+            public int LifeLost { get; }
+            public int JokerGained { get; }
+
+            // 다음 라운드가 새 Act를 여는 경우 그 번호(2~5), 아니면 0
+            public int NextAct { get; }
+        }
+
         [SerializeField] RoundController round;
         [SerializeField] CombatController combat;
         [SerializeField] StageController stage;
 
         // 라운드가 새로 열리거나 루프가 멈췄을 때 호출하는 이벤트
         public event Action FlowChanged;
+
+        // 전투 한 판을 마쳐 결과 비트를 띄워야 할 때 호출 (DismissBreak 전까지 다음 단계로 안 넘어간다)
+        public event Action<RoundSummary> RoundSettled;
 
         // 교체 미사용 Chip 보너스를 받았을 때 호출하는 이벤트 (인자: 받은 Chip)
         public event Action<int> HoldBonusEarned;
@@ -49,6 +78,10 @@ namespace PokerDefense.Game
         public float ElapsedSeconds { get; private set; }
 
         float startedAt;
+
+        // 결과 비트가 떠 있어 다음 단계로 넘어가길 기다리는 중인지, 그리고 넘어갈 때 실행할 작업
+        bool waitingForBreak;
+        Action afterBreak;
 
         void Awake()
         {
@@ -87,7 +120,43 @@ namespace PokerDefense.Game
 
         void OnCombatFinished(CombatOutcome outcome, int unresolved)
         {
-            AdvanceRound(outcome);
+            // 게임이 끝났으면 결과 비트 없이 최종 결과 화면으로 바로 넘긴다
+            if (stage.Stage.IsGameOver || stage.Stage.IsAllWavesCleared)
+            {
+                AdvanceRound(outcome);
+                return;
+            }
+
+            // 결과 비트를 띄우고, 닫힐 때 라운드 루프를 이어 간다 (전이는 DismissBreak 한 번으로만)
+            afterBreak = () => AdvanceRound(outcome);
+            waitingForBreak = true;
+            RoundSettled?.Invoke(BuildSummary(outcome, unresolved));
+        }
+
+        RoundSummary BuildSummary(CombatOutcome outcome, int unresolved)
+        {
+            bool cleared = outcome == CombatOutcome.Cleared;
+            int lifeLost = cleared ? 0 : stage.Stage.LifeDamageFor(unresolved, combat.Combat.UnresolvedBosses);
+            int jokerGained = cleared ? combat.Combat.Wave.JokerReward : 0;
+
+            int next = RoundNumber + 1;
+            int nextAct = next == 11 || next == 21 || next == 31 || next == 41 ? next / 10 + 1 : 0;
+
+            return new RoundSummary(RoundNumber, cleared, unresolved, lifeLost, jokerGained, nextAct);
+        }
+
+        // 결과 비트가 닫히면 UI가 호출 (자동 타이머 또는 탭)
+        public void DismissBreak()
+        {
+            if (waitingForBreak == false)
+            {
+                return;
+            }
+
+            waitingForBreak = false;
+            Action next = afterBreak;
+            afterBreak = null;
+            next?.Invoke();
         }
 
         /**
