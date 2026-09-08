@@ -33,10 +33,23 @@ namespace PokerDefense.UI
         [SerializeField] Button jokerButton;
         [SerializeField] TMP_Text jokerLabel;
 
+        [Tooltip("상황 카드를 탭하면 수치 상세를 펼치고 접는다")]
+        [SerializeField] Button detailToggle;
+
         [Tooltip("유닛 아트의 조준 방향·반동을 얻는 컨트롤러")]
         [SerializeField] CombatController combat;
 
+        // 사거리 링 (에셋 없이 LineRenderer로 원을 그린다)
+        const int RingSegments = 48;
+        const float RingWidth = 0.05f;
+        static readonly Color RingColor = new Color(1f, 0.95f, 0.6f, 0.5f);
+
         int selected = NoSelection;
+
+        // 상황 카드 수치 상세를 펼친 상태인지 (탭으로 토글, 세션 동안 유지)
+        bool detailExpanded;
+
+        LineRenderer rangeRing;
 
         // 조커로 성급을 올리는 중인지
         // (OnPlaced에서 조커 승급음과 일반 머지음을 구분하는 데 사용)
@@ -55,6 +68,9 @@ namespace PokerDefense.UI
             sellButton.onClick.AddListener(OnSell);
             randomSummonButton.onClick.AddListener(OnRandomSummon);
             jokerButton.onClick.AddListener(OnUseJoker);
+            detailToggle.onClick.AddListener(ToggleDetail);
+
+            BuildRangeRing();
 
             // PlacementController 이벤트 구독
             placement.PendingChanged += OnPendingChanged;
@@ -334,6 +350,63 @@ namespace PokerDefense.UI
             }
 
             UpdateLabels(pending);
+            UpdateRangeRing();
+        }
+
+        // 상황 카드 탭 - 수치 상세를 펼치거나 접는다
+        void ToggleDetail()
+        {
+            detailExpanded = !detailExpanded;
+            Refresh();
+        }
+
+        // 반지름 1짜리 원을 한 번 만들어 두고, 표시할 때 위치·크기만 갱신한다
+        void BuildRangeRing()
+        {
+            var go = new GameObject("RangeRing");
+            go.transform.SetParent(transform, false);
+
+            rangeRing = go.AddComponent<LineRenderer>();
+            rangeRing.useWorldSpace = true;
+            rangeRing.loop = true;
+            rangeRing.positionCount = RingSegments;
+            rangeRing.widthMultiplier = RingWidth;
+            rangeRing.numCapVertices = 2;
+            rangeRing.alignment = LineAlignment.View;
+
+            Shader shader = Shader.Find("Sprites/Default");
+            if (shader == null) shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null) shader = Shader.Find("Unlit/Color");
+            rangeRing.material = new Material(shader);
+
+            rangeRing.startColor = RingColor;
+            rangeRing.endColor = RingColor;
+            rangeRing.sortingOrder = 20;
+            rangeRing.enabled = false;
+        }
+
+        // 고른 유닛의 사거리를 그 칸 위에 원으로 표시한다 (다른 칸 탭은 막지 않는다)
+        void UpdateRangeRing()
+        {
+            if (selected == NoSelection || placement.Board[selected] == null)
+            {
+                rangeRing.enabled = false;
+                return;
+            }
+
+            Vector3 center = slots[selected].transform.position;
+            float radius = placement.Board[selected].Range;
+
+            for (int i = 0; i < RingSegments; i++)
+            {
+                float angle = i / (float)RingSegments * Mathf.PI * 2f;
+                rangeRing.SetPosition(i, new Vector3(
+                    center.x + Mathf.Cos(angle) * radius,
+                    center.y + Mathf.Sin(angle) * radius,
+                    center.z));
+            }
+
+            rangeRing.enabled = true;
         }
 
         // 고른 유닛 기준으로 슬롯 i를 누르면 일어날 일을 안내하는 문구를 반환
@@ -383,18 +456,38 @@ namespace PokerDefense.UI
             if (pending != null)
             {
                 sellLabel.text = $"소환 유닛 판매 +{stage.Economy.SellPriceFor(pending.Star)} Chip";
-                ShowDetail(pending, placement.IsStuck ? "놓을 자리가 없습니다 - 판매하세요" : "칸을 눌러 배치");
+                ShowDetail(pending,
+                    placement.IsStuck ? "놓을 자리가 없습니다 - 판매하세요" : "칸을 눌러 배치",
+                    $"같은 유닛·성급 칸에 겹치면 ★{pending.Star + 1}");
                 return;
             }
 
             if (selected != NoSelection)
             {
                 sellLabel.text = $"판매 +{stage.Economy.SellPriceFor(placement.Board[selected].Star)} Chip";
-                ShowDetail(placement.Board[selected], string.Empty);
+                ShowDetail(placement.Board[selected], string.Empty, MergeHintFor(selected));
                 return;
             }
 
-            ShowDetail(null, "확정하면 유닛이 소환됩니다");
+            ShowDetail(null, "확정하면 유닛이 소환됩니다", null);
+        }
+
+        // 고른 유닛이 지금 머지할 수 있는지 한 줄로 안내한다
+        string MergeHintFor(int index)
+        {
+            UnitInstance unit = placement.Board[index];
+
+            if (unit.IsMaxStar)
+            {
+                return "최대 성급 - 더 못 올림";
+            }
+
+            if (placement.Board.HasMergePartner(index))
+            {
+                return $"★{unit.Star + 1}로 머지할 상대가 있습니다";
+            }
+
+            return $"같은 유닛 ★{unit.Star} 둘이면 ★{unit.Star + 1}";
         }
 
         // 랜덤 소환 버튼이 비활성인 이유
@@ -435,8 +528,8 @@ namespace PokerDefense.UI
         }
 
         // 유닛 상세 정보 표시
-        // 슬롯에는 Sprite와 성급만 표시하고 이름, 공격력 등의 상세 정보는 전부 여기서 표시
-        void ShowDetail(UnitInstance unit, string hint)
+        // 슬롯에는 Sprite와 성급만 표시하고 이름·역할은 여기 앞줄에, 수치는 탭으로 펼치는 상세에 둔다
+        void ShowDetail(UnitInstance unit, string hint, string mergeHint)
         {
             if (unit == null)
             {
@@ -444,17 +537,29 @@ namespace PokerDefense.UI
                 return;
             }
 
-            string suffix = string.IsNullOrEmpty(hint) ? string.Empty : "  -  " + hint;
+            string toggle = detailExpanded ? "  ▲" : "  ▼";
+            string body =
+                $"{unit.Definition.DisplayName} {new string('★', unit.Star)} · {AttackPatternNames.Of(unit.Definition.Pattern)}{toggle}";
 
-            float power = unit.AttackPower;
+            if (string.IsNullOrEmpty(hint) == false)
+            {
+                body += $"\n{hint}";
+            }
 
-            pendingLabel.text =
-                $"{unit.Definition.DisplayName} {new string('★', unit.Star)}{suffix}\n" +
-                $"<size=76%>{AttackPatternNames.Of(unit.Definition.Pattern)}   " +
-                $"공격력 {power:0.#}   " +
-                $"초당 {unit.AttacksPerSecond:0.#}회   " +
-                $"DPS {power * unit.AttacksPerSecond:0.#}   " +
-                $"사거리 {unit.Range:0.#}</size>";
+            if (string.IsNullOrEmpty(mergeHint) == false)
+            {
+                body += $"\n<size=76%>{mergeHint}</size>";
+            }
+
+            if (detailExpanded)
+            {
+                float power = unit.AttackPower;
+                body +=
+                    $"\n<size=76%>공격력 {power:0.#}   초당 {unit.AttacksPerSecond:0.#}회   " +
+                    $"명목 DPS {power * unit.AttacksPerSecond:0.#}   사거리 {unit.Range:0.#}</size>";
+            }
+
+            pendingLabel.text = body;
         }
     }
 }
