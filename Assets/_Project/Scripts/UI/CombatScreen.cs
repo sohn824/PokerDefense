@@ -137,10 +137,10 @@ namespace PokerDefense.UI
 
             for (int i = 0; i < SplashPoolSize; i++)
             {
-                var gameObject = new GameObject("SplashEffect");
+                GameObject gameObject = new GameObject("SplashEffect");
                 gameObject.transform.SetParent(boardRoot, false);
 
-                var spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+                SpriteRenderer spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
                 spriteRenderer.sortingOrder = 9;
                 spriteRenderer.enabled = false;
 
@@ -156,10 +156,10 @@ namespace PokerDefense.UI
 
             for (int i = 0; i < TrailPoolSize; i++)
             {
-                var gameObject = new GameObject("PierceTrail");
+                GameObject gameObject = new GameObject("PierceTrail");
                 gameObject.transform.SetParent(boardRoot, false);
 
-                var spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+                SpriteRenderer spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
                 spriteRenderer.enabled = false;
 
                 trailPool[i] = spriteRenderer;
@@ -174,10 +174,10 @@ namespace PokerDefense.UI
 
             for (int i = 0; i < HitPoolSize; i++)
             {
-                var go = new GameObject("HitEffect");
+                GameObject go = new GameObject("HitEffect");
                 go.transform.SetParent(boardRoot, false);
 
-                var sr = go.AddComponent<SpriteRenderer>();
+                SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = hitSprite;
                 sr.sortingOrder = 9;
                 sr.enabled = false;
@@ -652,20 +652,20 @@ namespace PokerDefense.UI
         // Bar도 같은 Square 스프라이트를 늘려서 쓴다
         EnemyView CreateView(EnemyInstance enemy)
         {
-            var root = new GameObject("Enemy_" + enemy.Definition.Id);
+            GameObject root = new GameObject("Enemy_" + enemy.Definition.Id);
             root.transform.SetParent(boardRoot, false);
 
             bool hasArt = enemy.Definition.HasArt;
             float scale = BodyScale * enemy.Definition.VisualScale;
 
-            var body = new GameObject("Body").AddComponent<SpriteRenderer>();
+            SpriteRenderer body = new GameObject("Body").AddComponent<SpriteRenderer>();
             body.transform.SetParent(root.transform, false);
             body.transform.localScale = new Vector3(scale, scale, 1f);
             body.sprite = hasArt ? enemy.Definition.ArtFor(GridBoard.TrackDirection(enemy.Progress)) : enemySprite;
             body.color = hasArt ? Color.white : enemy.Definition.PlaceholderColor;
             body.sortingOrder = 5;
 
-            var back = new GameObject("BarBack").AddComponent<SpriteRenderer>();
+            SpriteRenderer back = new GameObject("BarBack").AddComponent<SpriteRenderer>();
             back.transform.SetParent(root.transform, false);
             back.transform.localScale = new Vector3(BarWidth + BarBorder, BarHeight + BarBorder, 1f);
             back.transform.localPosition = new Vector3(0f, BarOffsetY, 0f);
@@ -673,13 +673,13 @@ namespace PokerDefense.UI
             back.color = BarBackColor;
             back.sortingOrder = 6;
 
-            var fill = new GameObject("BarFill").AddComponent<SpriteRenderer>();
+            SpriteRenderer fill = new GameObject("BarFill").AddComponent<SpriteRenderer>();
             fill.transform.SetParent(root.transform, false);
             fill.sprite = enemySprite;
             fill.color = BarFillColor;
             fill.sortingOrder = 7;
 
-            var view = new EnemyView { Root = root.transform, Body = body, BarBack = back, BarFill = fill };
+            EnemyView view = new EnemyView { Root = root.transform, Body = body, BarBack = back, BarFill = fill };
             SetBar(view, 1f);
             return view;
         }

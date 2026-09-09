@@ -50,7 +50,7 @@ namespace PokerDefense.EditorTools
             }
 
             using (new EditorGUI.DisabledScope(blocked != null))
-            using (var view = new EditorGUILayout.ScrollViewScope(scroll))
+            using (EditorGUILayout.ScrollViewScope view = new EditorGUILayout.ScrollViewScope(scroll))
             {
                 scroll = view.scrollPosition;
 

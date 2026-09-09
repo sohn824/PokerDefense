@@ -247,11 +247,11 @@ namespace PokerDefense.UI
             bossWave = false;
             bossDeathPlayed = false;
 
-            var wave = combat.Stage.CurrentWave;
+            WaveDefinition wave = combat.Stage.CurrentWave;
 
             if (wave != null && wave.Entries != null)
             {
-                foreach (var entry in wave.Entries)
+                foreach (WaveDefinition.SpawnEntry entry in wave.Entries)
                 {
                     if (entry.count > 0 && entry.enemy != null && entry.enemy.Type == EnemyType.Boss)
                     {

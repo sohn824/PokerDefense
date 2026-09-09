@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using PokerDefense.Game;
 using TMPro;
@@ -49,7 +50,7 @@ namespace PokerDefense.UI
         {
             int normal = 0, swarm = 0, runner = 0, tank = 0, boss = 0;
 
-            System.Collections.Generic.IReadOnlyList<WaveDefinition.SpawnEntry> entries = wave.Entries;
+            IReadOnlyList<WaveDefinition.SpawnEntry> entries = wave.Entries;
 
             for (int i = 0; i < entries.Count; i++)
             {
@@ -74,22 +75,38 @@ namespace PokerDefense.UI
                     case EnemyType.Boss:
                         boss += e.count;
                         break;
-                    default: normal += e.count; break;
+                    default:
+                        normal += e.count;
+                        break;
                 }
             }
 
-            var sb = new StringBuilder("이번 적");
+            StringBuilder sb = new StringBuilder("이번 적");
 
             if (normal > 0)
+            {
                 sb.Append(" · 일반 ").Append(normal);
+            }
+
             if (swarm > 0)
+            {
                 sb.Append(" · 스웜 ").Append(swarm);
+            }
+
             if (runner > 0)
+            {
                 sb.Append(" · 러너 ").Append(runner);
+            }
+
             if (tank > 0)
+            {
                 sb.Append(" · 탱커 ").Append(tank);
+            }
+
             if (boss > 0)
+            {
                 sb.Append(boss > 1 ? $" · <color=#E8894F>보스 {boss}</color>" : " · <color=#E8894F>보스</color>");
+            }
 
             return sb.ToString();
         }

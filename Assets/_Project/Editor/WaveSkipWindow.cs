@@ -43,7 +43,7 @@ namespace PokerDefense.EditorTools
             {
                 if (stageController != null)
                 {
-                    var stage = stageController.Stage;
+                    StageContext stage = stageController.Stage;
                     EditorGUILayout.LabelField("진행 중",
                         $"{stage.WaveIndex + 1} / {stage.TotalWaves} 웨이브");
                 }

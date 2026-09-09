@@ -11,17 +11,22 @@ namespace PokerDefense.UI
     public static class UiStyle
     {
         // 패널 - 저채도 짙은 바탕
-        public static readonly Color PanelBg = new Color(0.070f, 0.078f, 0.104f, 1f);      // 화면을 덮는 패널 (상점 · 결과)
-        public static readonly Color Plate   = new Color(0.100f, 0.110f, 0.145f, 0.94f);   // 경기장 위에 얹는 정보판 · 배지
+        public static readonly Color PanelBg = new Color(0.045f, 0.045f, 0.045f, 1f);      // 화면을 덮는 패널 (상점 · 결과)
+        public static readonly Color Plate   = new Color(0.055f, 0.055f, 0.055f, 1f);   // 경기장 위에 얹는 정보판 · 배지
         public static readonly Color Scrim   = new Color(0f, 0f, 0f, 0.72f);               // 모달 뒤에 까는 어두운 막
 
         // 버튼 - 주 행동은 채운 강조색, 보조는 낮은 대비의 어두운 바탕, 위험은 따뜻한 붉은색
-        public static readonly Color ButtonPrimary   = new Color(0.180f, 0.620f, 0.357f, 1f);
-        public static readonly Color ButtonSecondary = new Color(0.141f, 0.149f, 0.184f, 0.96f);
-        public static readonly Color ButtonDanger    = new Color(0.698f, 0.275f, 0.196f, 1f);
+        public static readonly Color ButtonPrimary   = new Color(0.035f, 0.235f, 0.155f, 1f);
+        public static readonly Color ButtonSecondary = new Color(0.055f, 0.065f, 0.074f, 1f);
+        public static readonly Color ButtonDanger    = new Color(0.245f, 0.066f, 0.048f, 1f);
 
         // 비활성 버튼 바탕 - 역할색 없이 확실히 죽은 어두운 중립색. 사유는 라벨 문구가 전달한다
-        public static readonly Color ButtonDisabled = new Color(0.20f, 0.21f, 0.25f, 0.92f);
+        public static readonly Color ButtonDisabled = new Color(0.032f, 0.037f, 0.042f, 1f);
+
+        // 테두리 - 패널 · 버튼 가장자리. 기본은 따뜻한 금속색, 죽은 상태는 어둡게, 주 행동은 초록
+        public static readonly Color Border        = new Color(0.300f, 0.225f, 0.135f, 1f);
+        public static readonly Color BorderMuted   = new Color(0.090f, 0.105f, 0.120f, 1f);
+        public static readonly Color BorderPrimary = new Color(0.180f, 0.480f, 0.320f, 1f);
 
         // 본문 - 밝은 중립색 세 단계
         public static readonly Color TextPrimary = new Color(0.925f, 0.929f, 0.949f, 1f);

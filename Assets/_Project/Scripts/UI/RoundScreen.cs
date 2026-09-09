@@ -146,7 +146,7 @@ namespace PokerDefense.UI
                 AudioManager.Instance?.Play(AudioManager.Sfx.HandLow);
             }
 
-            var keyCards = new System.Text.StringBuilder("키카드");
+            System.Text.StringBuilder keyCards = new System.Text.StringBuilder("키카드");
 
             for (int i = 0; i < result.KeyCards.Count; i++)
             {
@@ -336,7 +336,7 @@ namespace PokerDefense.UI
                 return;
             }
 
-            var indices = new List<int>();
+            List<int> indices = new List<int>();
 
             for (int i = 0; i < cardViews.Length; i++)
             {

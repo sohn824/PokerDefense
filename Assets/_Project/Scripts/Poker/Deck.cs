@@ -27,13 +27,13 @@ namespace PokerDefense.Poker
         // 상점 진열도 이 목록에서 뽑는다 (ShopOffer)
         public static List<Card> BuildCards(IReadOnlyList<Card> excluded = null)
         {
-            var list = new List<Card>(FullSize);
+            List<Card> list = new List<Card>(FullSize);
 
             foreach (Suit suit in Enum.GetValues(typeof(Suit)))
             {
                 for (Rank rank = Rank.Two; rank <= Rank.Ace; rank++)
                 {
-                    var card = new Card(rank, suit);
+                    Card card = new Card(rank, suit);
 
                     if (excluded == null || Contains(excluded, card) == false)
                     {

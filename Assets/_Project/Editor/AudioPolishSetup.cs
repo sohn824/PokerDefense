@@ -34,7 +34,7 @@ namespace PokerDefense.Editor
                 throw new InvalidOperationException("Stop Play Mode before applying audio assets.");
             }
 
-            var manager = UnityEngine.Object.FindAnyObjectByType<AudioManager>();
+            AudioManager manager = UnityEngine.Object.FindAnyObjectByType<AudioManager>();
 
             if (manager == null)
             {
@@ -45,10 +45,10 @@ namespace PokerDefense.Editor
             foreach (string guid in AssetDatabase.FindAssets("t:AudioClip", new[] { Folder.TrimEnd('/') }))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                var importer = (AudioImporter)AssetImporter.GetAtPath(path);
+                AudioImporter importer = (AudioImporter)AssetImporter.GetAtPath(path);
                 bool music = System.IO.Path.GetFileName(path).StartsWith("bgm_", StringComparison.Ordinal);
 
-                var settings = importer.defaultSampleSettings;
+                AudioImporterSampleSettings settings = importer.defaultSampleSettings;
                 settings.loadType = music ? AudioClipLoadType.Streaming : AudioClipLoadType.DecompressOnLoad;
                 settings.compressionFormat = music ? AudioCompressionFormat.Vorbis : AudioCompressionFormat.PCM;
                 settings.quality = 0.85f;
@@ -62,13 +62,13 @@ namespace PokerDefense.Editor
 
             Undo.RecordObject(manager, "Configure audio polish");
 
-            var so = new SerializedObject(manager);
-            var clips = so.FindProperty("cues");
+            SerializedObject so = new SerializedObject(manager);
+            SerializedProperty clips = so.FindProperty("cues");
             clips.arraySize = CueFiles.Length;
 
             for (int i = 0; i < CueFiles.Length; i++)
             {
-                var cue = clips.GetArrayElementAtIndex(i);
+                SerializedProperty cue = clips.GetArrayElementAtIndex(i);
                 cue.FindPropertyRelative("id").enumValueIndex = i;
 
                 bool fire = CueFiles[i].StartsWith("fire_", StringComparison.Ordinal);
@@ -78,7 +78,7 @@ namespace PokerDefense.Editor
                     || i == 15 || i == 16 || i == 17 || i == 18;
 
                 // 발사음과 종이 넘기는 계열만 변형 클립 3개, 나머지는 1개
-                var variants = cue.FindPropertyRelative("variants");
+                SerializedProperty variants = cue.FindPropertyRelative("variants");
                 variants.arraySize = fire || paper ? 3 : 1;
 
                 for (int v = 0; v < variants.arraySize; v++)
@@ -140,7 +140,7 @@ namespace PokerDefense.Editor
 
         static AudioClip Required(string name)
         {
-            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(Folder + name + ".wav");
+            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(Folder + name + ".wav");
 
             if (clip == null)
             {

@@ -268,7 +268,7 @@ namespace PokerDefense.EditorTools
             int price = stageCtrl.Economy.ShopCardPrice;
             int reserve = strategy == "greedy_summon" ? stageCtrl.Economy.RandomSummonCost : 0;
 
-            var heldRanks = new HashSet<Rank>();
+            HashSet<Rank> heldRanks = new HashSet<Rank>();
             foreach (Card h in stageCtrl.HeldCards)
             {
                 heldRanks.Add(h.Rank);
@@ -359,7 +359,7 @@ namespace PokerDefense.EditorTools
         // 페어가 없으면 무늬 3장 이상(플러시 노림)을, 그것도 없으면 숫자 높은 2장만 남긴다.
         static List<int> DecideGreedyExchange(IReadOnlyList<Card> hand)
         {
-            var byRank = new Dictionary<Rank, List<int>>();
+            Dictionary<Rank, List<int>> byRank = new Dictionary<Rank, List<int>>();
 
             for (int i = 0; i < hand.Count; i++)
             {
@@ -372,12 +372,12 @@ namespace PokerDefense.EditorTools
                 list.Add(i);
             }
 
-            var groups = byRank.Values
+            List<List<int>> groups = byRank.Values
                 .OrderByDescending(g => g.Count)
                 .ThenByDescending(g => (int)hand[g[0]].Rank)
                 .ToList();
 
-            var keep = new HashSet<int>();
+            HashSet<int> keep = new HashSet<int>();
 
             if (groups[0].Count >= 2)
             {
@@ -390,7 +390,7 @@ namespace PokerDefense.EditorTools
             }
             else
             {
-                var bySuit = new Dictionary<Suit, List<int>>();
+                Dictionary<Suit, List<int>> bySuit = new Dictionary<Suit, List<int>>();
 
                 for (int i = 0; i < hand.Count; i++)
                 {

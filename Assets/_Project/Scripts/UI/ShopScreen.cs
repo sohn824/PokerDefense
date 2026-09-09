@@ -143,7 +143,7 @@ namespace PokerDefense.UI
                 return $"보유 카드 없음  (빈 칸 {capacity})";
             }
 
-            var text = new StringBuilder("보유 카드");
+            StringBuilder text = new StringBuilder("보유 카드");
 
             for (int i = 0; i < held.Count; i++)
             {

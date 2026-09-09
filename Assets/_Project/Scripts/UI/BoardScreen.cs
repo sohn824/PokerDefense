@@ -363,7 +363,7 @@ namespace PokerDefense.UI
         // 반지름 1짜리 원을 한 번 만들어 두고, 표시할 때 위치·크기만 갱신한다
         void BuildRangeRing()
         {
-            var go = new GameObject("RangeRing");
+            GameObject go = new GameObject("RangeRing");
             go.transform.SetParent(transform, false);
 
             rangeRing = go.AddComponent<LineRenderer>();
@@ -375,8 +375,17 @@ namespace PokerDefense.UI
             rangeRing.alignment = LineAlignment.View;
 
             Shader shader = Shader.Find("Sprites/Default");
-            if (shader == null) shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null) shader = Shader.Find("Unlit/Color");
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Universal Render Pipeline/Unlit");
+            }
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Color");
+            }
+
             rangeRing.material = new Material(shader);
 
             rangeRing.startColor = RingColor;

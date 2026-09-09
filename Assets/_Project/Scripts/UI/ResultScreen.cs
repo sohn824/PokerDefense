@@ -47,7 +47,7 @@ namespace PokerDefense.UI
 
             titleLabel.text = cleared ? "스테이지 클리어" : "게임 오버";
 
-            var body = new StringBuilder();
+            StringBuilder body = new StringBuilder();
             body.AppendLine($"도달 웨이브   {context.WaveIndex} / {context.TotalWaves}");
             body.AppendLine($"최고 족보   {BestHand(stats)}");
             body.AppendLine($"최고 유닛   {BestUnit(stats)}");

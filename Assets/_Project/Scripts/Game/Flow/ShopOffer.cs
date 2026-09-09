@@ -26,7 +26,7 @@ namespace PokerDefense.Game
         public IReadOnlyList<Card> Roll(IReadOnlyList<Card> held)
         {
             List<Card> pool = Deck.BuildCards(held);
-            var offered = new List<Card>(OfferCount);
+            List<Card> offered = new List<Card>(OfferCount);
 
             int take = Math.Min(OfferCount, pool.Count);
 
