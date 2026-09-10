@@ -2,7 +2,13 @@
 
 [POLISH.md](POLISH.md) 1번(오디오 패스)에서 생성형 AI로 제작할 사운드 목록이다.
 
-## 현재 채택 — 기타 반주 전투 BGM (2026-09-06)
+## 현재 채택 — Arena Breaks (2026-09-11)
+
+- 사용자 선택에 따라 `ArenaBreaks/Arena_Breaks_loop.wav`를 `bgm_combat.wav`에 그대로 적용했다. 124 BPM / 77.419초 / 48kHz stereo PCM16, 끝 페이드 없는 루프.
+- Unity 강제 임포트 후 새 길이와 준비·전투·보스·결과 4개 슬롯의 동일 클립 참조 확인. 기존 GUID·임포트 설정·음량 유지. 이전 WAV/meta는 `Artifacts/Audio/BeforeArenaBreaksInstall`에 백업.
+- 기타 펑크 리듬·옥타브 베이스·브레이크비트 후보 채택. 원곡 녹음은 사용하지 않았다.
+
+## 이전 채택 — 기타 반주 전투 BGM (2026-09-06)
 
 - 사용자 선택에 따라 GuitarRhythmOnly/guitar_loop.wav를 bgm_combat.wav에 그대로 적용. 메인 선율 없는 드럼·베이스·기타 반주, 48kHz/스테레오/16bit/76.8초. 끝 페이드 없는 루프 원본 사용, 게인 변경 없음.
 - 전투 WAV만 해시 변경됨을 확인. 메타 GUID/총성/다른 곡 유지. 이전 전투곡 BeforeGuitarRhythmInstall에 백업. 현재 런타임 선택은 기타 반주 버전.

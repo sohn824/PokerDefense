@@ -1,13 +1,84 @@
 # Poker Defense audio build
 
-## Selected combat music: rhythm guitar only
+Local-only experiments: `analyze_rock_reference.py`, `audition_melody_sketches.py`
+and `compose_iron_oath.py` are ignored and are not included in a fresh clone.
+Their sections below document past auditions. Keep `compose_arena_breaks.py`
+and `compose_arena_drive.py`: the selected BGM generator imports the latter's
+instrument helpers. Backups, previews, downloaded samples and PythonDeps are
+already excluded by `/Artifacts/`.
 
-Current runtime combat WAV is the exact GuitarRhythmOnly/guitar_loop.wav (no ending fade).
-Rebuild candidates with `python Tools/Audio/audition_guitar_choir.py --no-lead`, then copy
-`Artifacts/Audio/GuitarRhythmOnly/guitar_loop.wav` to `Assets/_Project/Audio/bgm_combat.wav`
-as the FINAL override after all earlier builders. Preserve the existing .meta.
-Sources: GUITAR_CHOIR_CANDIDATES.md (CC0 guitar and existing orchestra/percussion; no voice samples in this mix).
+## Arena Breaks audition (2026-09-11)
 
+Run `python Tools/Audio/compose_arena_breaks.py` (NumPy; imports the instrument
+helpers in `compose_arena_drive.py` without rendering that score). This creates
+an original 124 BPM / 77.42-second minor funk/breakbeat candidate, with clean
+minor-seventh/ninth guitar chops, octave bass replies, ghost snares and a separate
+break/build/lift. No lead melody or reference recording samples are included.
+Outputs under `Artifacts/Audio/ArenaBreaks`: loop, full listening preview, and
+30.97-second highlight. Sources remain the documented CC0 guitar/VSCO libraries.
+Reference: user-supplied alexguz MP3, locally measured at 124.84 seconds with
+strong tempo candidates around 123–127 BPM; this is signal analysis, not direct
+listening or exact transcription. Output PCM RMS -15.90 dBFS / sample peak -1.50
+dBFS; no clipping, matching loop endpoints. Previous candidates and runtime audio
+remain unchanged. Do not interpret these measurements as listening approval.
+
+
+## Arena Drive audition (2026-09-11)
+
+`python Tools/Audio/compose_arena_drive.py` renders an original 100 BPM,
+76.8-second riff-led rock candidate under `Artifacts/Audio/ArenaDrive`.
+Files: `Arena_Drive_loop.wav`, `Arena_Drive_full_preview.wav`, and a 28.8-second
+`Arena_Drive_highlight.wav`. No separate lead melody; power-chord riffs, bass,
+kit-like drums, breakdown and final lift. Requires NumPy and existing CC0 guitar
+and VSCO source banks documented below. Runtime assets are hash-checked unchanged.
+
+`python Tools/Audio/analyze_rock_reference.py <local-mp3>` measures the supplied
+reference locally with NumPy and SoundFile (optional packages in ignored
+`Artifacts/Audio/PythonDeps`). It does not upload or copy reference audio into
+Assets. The supplied magpiemusic recording measures 126.09 seconds, with strong
+24–40s and 104–120s passages; tempo detection is ambiguous around 100/133 BPM.
+100 BPM is this candidate's arranging choice, not a confirmed reference tempo.
+The reference was analyzed as signal data, not directly auditioned. No portion
+of that recording is included in the composition. Output PCM measures -14.50 dBFS
+RMS / -1.58 dBFS sample peak; this is not LUFS or true-peak certification.
+
+
+## Melody-only auditions (2026-09-10)
+
+Run `python Tools/Audio/audition_melody_sketches.py` with NumPy and the existing
+VSCO source bank. Outputs: `Artifacts/Audio/MelodySketches/{A_Resolute,B_Defiance,C_Horizon}.wav`.
+Three original single-voice sketches, 17.74 seconds each, 112 BPM, identical CC0 harp
+timbre and -20 dBFS RMS. No drums, chords, bass, guitar backing or added reverb.
+A uses sparse falling gestures; B repeated notes and offbeat leaps; C longer rising
+arches. This is a melody selection exercise, not the final instrument arrangement.
+Runtime assets remain unchanged. Source/PCM measurements and note events accompany
+the files. No claim of reference-song transcription or direct audio analysis.
+
+## New audition: Iron Oath (2026-09-10)
+
+`python Tools/Audio/compose_iron_oath.py` creates an original 128 BPM, D-minor,
+90-second battle theme under `Artifacts/Audio/IronOath`. Outputs are a seamless
+loop, a full listening copy with an ending fade, and a 30-second climax excerpt.
+This is an audition only: it does not replace runtime audio. Requires NumPy and
+existing FreePats guitar / VSCO source folders described in
+[GUITAR_CHOIR_CANDIDATES.md](GUITAR_CHOIR_CANDIDATES.md) and
+[ORCHESTRA_SOURCES.md](ORCHESTRA_SOURCES.md), both CC0 for the samples used here.
+No voice samples are used. Reference supplied by user: Farland Saga 2, Storm
+PART2 (폭풍 PART2). Reference audio could not be accessed; the arrangement follows
+the user's solemn, resolute battle mood brief, without transcribing that track.
+Measurements and source hashes accompany the WAVs; RMS/sample peak are not LUFS
+or true-peak measurements. Current selected game music remains unchanged.
+
+## Selected game BGM: Arena Breaks (2026-09-11)
+
+The user selected Arena Breaks. Runtime `Assets/_Project/Audio/bgm_combat.wav`
+is byte-identical to `Artifacts/Audio/ArenaBreaks/Arena_Breaks_loop.wav`:
+124 BPM, 77.419 seconds, 48kHz stereo PCM16, no ending fade. Preparation, combat,
+boss and result scene slots all reference this same asset. Existing GUID, importer
+settings and volume are preserved. Rebuild with `compose_arena_breaks.py`, then
+copy the loop as the FINAL override after any historical builders. Do not install
+the faded preview. Previous runtime WAV/meta are backed up under ignored
+`Artifacts/Audio/BeforeArenaBreaksInstall/<previous-sha256>/`.
 
 ## Git ownership
 

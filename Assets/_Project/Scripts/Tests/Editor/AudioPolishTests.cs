@@ -108,7 +108,10 @@ namespace PokerDefense.Tests
                 var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
                 Assert.IsNotNull(clip, path);
                 Assert.AreEqual(2, clip.channels, path);
-                Assert.AreEqual(3686400, clip.samples, path);
+                // Arena Breaks: 40 bars, 4 beats per bar, 124 BPM at 48 kHz.
+                Assert.AreEqual(48000, clip.frequency, path);
+                int expectedSamples = (int)System.Math.Round(40 * 4 * 60.0 / 124 * 48000);
+                Assert.AreEqual(expectedSamples, clip.samples, path);
                 var importer = (AudioImporter)AssetImporter.GetAtPath(path);
                 Assert.AreEqual(AudioClipLoadType.Streaming, importer.defaultSampleSettings.loadType, path);
             }

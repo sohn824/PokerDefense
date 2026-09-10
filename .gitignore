@@ -88,6 +88,13 @@ __pycache__/
 /Tools/Audio/VOICE_LICENSE.txt
 /Tools/Audio/fetch_voice_candidates.py
 
+# Local reference analysis and unselected melody/composition experiments.
+# Keep compose_arena_breaks.py and its compose_arena_drive.py dependency:
+# together they rebuild the selected runtime BGM.
+/Tools/Audio/analyze_rock_reference.py
+/Tools/Audio/audition_melody_sketches.py
+/Tools/Audio/compose_iron_oath.py
+
 # Retired arrangements: every Game music slot now references bgm_combat.
 /Assets/_Project/Audio/bgm_plan.wav
 /Assets/_Project/Audio/bgm_plan.wav.meta
