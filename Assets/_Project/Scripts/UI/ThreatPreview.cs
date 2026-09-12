@@ -3,6 +3,7 @@ using System.Text;
 using PokerDefense.Game;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace PokerDefense.UI
 {
@@ -11,10 +12,18 @@ namespace PokerDefense.UI
      *
      * 전투 전(교체 · 준비) 단계에서 이번 웨이브의 적 구성을 한 줄로 보여준다
      * "어떤 족보를 원하는가"를 정할 근거를 주는 것이 목적
-     * 전투가 시작되면 숨긴다
+     * 바를 탭하면 종류별 특성 한 줄을 펼치고, 전투가 시작되면 숨긴다
      */
     public sealed class ThreatPreview : MonoBehaviour
     {
+        // 표시 순서 (보스는 항상 끝)
+        static readonly EnemyType[] Order =
+        {
+            EnemyType.Normal, EnemyType.Swarm, EnemyType.Runner, EnemyType.Tank, EnemyType.Boss,
+        };
+
+        static readonly int TypeCount = System.Enum.GetValues(typeof(EnemyType)).Length;
+
         [SerializeField] StageController stage;
         [SerializeField] CombatController combat;
         [SerializeField] GameFlowController flow;
@@ -22,6 +31,22 @@ namespace PokerDefense.UI
         [Tooltip("켜고 끌 바 전체")]
         [SerializeField] GameObject root;
         [SerializeField] TMP_Text label;
+
+        [Tooltip("바를 탭하면 특성 상세를 펼치고 접는다")]
+        [SerializeField] Button toggle;
+
+        // 특성 상세를 펼친 상태인지 (탭으로 토글, 세션 동안 유지)
+        bool expanded;
+
+        void Awake()
+        {
+            toggle.onClick.AddListener(Toggle);
+        }
+
+        void Toggle()
+        {
+            expanded = !expanded;
+        }
 
         void Update()
         {
@@ -41,14 +66,14 @@ namespace PokerDefense.UI
 
             if (show)
             {
-                label.text = Describe(wave);
+                label.text = Describe(wave, expanded);
             }
         }
 
-        // 적 종류별로 수를 묶어 설명 문자열을 만들어 반환
-        static string Describe(WaveDefinition wave)
+        // 적 종류별로 수를 묶고, 펼친 상태면 종류별 특성 한 줄을 덧붙인다
+        static string Describe(WaveDefinition wave, bool expanded)
         {
-            int normal = 0, swarm = 0, runner = 0, tank = 0, boss = 0;
+            int[] count = new int[TypeCount];
 
             IReadOnlyList<WaveDefinition.SpawnEntry> entries = wave.Entries;
 
@@ -56,56 +81,61 @@ namespace PokerDefense.UI
             {
                 WaveDefinition.SpawnEntry e = entries[i];
 
-                if (e.enemy == null)
+                if (e.enemy != null)
                 {
-                    continue;
-                }
-
-                switch (e.enemy.Type)
-                {
-                    case EnemyType.Swarm:
-                        swarm += e.count;
-                        break;
-                    case EnemyType.Runner:
-                        runner += e.count;
-                        break;
-                    case EnemyType.Tank:
-                        tank += e.count;
-                        break;
-                    case EnemyType.Boss:
-                        boss += e.count;
-                        break;
-                    default:
-                        normal += e.count;
-                        break;
+                    count[(int)e.enemy.Type] += e.count;
                 }
             }
 
             StringBuilder sb = new StringBuilder("이번 적");
 
-            if (normal > 0)
+            // 특성을 펼칠 만한 특수 종류(일반 제외)가 있는지
+            bool hasDetail = false;
+
+            for (int i = 0; i < Order.Length; i++)
             {
-                sb.Append(" · 일반 ").Append(normal);
+                EnemyType type = Order[i];
+                int n = count[(int)type];
+
+                if (n <= 0)
+                {
+                    continue;
+                }
+
+                if (type == EnemyType.Boss)
+                {
+                    sb.Append(n > 1 ? $" · <color=#E8894F>보스 {n}</color>" : " · <color=#E8894F>보스</color>");
+                }
+                else
+                {
+                    sb.Append(" · ").Append(EnemyTypeNames.Of(type)).Append(' ').Append(n);
+                }
+
+                if (type != EnemyType.Normal)
+                {
+                    hasDetail = true;
+                }
             }
 
-            if (swarm > 0)
+            if (hasDetail == false)
             {
-                sb.Append(" · 스웜 ").Append(swarm);
+                return sb.ToString();
             }
 
-            if (runner > 0)
-            {
-                sb.Append(" · 러너 ").Append(runner);
-            }
+            sb.Append(expanded ? "  ▲" : "  ▼");
 
-            if (tank > 0)
+            if (expanded)
             {
-                sb.Append(" · 탱커 ").Append(tank);
-            }
+                for (int i = 0; i < Order.Length; i++)
+                {
+                    EnemyType type = Order[i];
 
-            if (boss > 0)
-            {
-                sb.Append(boss > 1 ? $" · <color=#E8894F>보스 {boss}</color>" : " · <color=#E8894F>보스</color>");
+                    if (type != EnemyType.Normal && count[(int)type] > 0)
+                    {
+                        sb.Append("\n<size=76%>").Append(EnemyTypeNames.Of(type)).Append(": ")
+                            .Append(EnemyTypeNames.TraitOf(type)).Append("</size>");
+                    }
+                }
             }
 
             return sb.ToString();

@@ -54,9 +54,23 @@ namespace PokerDefense.UI
 
         static string BodyText(GameFlowController.RoundSummary s)
         {
-            string line = s.Cleared
-                ? s.JokerGained > 0 ? $"적 전멸 · 조커 +{s.JokerGained}" : "적 전멸"
-                : $"{s.EnemiesLeft}마리 남음 · 라이프 -{s.LifeLost}";
+            string line;
+
+            if (s.Cleared)
+            {
+                line = s.JokerGained > 0 ? $"적 전멸 · 조커 +{s.JokerGained}" : "적 전멸";
+            }
+            else
+            {
+                line = $"라이프 -{s.LifeLost}";
+
+                string left = EnemyTypeNames.Remnants(s.Remnants);
+
+                if (string.IsNullOrEmpty(left) == false)
+                {
+                    line += $"\n<size=80%>남은 적: {left}</size>";
+                }
+            }
 
             if (s.NextAct > 0)
             {

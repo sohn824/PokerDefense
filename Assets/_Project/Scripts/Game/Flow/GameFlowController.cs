@@ -21,7 +21,8 @@ namespace PokerDefense.Game
          */
         public readonly struct RoundSummary
         {
-            public RoundSummary(int wave, bool cleared, int enemiesLeft, int lifeLost, int jokerGained, int nextAct)
+            public RoundSummary(int wave, bool cleared, int enemiesLeft, int lifeLost, int jokerGained, int nextAct,
+                int bossLeft, IReadOnlyList<CombatContext.Remnant> remnants)
             {
                 Wave = wave;
                 Cleared = cleared;
@@ -29,6 +30,8 @@ namespace PokerDefense.Game
                 LifeLost = lifeLost;
                 JokerGained = jokerGained;
                 NextAct = nextAct;
+                BossLeft = bossLeft;
+                Remnants = remnants;
             }
 
             public int Wave { get; }
@@ -39,6 +42,12 @@ namespace PokerDefense.Game
 
             // 다음 라운드가 새 Act를 여는 경우 그 번호(2~5), 아니면 0
             public int NextAct { get; }
+
+            // 남은 보스 수 (미등장 포함)
+            public int BossLeft { get; }
+
+            // 종류별 미해결 적. 전투 종료 시점의 불변 스냅샷
+            public IReadOnlyList<CombatContext.Remnant> Remnants { get; }
         }
 
         [SerializeField] RoundController round;
@@ -73,6 +82,10 @@ namespace PokerDefense.Game
 
         // 게임 오버나 스테이지 클리어로 루프가 멈췄는지
         public bool IsFinished { get; private set; }
+
+        // 직전 전투의 요약 스냅샷 (결과 비트 · 상황 카드 회고 · 최종 결과 화면이 공유)
+        // 다음 전투가 끝날 때 교체된다. 첫 전투 전에는 null
+        public RoundSummary? LastRound { get; private set; }
 
         // 루프가 멈춘 시점까지 걸린 시간 (결과 화면이 사용)
         public float ElapsedSeconds { get; private set; }
@@ -120,6 +133,10 @@ namespace PokerDefense.Game
 
         void OnCombatFinished(CombatOutcome outcome, int unresolved)
         {
+            // 스냅샷은 게임이 끝났든 아니든 항상 남긴다 (최종 결과 화면도 이 값을 쓴다)
+            RoundSummary summary = BuildSummary(outcome, unresolved);
+            LastRound = summary;
+
             // 게임이 끝났으면 결과 비트 없이 최종 결과 화면으로 바로 넘긴다
             if (stage.Stage.IsGameOver || stage.Stage.IsAllWavesCleared)
             {
@@ -130,7 +147,7 @@ namespace PokerDefense.Game
             // 결과 비트를 띄우고, 닫힐 때 라운드 루프를 이어 간다 (전이는 DismissBreak 한 번으로만)
             afterBreak = () => AdvanceRound(outcome);
             waitingForBreak = true;
-            RoundSettled?.Invoke(BuildSummary(outcome, unresolved));
+            RoundSettled?.Invoke(summary);
         }
 
         RoundSummary BuildSummary(CombatOutcome outcome, int unresolved)
@@ -142,7 +159,8 @@ namespace PokerDefense.Game
             int next = RoundNumber + 1;
             int nextAct = next == 11 || next == 21 || next == 31 || next == 41 ? next / 10 + 1 : 0;
 
-            return new RoundSummary(RoundNumber, cleared, unresolved, lifeLost, jokerGained, nextAct);
+            return new RoundSummary(RoundNumber, cleared, unresolved, lifeLost, jokerGained, nextAct,
+                combat.Combat.UnresolvedBosses, combat.Combat.CollectUnresolved());
         }
 
         // 결과 비트가 닫히면 UI가 호출 (자동 타이머 또는 탭)

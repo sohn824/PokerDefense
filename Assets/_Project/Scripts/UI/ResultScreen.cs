@@ -60,6 +60,16 @@ namespace PokerDefense.UI
                 body.AppendLine();
                 body.Append($"클리어 시간   {Duration(flow.ElapsedSeconds)}");
             }
+            else if (flow.LastRound.HasValue)
+            {
+                string left = EnemyTypeNames.Remnants(flow.LastRound.Value.Remnants);
+
+                if (string.IsNullOrEmpty(left) == false)
+                {
+                    body.AppendLine();
+                    body.Append($"마지막 웨이브   남은 적 {left}");
+                }
+            }
 
             bodyLabel.text = body.ToString();
         }

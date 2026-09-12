@@ -748,10 +748,10 @@ namespace PokerDefense.UI
 
             if (alive == 0)
             {
-                return $"다음 적까지 {combat.SecondsToNextSpawn:0.0}초  (남은 {pending})";
+                return $"다음 적까지 {combat.SecondsToNextSpawn:0.0}초  남은 적 {pending}";
             }
 
-            return $"적 {alive}  (남은 {pending})";
+            return $"적 {alive}  남은 적 {pending}";
         }
     }
 }

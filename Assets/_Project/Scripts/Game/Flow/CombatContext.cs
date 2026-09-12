@@ -83,6 +83,19 @@ namespace PokerDefense.Game
             public UnitDefinition Source;
         }
 
+        /**
+         * 전투가 끝났을 때 아직 정리되지 않은 적을 종류별로 센 값
+         * Live = 트랙에 살아 있는 수, Pending = 제한시간 안에 나오지 못한 수
+         */
+        public struct Remnant
+        {
+            public EnemyType Type;
+            public int Live;
+            public int Pending;
+
+            public int Total => Live + Pending;
+        }
+
         // 피격 기록을 들고 있는 시간 (타격 이펙트 수명보다 길어야 함)
         const float HitMemorySeconds = 0.5f;
 
@@ -179,6 +192,37 @@ namespace PokerDefense.Game
 
                 return count;
             }
+        }
+
+        // 아직 정리되지 않은 적을 종류별로 센다. 살아 있는 적과 미등장 적을 나눠 담고
+        // 하나도 없는 종류는 빼고 돌려준다 (결과 스냅샷용, 전투 정리 전에 호출)
+        public List<Remnant> CollectUnresolved()
+        {
+            EnemyType[] all = (EnemyType[])Enum.GetValues(typeof(EnemyType));
+            int[] live = new int[all.Length];
+            int[] pending = new int[all.Length];
+
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                live[(int)enemies[i].Definition.Type]++;
+            }
+
+            for (int i = nextSpawnIndex; i < waveSchedule.Count; i++)
+            {
+                pending[(int)waveSchedule[i].Enemy.Type]++;
+            }
+
+            List<Remnant> result = new List<Remnant>();
+
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (live[i] > 0 || pending[i] > 0)
+                {
+                    result.Add(new Remnant { Type = all[i], Live = live[i], Pending = pending[i] });
+                }
+            }
+
+            return result;
         }
 
         // 전투 진행 프로세스
