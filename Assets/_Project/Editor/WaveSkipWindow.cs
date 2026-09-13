@@ -88,11 +88,6 @@ namespace PokerDefense.EditorTools
                 return "이미 게임이 끝났습니다.";
             }
 
-            if (flow.ShopCards != null)
-            {
-                return "카드 상점이 열려 있습니다. 상점을 먼저 닫아주세요.";
-            }
-
             if (flow.CanDevSkip == false)
             {
                 return "전투 중에는 쓸 수 없습니다. 전투가 끝난 뒤(카드·배치 단계)에 사용해주세요.";

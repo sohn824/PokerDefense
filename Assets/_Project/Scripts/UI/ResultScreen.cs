@@ -51,7 +51,6 @@ namespace PokerDefense.UI
             body.AppendLine($"최고 족보   {BestHand(stats)}");
             body.AppendLine($"최고 유닛   {BestUnit(stats)}");
             body.AppendLine($"총 소환   {stats.Summons}");
-            body.AppendLine($"사용한 Chip   {stats.ChipSpent}");
             body.Append($"남은 라이프   {context.Life}");
 
             if (cleared)

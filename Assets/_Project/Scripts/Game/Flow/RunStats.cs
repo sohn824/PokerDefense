@@ -6,13 +6,13 @@ namespace PokerDefense.Game
      * RunStats
      *
      * 한 판의 성과 기록. 결과 화면에만 쓰인다
-     * 규칙을 바꾸지 않으므로 StageContext(라이프·Chip·웨이브)와 섞지 않고 따로 둔다
+     * 규칙을 바꾸지 않으므로 StageContext(라이프·웨이브)와 섞지 않고 따로 둔다
      *
      * 메타 성장이 없는 게임에서 "지난번보다 잘했다"를 느끼게 하는 유일한 장치라 패배해도 보여준다
      */
     public sealed class RunStats
     {
-        // 이번 판에 소환된 유닛 수. 족보 소환과 지원 소환을 모두 센다
+        // 이번 판에 소환된 유닛 수. 손패로 소환한 유닛을 센다
         public int Summons { get; private set; }
 
         // 이번 판에 만든 가장 희귀한 족보. 한 번도 확정하지 않았으면 null
@@ -21,7 +21,6 @@ namespace PokerDefense.Game
         // 이번 판에 가진 가장 센 유닛. 성급과 종류를 함께 반영하려고 DPS로 비교한다
         public UnitInstance BestUnit { get; private set; }
 
-        public int ChipSpent { get; private set; }
 
         public void RecordHand(HandCategory category)
         {
@@ -33,7 +32,7 @@ namespace PokerDefense.Game
             BestHand = category;
         }
 
-        /// <summary>유닛이 새로 소환됐다. 팔았더라도 소환한 사실은 남는다.</summary>
+        /// <summary>유닛이 새로 소환됐다. 퇴장했더라도 소환한 사실은 남는다.</summary>
         public void RecordSummon(UnitInstance unit)
         {
             Summons++;
@@ -56,15 +55,7 @@ namespace PokerDefense.Game
             BestUnit = unit;
         }
 
-        public void RecordChipSpent(int amount)
-        {
-            if (amount <= 0)
-            {
-                return;
-            }
 
-            ChipSpent += amount;
-        }
 
         static float Dps(UnitInstance unit) => unit.AttackPower * unit.AttacksPerSecond;
     }

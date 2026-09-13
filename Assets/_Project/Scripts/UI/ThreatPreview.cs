@@ -56,8 +56,7 @@ namespace PokerDefense.UI
             bool show = wave != null
                         && combat.IsFighting == false
                         && s.IsGameOver == false
-                        && flow.IsFinished == false
-                        && flow.ShopCards == null;
+                        && flow.IsFinished == false;
 
             if (root.activeSelf != show)
             {

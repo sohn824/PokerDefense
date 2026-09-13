@@ -41,8 +41,7 @@ namespace PokerDefense.UI
         {
             bool show = flow.LastRound.HasValue
                         && combat.IsFighting == false
-                        && flow.IsFinished == false
-                        && flow.ShopCards == null;
+                        && flow.IsFinished == false;
 
             // 전투가 다시 시작되면 접힌 상태로 되돌린다
             if (show == false)
@@ -90,7 +89,7 @@ namespace PokerDefense.UI
 
                 if (s.JokerGained > 0)
                 {
-                    line += $"\n<size=76%>조커 +{s.JokerGained}</size>";
+                    line += $"\n<size=76%>승급권 +{s.JokerGained}</size>";
                 }
             }
 

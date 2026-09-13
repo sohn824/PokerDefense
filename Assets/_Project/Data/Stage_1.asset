@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: Stage_1
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.StageDefinition
   startingLife: 20
-  startingChip: 0
   maxLifeDamagePerWave: 3
   waves:
   - {fileID: 11400000, guid: d5ddc6e76db5187459c7aeb16deda1e9, type: 2}

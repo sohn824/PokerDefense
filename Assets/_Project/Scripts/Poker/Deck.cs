@@ -60,6 +60,8 @@ namespace PokerDefense.Poker
 
         public int Remaining => cards.Count - nextIndex;
 
+        public bool ContainsRemaining(Card card) => cards.IndexOf(card, nextIndex) >= nextIndex;
+
         public Card Draw()
         {
             if (Remaining == 0)

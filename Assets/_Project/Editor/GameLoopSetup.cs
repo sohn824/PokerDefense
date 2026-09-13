@@ -35,6 +35,7 @@ namespace PokerDefense.Editor
             font = UnityEngine.Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include).First(t => t.font != null).font;
             InstallAssist();
             InstallGuides();
+            InstallHandLoop();
             InstallMenu(false);
             EditorSceneManager.SaveScene(game);
 
@@ -71,11 +72,12 @@ namespace PokerDefense.Editor
             font = UnityEngine.Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include).First(t => t.font != null).font;
             InstallAssist();
             InstallGuides();
+            InstallHandLoop();
             MenuScreen menu = UnityEngine.Object.FindAnyObjectByType<MenuScreen>();
             SerializedObject so = new SerializedObject(menu);
             SerializedProperty groups = so.FindProperty("inputGroups");
-            groups.arraySize = 3;
-            string[] names = { "Canvas", "AssistCanvas", "GuideCanvas" };
+            groups.arraySize = 4;
+            string[] names = { "Canvas", "AssistCanvas", "GuideCanvas", "DecisionCanvas" };
             for (int i = 0; i < names.Length; i++)
             {
                 groups.GetArrayElementAtIndex(i).objectReferenceValue = GameObject.Find(names[i]).GetComponent<CanvasGroup>();
@@ -93,11 +95,9 @@ namespace PokerDefense.Editor
         {
             foreach (TMP_Text text in UnityEngine.Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include))
             {
-                if (text.text.Contains("승부 교체"))
+                if (text.name == "Body" && text.transform.parent.name == "Help")
                 {
-                    text.text = text.text.Replace("승부 교체", "추가 교체")
-                        .Replace("일반 교체한 자리 한 곳에 다시 도전합니다.\n공개한 후보 중 한 장을 반드시 선택합니다.",
-                            "교체했던 카드 한 장을 다시 바꿀 수 있습니다.\n카드 선택 → 후보 확인 → 한 장으로 교체\n후보를 보면 기회 1회와 유지 보너스를 씁니다.");
+                    text.text = HelpText;
                     EditorUtility.SetDirty(text);
                 }
             }
@@ -107,7 +107,7 @@ namespace PokerDefense.Editor
         {
             OnboardingGuide guide = UnityEngine.Object.FindAnyObjectByType<OnboardingGuide>();
             SerializedObject so = new SerializedObject(guide);
-            foreach (string field in new[] { "cardHintRow", "shopHintRow" })
+            foreach (string field in new[] { "cardHintRow" })
             {
                 GameObject oldRow = so.FindProperty(field).objectReferenceValue as GameObject;
                 if (oldRow != null)
@@ -135,7 +135,7 @@ namespace PokerDefense.Editor
             groups.GetArrayElementAtIndex(0).objectReferenceValue = GameObject.Find("Canvas").GetComponent<CanvasGroup>();
             groups.GetArrayElementAtIndex(1).objectReferenceValue = GameObject.Find("AssistCanvas").GetComponent<CanvasGroup>();
             so.ApplyModifiedPropertiesWithoutUndo();
-            foreach (string prefix in new[] { "card", "shop" })
+            foreach (string prefix in new[] { "card" })
             {
                 RectTransform overlay = Rect(prefix + "GuideOverlay", root, Vector2.zero, Vector2.zero);
                 Stretch(overlay);
@@ -154,6 +154,53 @@ namespace PokerDefense.Editor
                 Set(guide, prefix + "HintClose", close);
                 overlay.gameObject.SetActive(false);
             }
+        }
+
+        const string HelpText = "<b>손패로 유닛을 만드세요</b>\n바꿀 카드를 선택하고 일반 교체합니다.\n자리마다 한 번, 비용 없이 바꿀 수 있습니다.\n\n<b>매 라운드 선택 교체 1회</b>\n일반 교체했던 카드 한 장을 다시 바꿉니다.\n후보 3장 중 한 장을 반드시 골라야 합니다.\n남은 기회는 다음 라운드로 쌓이지 않습니다.\n\n<b>보드를 완성하세요</b>\n같은 유닛·같은 성급을 합치면 승급합니다.\n다른 유닛 칸에는 확인 후 새 유닛을 놓습니다.\n보스 보상 승급권으로도 한 단계 올릴 수 있습니다.\n\n<b>전투를 보고 배치를 바꾸세요</b>\n적의 특성과 사거리를 확인하세요.\n전투 중에도 유닛을 이동·합칠 수 있습니다.";
+
+        static void InstallHandLoop()
+        {
+            Transform tray = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include).FirstOrDefault(t => t.name == "HeldCardTray");
+            if (tray != null) UnityEngine.Object.DestroyImmediate(tray.gameObject);
+            GameObject old = GameObject.Find("DecisionCanvas");
+            if (old != null) UnityEngine.Object.DestroyImmediate(old);
+            RectTransform root = Rect("DecisionCanvas", null, Vector2.zero, Vector2.zero);
+            Canvas canvas = root.gameObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 140;
+            root.gameObject.AddComponent<CanvasGroup>();
+            root.gameObject.AddComponent<GraphicRaycaster>();
+            CanvasScaler scaler = root.gameObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1080f, 1920f);
+            BoardDecisionScreen decision = root.gameObject.AddComponent<BoardDecisionScreen>();
+            Set(decision, "gameInput", GameObject.Find("Canvas").GetComponent<CanvasGroup>());
+            RectTransform overlay = Rect("DecisionOverlay", root, Vector2.zero, Vector2.zero);
+            Stretch(overlay);
+            overlay.gameObject.AddComponent<Image>().color = UiStyle.Scrim;
+            RectTransform safe = Rect("SafeArea", overlay, Vector2.zero, Vector2.zero);
+            Stretch(safe);
+            safe.gameObject.AddComponent<SafeAreaFitter>();
+            RectTransform page = Page("BoardDecision", safe);
+            page.sizeDelta = new Vector2(940f, 1000f);
+            Label("Title", page, "유닛 변경 확인", new Vector2(0f, 350f), new Vector2(850f, 100f), 56f);
+            Set(decision, "message", Label("Message", page, "", new Vector2(0f, 90f), new Vector2(820f, 350f), UiStyle.BodySize));
+            Set(decision, "confirm", Button("DecisionConfirm", page, "확인 · 실행하기", -190f, UiStyle.ButtonDanger));
+            Set(decision, "cancel", Button("DecisionCancel", page, "취소 · 그대로 두기", -345f, UiStyle.ButtonSecondary));
+            Set(decision, "panel", overlay.gameObject);
+            overlay.gameObject.SetActive(false);
+            Set(UnityEngine.Object.FindAnyObjectByType<BoardScreen>(), "decision", decision);
+            RoundScreen roundScreen = UnityEngine.Object.FindAnyObjectByType<RoundScreen>();
+            Set(roundScreen, "placement", UnityEngine.Object.FindAnyObjectByType<PlacementController>());
+            Transform previous = roundScreen.transform.Find("HandGoals");
+            if (previous != null) UnityEngine.Object.DestroyImmediate(previous.gameObject);
+            RectTransform goalPanel = Rect("HandGoals", roundScreen.transform, new Vector2(0f, 340f), new Vector2(1000f, 104f));
+            goalPanel.anchorMin = goalPanel.anchorMax = new Vector2(.5f, 0f);
+            goalPanel.gameObject.AddComponent<CanvasRenderer>();
+            goalPanel.gameObject.AddComponent<ArenaPanelGraphic>().Configure(UiStyle.PanelBg, UiStyle.BorderMuted, false);
+            TMP_Text goals = Label("Goals", goalPanel, "", Vector2.zero, new Vector2(970f, 100f), 30f);
+            Set(roundScreen, "goalPanel", goalPanel.gameObject);
+            Set(roundScreen, "goalLabel", goals);
         }
 
         static void InstallAssist()
@@ -191,7 +238,6 @@ namespace PokerDefense.Editor
             Set(screen, "gameInput", gameInput);
             RoundController round = UnityEngine.Object.FindAnyObjectByType<RoundController>();
             StageController stage = UnityEngine.Object.FindAnyObjectByType<StageController>();
-            Set(round, "stage", stage);
             RunJournal journal = round.GetComponent<RunJournal>();
             if (journal == null)
             {
@@ -203,7 +249,6 @@ namespace PokerDefense.Editor
             Set(journal, "flow", UnityEngine.Object.FindAnyObjectByType<GameFlowController>());
             Set(journal, "placement", UnityEngine.Object.FindAnyObjectByType<PlacementController>());
             Set(screen, "round", round);
-            Set(screen, "stage", stage);
             Set(screen, "placement", UnityEngine.Object.FindAnyObjectByType<PlacementController>());
             Set(screen, "flow", UnityEngine.Object.FindAnyObjectByType<GameFlowController>());
             Set(screen, "unitTable", AssetDatabase.LoadAssetAtPath<HandUnitTable>(AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets("t:HandUnitTable")[0])));
@@ -211,7 +256,7 @@ namespace PokerDefense.Editor
             ((RectTransform)actionBar).sizeDelta = new Vector2(1040f, 160f);
             Transform exchange = actionBar.Find("ExchangeButton");
             Transform confirm = actionBar.Find("ConfirmButton");
-            Button open = Button("AssistButton", actionBar, "추가 교체", 0f, UiStyle.ButtonSecondary);
+            Button open = Button("AssistButton", actionBar, "선택 교체", 0f, UiStyle.ButtonSecondary);
             open.transform.SetSiblingIndex(exchange.GetSiblingIndex() + 1);
             foreach (Transform button in new[] { exchange, open.transform, confirm })
             {
@@ -225,10 +270,6 @@ namespace PokerDefense.Editor
                 layout.preferredHeight = 140f;
                 button.GetComponentInChildren<TMP_Text>().fontSize = UiStyle.ActionSize;
             }
-            TMP_Text hint = Label("ExchangeActionHint", actionBar, "", new Vector2(0f, 50f), new Vector2(1000f, 76f), UiStyle.CaptionSize);
-            hint.rectTransform.anchorMin = hint.rectTransform.anchorMax = new Vector2(.5f, 1f);
-            hint.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
-            Set(screen, "actionHint", hint);
             Set(screen, "openButton", open);
             Set(screen, "openLabel", open.GetComponentInChildren<TMP_Text>());
             RectTransform overlay = Rect("AssistOverlay", safe, Vector2.zero, Vector2.zero);
@@ -236,7 +277,7 @@ namespace PokerDefense.Editor
             overlay.gameObject.AddComponent<Image>().color = UiStyle.Scrim;
             RectTransform page = Page("Candidates", overlay);
             Set(screen, "panel", overlay.gameObject);
-            Label("Title", page, "추가 교체", new Vector2(0f, 470f), new Vector2(800f, 100f), UiStyle.TitleSize);
+            Label("Title", page, "선택 교체", new Vector2(0f, 470f), new Vector2(800f, 100f), UiStyle.TitleSize);
             Set(screen, "instruction", Label("Instruction", page, "", new Vector2(0f, 340f), new Vector2(850f, 130f), UiStyle.BodySize));
             Button[] slots = new Button[5];
             for (int i = 0; i < slots.Length; i++)
@@ -295,12 +336,13 @@ namespace PokerDefense.Editor
             Set(menu, "titleScene", title);
             SerializedObject menuObject = new SerializedObject(menu);
             SerializedProperty inputGroups = menuObject.FindProperty("inputGroups");
-            inputGroups.arraySize = title ? 0 : 3;
+            inputGroups.arraySize = title ? 0 : 4;
             if (title == false)
             {
                 inputGroups.GetArrayElementAtIndex(0).objectReferenceValue = GameObject.Find("Canvas").GetComponent<CanvasGroup>();
                 inputGroups.GetArrayElementAtIndex(1).objectReferenceValue = GameObject.Find("AssistCanvas").GetComponent<CanvasGroup>();
                 inputGroups.GetArrayElementAtIndex(2).objectReferenceValue = GameObject.Find("GuideCanvas").GetComponent<CanvasGroup>();
+                inputGroups.GetArrayElementAtIndex(3).objectReferenceValue = GameObject.Find("DecisionCanvas").GetComponent<CanvasGroup>();
             }
             menuObject.ApplyModifiedPropertiesWithoutUndo();
             Set(menu, "flow", UnityEngine.Object.FindAnyObjectByType<GameFlowController>());
@@ -378,7 +420,7 @@ namespace PokerDefense.Editor
 
             Label("Title", help, "투기장 안내", new Vector2(0f, 450f), new Vector2(780f, 110f), UiStyle.TitleSize);
             TMP_Text body = Label("Body", help,
-                "<b>손패를 완성하세요</b>\n5장의 족보가 소환 유닛을 결정합니다.\n각 자리는 한 번 교체할 수 있습니다.\n교체를 아끼면 유지 보너스 Chip을 받습니다.\n\n<b>보드를 강화하세요</b>\n같은 유닛·같은 성급끼리 합치면 승급합니다.\n다른 유닛은 자리를 바꿀 수 있습니다.\n사거리와 이번 적의 특성을 확인하세요.\n\n<b>다음 손패를 준비하세요</b>\n상점에서 산 카드는 최대 3장 보유합니다.\n손패에 놓아도 유지 보너스는 줄지 않습니다.\n\n<b>추가 교체</b>\n교체했던 카드 한 장을 다시 바꿀 수 있습니다.\n카드 선택 → 후보 확인 → 한 장으로 교체\n후보를 보면 기회 1회와 유지 보너스를 씁니다.",
+                HelpText,
                 new Vector2(0f, -40f), new Vector2(760f, 820f), UiStyle.BodySize);
             body.alignment = TextAlignmentOptions.TopLeft;
             Label("Title", abandon, "진행을 포기할까요?", new Vector2(0f, 260f), new Vector2(800f, 130f), 58f);

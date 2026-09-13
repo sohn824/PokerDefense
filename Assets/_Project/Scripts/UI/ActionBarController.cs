@@ -13,7 +13,7 @@ namespace PokerDefense.UI
     public sealed class ActionBarController : MonoBehaviour
     {
         // 화면에 실제로 보이는 단계
-        enum Stage { Exchange, PlacePending, PlaceReady, Combat, Shop, Result }
+        enum Stage { Exchange, PlacePending, PlaceReady, Combat, Result }
 
         [SerializeField] RoundController round;
         [SerializeField] PlacementController placement;
@@ -25,7 +25,6 @@ namespace PokerDefense.UI
         [SerializeField] GameObject confirmButton;
         [SerializeField] GameObject exchangeButton;
         [SerializeField] GameObject startCombatButton;
-        [SerializeField, FormerlySerializedAs("supportButton")] GameObject randomSummonButton;
         [SerializeField] GameObject sellButton;
         [SerializeField] GameObject jokerButton;
 
@@ -48,7 +47,6 @@ namespace PokerDefense.UI
             combat.CombatStarted += OnCombatStarted;
             combat.CombatFinished += OnCombatFinished;
             flow.FlowChanged += Apply;
-            flow.ShopOpened += OnShopOpened;
         }
 
         void Start()
@@ -65,7 +63,6 @@ namespace PokerDefense.UI
             combat.CombatStarted -= OnCombatStarted;
             combat.CombatFinished -= OnCombatFinished;
             flow.FlowChanged -= Apply;
-            flow.ShopOpened -= OnShopOpened;
         }
 
         // 보드 유닛 선택은 PlacementController 이벤트를 거치지 않으므로 매 프레임 확인한다
@@ -82,7 +79,6 @@ namespace PokerDefense.UI
         void OnPlaced(int index, PlacementResult result) => Apply();
         void OnCombatStarted(CombatContext context) => Apply();
         void OnCombatFinished(CombatOutcome outcome, int unresolved) => Apply();
-        void OnShopOpened(System.Collections.Generic.IReadOnlyList<PokerDefense.Poker.Card> cards) => Apply();
 
         // 지금 단계를 판정하고 버튼/라벨 노출을 거기에 맞춘다
         void Apply()
@@ -94,13 +90,12 @@ namespace PokerDefense.UI
             SetActive(confirmButton, stage == Stage.Exchange);
             SetActive(exchangeButton, stage == Stage.Exchange);
             SetActive(startCombatButton, stage == Stage.PlaceReady);
-            SetActive(randomSummonButton, stage == Stage.PlaceReady || stage == Stage.Combat);
-            // 랜덤 소환은 전투 중에도 대기 유닛을 만들 수 있으므로 Pending 여부로 직접 판정한다
+            // 소환 포기와 퇴장 버튼은 대기/선택 상태에 맞춰 노출한다
             SetActive(sellButton, placement.Pending != null || combatEdit);
             SetActive(jokerButton, combatEdit);
 
             SetActive(handPanel, stage == Stage.Exchange);
-            SetActive(situationCard, stage != Stage.Shop && stage != Stage.Result);
+            SetActive(situationCard, stage != Stage.Result);
             SetActive(categoryLabel, stage == Stage.Exchange || stage == Stage.PlacePending);
             SetActive(statusLabel, stage == Stage.Exchange);
             SetActive(pendingLabel, placement.Pending != null || stage == Stage.PlaceReady);
@@ -112,11 +107,6 @@ namespace PokerDefense.UI
             if (flow.IsFinished)
             {
                 return Stage.Result;
-            }
-
-            if (flow.ShopCards != null)
-            {
-                return Stage.Shop;
             }
 
             if (combat.IsFighting)

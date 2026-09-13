@@ -140,8 +140,6 @@ namespace PokerDefense.UI
 
             if (flow != null)
             {
-                flow.HoldBonusEarned += OnHoldBonus;
-                flow.ShopOpened += OnShopOpened;
             }
 
             if (combat != null)
@@ -180,7 +178,7 @@ namespace PokerDefense.UI
                 voices[i].volume = voiceGains[i] * AudioPreferences.EffectsGain;
             }
 
-            // 결과 -> 드로우 전환과 상점 콜백이 모두 끝난 뒤의 최종 상태를 읽는다
+            // 결과 -> 드로우 전환이 끝난 뒤의 최종 상태를 읽는다
             AudioClip desired;
 
             if (flow != null && flow.IsFinished)
@@ -294,15 +292,8 @@ namespace PokerDefense.UI
             }
         }
 
-        void OnHoldBonus(int amount)
-        {
-            if (amount > 0)
-            {
-                Play(Sfx.HoldBonus);
-            }
-        }
 
-        void OnShopOpened(IReadOnlyList<PokerDefense.Poker.Card> cards) => Play(Sfx.ShopOpen);
+
 
         void PlayUiButton() => Play(Sfx.UiButton);
 
@@ -480,8 +471,6 @@ namespace PokerDefense.UI
 
             if (flow != null)
             {
-                flow.HoldBonusEarned -= OnHoldBonus;
-                flow.ShopOpened -= OnShopOpened;
             }
 
             if (combat != null)

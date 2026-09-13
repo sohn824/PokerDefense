@@ -9,7 +9,7 @@ namespace PokerDefense.UI
     /**
      * RoundBreakScreen
      *
-     * 전투 한 판이 끝나면 결과 요약을 잠깐 보여주고 다음 단계(상점 또는 다음 손패)로 넘긴다
+     * 전투 한 판이 끝나면 결과 요약을 잠깐 보여주고 다음 손패로 넘긴다
      */
     public sealed class RoundBreakScreen : MonoBehaviour
     {
@@ -58,7 +58,7 @@ namespace PokerDefense.UI
 
             if (s.Cleared)
             {
-                line = s.JokerGained > 0 ? $"적 전멸 · 조커 +{s.JokerGained}" : "적 전멸";
+                line = s.JokerGained > 0 ? $"적 전멸 · 승급권 +{s.JokerGained}" : "적 전멸";
             }
             else
             {

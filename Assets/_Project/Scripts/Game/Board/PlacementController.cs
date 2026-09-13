@@ -18,10 +18,6 @@ namespace PokerDefense.Game
         [SerializeField] HandUnitTable unitTable;
 
         readonly GridBoard board = new GridBoard();
-        readonly System.Random seedSource = new System.Random();
-
-        RandomSummon randomSummon;
-
         // 배치를 기다리는 유닛이 생기거나 사라졌을 때 호출하는 이벤트 (인자: 대기 유닛 or null)
         public event Action<UnitInstance> PendingChanged;
 
@@ -31,39 +27,17 @@ namespace PokerDefense.Game
         // 배치와 무관하게 보드가 바뀌었을 때 (이동 / 판매)
         public event Action BoardChanged;
 
-        // 랜덤 소환이 확정돼 뽑힌 유닛이 배치 대기로 올라왔을 때 (인자: 뽑힌 유닛). 슬롯머신 연출용
-        public event Action<UnitDefinition> RandomSummoned;
-
         public GridBoard Board => board;
 
         public UnitInstance Pending { get; private set; }
 
-        // 이번 라운드에 쓴 랜덤 소환 횟수
-        public int RandomSummonsUsed { get; private set; }
-
-        // true일 경우 들고 있는 유닛을 놓을 자리가 아예 없는 상태
-        public bool IsStuck => Pending != null && board.CanAccept(Pending) == false;
-
-        public int RandomSummonCost => stage.Economy.RandomSummonCost;
-
-        // 랜덤 소환은 대기 유닛이 없을 때만 가능하다. 전투 중에도 쓸 수 있다. 라운드당 횟수 제한이 있다
-        public bool CanRandomSummon => Pending == null
-                                       && round.Phase == RoundPhase.Place
-                                       && RandomSummonsUsed < stage.Economy.RandomSummonsPerRound
-                                       && stage.Stage.Chip >= RandomSummonCost
-                                       && HasEmptySlot;
-
-        bool HasEmptySlot => board.OccupiedCount < GridBoard.SlotCount;
-
         void Awake()
         {
             round.Evaluated += OnEvaluated;
-            randomSummon = new RandomSummon(stage.Economy, unitTable, seedSource.Next());
         }
 
         void OnEvaluated(HandResult result)
         {
-            RandomSummonsUsed = 0;
             Pending = new UnitInstance(unitTable.GetDefinition(result.Category));
             stage.Stats.RecordSummon(Pending);
             PendingChanged?.Invoke(Pending);
@@ -152,57 +126,39 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // 보드의 유닛을 팔아 Chip으로 바꾸기
-        public bool TrySellSlot(int index)
+        // 퇴장·교체는 UI 확인 뒤에만 호출한다. 보드 변화도 기록한다.
+        public bool TryRetireSlot(int index)
         {
-            UnitInstance unit = board[index];
-
-            if (unit == null)
+            if (GameSession.IsPaused || Pending != null || board[index] == null)
             {
                 return false;
             }
-
             board.TakeAt(index);
-            stage.AddChip(stage.Economy.SellPriceFor(unit.Star));
             BoardChanged?.Invoke();
             return true;
         }
 
-        // 배치 대기 유닛을 팔기
-        public bool TrySellPending()
+        public bool TryDiscardPending()
         {
-            if (Pending == null)
+            if (GameSession.IsPaused || Pending == null)
             {
                 return false;
             }
-
-            stage.AddChip(stage.Economy.SellPriceFor(Pending.Star));
             Pending = null;
             PendingChanged?.Invoke(null);
             return true;
         }
 
-        // Chip으로 랜덤 하위 유닛 ★1을 뽑아 배치 대기 유닛으로 올린다
-        // (포커 확정과 같은 흐름 - 플레이어가 칸을 골라 놓는다. 슬롯머신 연출은 RandomSummoned 구독)
-        public bool TryRandomSummon()
+        public bool TryReplacePending(int index, UnitInstance expected)
         {
-            if (CanRandomSummon == false)
+            if (GameSession.IsPaused || Pending == null || board.TryReplace(index, expected, Pending) == false)
             {
                 return false;
             }
-
-            if (stage.TrySpendChip(RandomSummonCost) == false)
-            {
-                return false;
-            }
-
-            RandomSummonsUsed++;
-
-            UnitDefinition drawn = randomSummon.Draw();
-            Pending = new UnitInstance(drawn);
-            stage.Stats.RecordSummon(Pending);
-            PendingChanged?.Invoke(Pending);
-            RandomSummoned?.Invoke(drawn);
+            Pending = null;
+            stage.Stats.RecordUnit(board[index]);
+            Placed?.Invoke(index, PlacementResult.Replaced);
+            PendingChanged?.Invoke(null);
             return true;
         }
     }

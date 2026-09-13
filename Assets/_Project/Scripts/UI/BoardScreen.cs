@@ -28,8 +28,7 @@ namespace PokerDefense.UI
 
         [SerializeField] Button sellButton;
         [SerializeField] TMP_Text sellLabel;
-        [SerializeField, FormerlySerializedAs("supportButton")] Button randomSummonButton;
-        [SerializeField, FormerlySerializedAs("supportLabel")] TMP_Text randomSummonLabel;
+        [SerializeField] BoardDecisionScreen decision;
         [SerializeField] Button jokerButton;
         [SerializeField] TMP_Text jokerLabel;
 
@@ -51,11 +50,11 @@ namespace PokerDefense.UI
 
         LineRenderer rangeRing;
 
-        // 조커로 성급을 올리는 중인지
-        // (OnPlaced에서 조커 승급음과 일반 머지음을 구분하는 데 사용)
+        // 승급권로 성급을 올리는 중인지
+        // (OnPlaced에서 승급권 승급음과 일반 머지음을 구분하는 데 사용)
         bool usingJoker;
 
-        // ActionBarController가 판매·조커 버튼 노출을 정할 때 참조한다
+        // ActionBarController가 퇴장·승급권 버튼 노출을 정할 때 참조한다
         public bool HasSelection => selected != NoSelection;
 
         void Awake()
@@ -66,7 +65,6 @@ namespace PokerDefense.UI
             }
 
             sellButton.onClick.AddListener(OnSell);
-            randomSummonButton.onClick.AddListener(OnRandomSummon);
             jokerButton.onClick.AddListener(OnUseJoker);
             detailToggle.onClick.AddListener(ToggleDetail);
 
@@ -153,13 +151,13 @@ namespace PokerDefense.UI
         // selected 상태를 초기화하고 Refresh를 호출해 UI 상태 갱신
         void OnPlaced(int index, PlacementResult result)
         {
-            if (result == PlacementResult.Placed)
+            if (result == PlacementResult.Placed || result == PlacementResult.Replaced)
             {
                 AudioManager.Instance?.Play(AudioManager.Sfx.UnitPlace);
             }
             else if (result == PlacementResult.Merged)
             {
-                // 조커 승급도 Merged로 들어오므로 먼저 갈라내고, 나머지는 합쳐진 성급에 맞는 효과음 선택
+                // 승급권 승급도 Merged로 들어오므로 먼저 갈라내고, 나머지는 합쳐진 성급에 맞는 효과음 선택
                 int star = placement.Board[index] != null ? placement.Board[index].Star : 2;
 
                 if (usingJoker)
@@ -218,7 +216,16 @@ namespace PokerDefense.UI
                 if (placement.TryPlace(slot.Index) == false)
                 {
                     // 못 놓는 칸을 누르면 안내 문구만 띄우고 return
-                    pendingLabel.text = "여기엔 놓을 수 없습니다 · 같은 유닛·성급 칸에만 겹칠 수 있습니다";
+                    UnitInstance old = placement.Board[slot.Index];
+                    UnitInstance next = placement.Pending;
+                    int index = slot.Index;
+                    if (old != null)
+                    {
+                        decision.Open($"{old.Definition.DisplayName} ★{old.Star} 퇴장\n↓\n{next.Definition.DisplayName} ★{next.Star} 배치\n\n기존 유닛은 사라집니다.", () =>
+                        {
+                            if (placement.Pending == next) placement.TryReplacePending(index, old);
+                        });
+                    }
                 }
 
                 return;
@@ -270,32 +277,22 @@ namespace PokerDefense.UI
 
         void OnSell()
         {
-            if (placement.Pending != null)
+            UnitInstance pending = placement.Pending;
+            if (pending != null)
             {
-                if (placement.TrySellPending())
+                decision.Open($"{pending.Definition.DisplayName} ★{pending.Star} 소환을 포기할까요?\n이번 라운드에는 다시 소환되지 않습니다.", () =>
                 {
-                    AudioManager.Instance?.Play(AudioManager.Sfx.ChipGain);
-                }
-
-                return;
+                    if (placement.Pending == pending) placement.TryDiscardPending();
+                });
             }
-
-            if (selected != NoSelection)
+            else if (selected != NoSelection)
             {
-                if (placement.TrySellSlot(selected))
+                int index = selected;
+                UnitInstance unit = placement.Board[index];
+                decision.Open($"{unit.Definition.DisplayName} ★{unit.Star}을 퇴장시킬까요?\n퇴장한 유닛은 돌아오지 않습니다.", () =>
                 {
-                    AudioManager.Instance?.Play(AudioManager.Sfx.ChipGain);
-                }
-
-                selected = NoSelection;
-            }
-        }
-
-        void OnRandomSummon()
-        {
-            if (placement.TryRandomSummon())
-            {
-                AudioManager.Instance?.Play(AudioManager.Sfx.UnitSummon);
+                    if (placement.Board[index] == unit) placement.TryRetireSlot(index);
+                });
             }
         }
 
@@ -330,7 +327,7 @@ namespace PokerDefense.UI
                     bool placeable = board.CanPlaceAt(i, pending);
                     slots[i].SetHighlight(placeable, false);
                     slots[i].SetInteractable(true);
-                    slots[i].SetActionHint(string.Empty);
+                    slots[i].SetActionHint(board[i] == null ? "배치" : placeable ? "합치기" : "유닛 교체");
                 }
                 else if (selected == NoSelection)
                 {
@@ -443,14 +440,7 @@ namespace PokerDefense.UI
         // 버튼을 아예 보일지 말지는 ActionBarController가 단계별로 정한다
         void UpdateLabels(UnitInstance pending)
         {
-            // 비용·남은 횟수를 항상 노출하고, 못 쓰는 이유는 회색만이 아니라 문구로 보여준다
-            randomSummonButton.interactable = placement.CanRandomSummon;
-            int summonsLeft = stage.Economy.RandomSummonsPerRound - placement.RandomSummonsUsed;
-            randomSummonLabel.text = placement.CanRandomSummon
-                ? $"랜덤 소환 · {placement.RandomSummonCost} Chip · 남은 {summonsLeft}회"
-                : $"랜덤 소환 · {RandomSummonBlockReason()}";
-
-            // 조커는 고른 유닛에만 쓸 수 있음
+            // 승급권은 고른 유닛에만 쓸 수 있음
             bool jokerOffered = pending == null && selected != NoSelection;
 
             if (jokerOffered)
@@ -458,22 +448,22 @@ namespace PokerDefense.UI
                 UnitInstance unit = placement.Board[selected];
                 jokerButton.interactable = placement.CanUseJokerOn(selected);
                 jokerLabel.text = placement.CanUseJokerOn(selected)
-                    ? $"조커 ★{unit.Star} → ★{unit.Star + 1} · Joker {stage.Stage.Jokers}"
-                    : $"조커 · {JokerBlockReason(unit)}";
+                    ? $"승급권 ★{unit.Star} → ★{unit.Star + 1} · 남은 {stage.Stage.Jokers}회"
+                    : $"승급권 · {JokerBlockReason(unit)}";
             }
 
             if (pending != null)
             {
-                sellLabel.text = $"소환 유닛 판매 +{stage.Economy.SellPriceFor(pending.Star)} Chip";
+                sellLabel.text = "이번 소환 포기";
                 ShowDetail(pending,
-                    placement.IsStuck ? "놓을 자리가 없습니다 - 판매하세요" : "칸을 눌러 배치",
+                    "빈 칸 배치 · 같은 유닛 합치기 · 다른 유닛 교체",
                     $"같은 유닛·성급 칸에 겹치면 ★{pending.Star + 1}");
                 return;
             }
 
             if (selected != NoSelection)
             {
-                sellLabel.text = $"판매 +{stage.Economy.SellPriceFor(placement.Board[selected].Star)} Chip";
+                sellLabel.text = "선택 유닛 퇴장";
                 ShowDetail(placement.Board[selected], string.Empty, MergeHintFor(selected));
                 return;
             }
@@ -499,28 +489,7 @@ namespace PokerDefense.UI
             return $"같은 유닛 ★{unit.Star} 둘이면 ★{unit.Star + 1}";
         }
 
-        // 랜덤 소환 버튼이 비활성인 이유
-        string RandomSummonBlockReason()
-        {
-            if (placement.RandomSummonsUsed >= stage.Economy.RandomSummonsPerRound)
-            {
-                return "남은 0회";
-            }
-
-            if (placement.Board.OccupiedCount >= GridBoard.SlotCount)
-            {
-                return "빈 칸 없음";
-            }
-
-            if (stage.Stage.Chip < placement.RandomSummonCost)
-            {
-                return $"Chip {stage.Stage.Chip}/{placement.RandomSummonCost}";
-            }
-
-            return $"{placement.RandomSummonCost} Chip";
-        }
-
-        // 조커 버튼이 비활성인 이유
+        // 승급권 버튼이 비활성인 이유
         string JokerBlockReason(UnitInstance unit)
         {
             if (unit.IsMaxStar)

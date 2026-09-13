@@ -13,6 +13,9 @@ namespace PokerDefense.Game
 
         // 그리드에 다른 유닛이 있거나 최대 성급이라 놓을 수 없음
         Rejected,
+
+        // 기존 유닛을 퇴장시키고 새 유닛 배치
+        Replaced,
     }
 
     /**
@@ -137,6 +140,18 @@ namespace PokerDefense.Game
             }
 
             return false;
+        }
+
+        // 확인 창을 연 뒤 보드가 바뀌었다면 다른 유닛을 지우지 않는다.
+        public bool TryReplace(int index, UnitInstance expected, UnitInstance replacement)
+        {
+            if (index < 0 || index >= SlotCount || expected == null || replacement == null
+                || slots[index] != expected || expected.CanMergeWith(replacement))
+            {
+                return false;
+            }
+            slots[index] = replacement;
+            return true;
         }
 
         // 그리드 슬롯이 빈칸이면 유닛 배치, 같은 유닛/성급이면 머지

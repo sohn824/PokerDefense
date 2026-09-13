@@ -81,7 +81,6 @@ namespace PokerDefense.UI
         [Tooltip("웨이브 실패 시 붉게 번쩍이는 전체 화면 이펙트")]
         [SerializeField] Image failFlash;
         [SerializeField] TMP_Text lifeLabel;
-        [SerializeField] TMP_Text chipLabel;
         [SerializeField] TMP_Text jokerLabel;
         [SerializeField] TMP_Text waveLabel;
         [SerializeField] TMP_Text combatLabel;
@@ -217,7 +216,7 @@ namespace PokerDefense.UI
             if (outcome == CombatOutcome.Cleared)
             {
                 lastOutcome = controller.Combat.Wave.JokerReward > 0
-                    ? "웨이브 클리어 - 조커 획득"
+                    ? "웨이브 클리어 - 승급권 획득"
                     : "웨이브 클리어";
             }
             else
@@ -698,7 +697,6 @@ namespace PokerDefense.UI
         {
             StageContext stage = controller.Stage;
             lifeLabel.text = $"<color=#FF6B6E>♥</color> {stage.Life}";
-            chipLabel.text = $"<color=#FFD76B>◆</color> {stage.Chip}";
 
             bool hasJoker = stage.Jokers > 0;
             jokerLabel.gameObject.SetActive(hasJoker);

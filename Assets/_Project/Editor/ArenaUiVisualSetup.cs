@@ -58,7 +58,7 @@ namespace PokerDefense.Editor
                 EditorUtility.SetDirty(skin);
             }
 
-            foreach (string name in new[] { "ShopPanel", "ResultPanel" })
+            foreach (string name in new[] { "ResultPanel" })
             {
                 RectTransform rt = rects.Single(r => r.name == name);
                 rt.GetComponent<Image>().color = UiStyle.PanelBg;
@@ -68,13 +68,6 @@ namespace PokerDefense.Editor
                 frame.rectTransform.offsetMax = new Vector2(-30f, -48f);
                 frame.Configure(UiStyle.PanelBg, UiStyle.Border, true);
             }
-
-            RectTransform body = rects.Single(r => r.name == "Body" && r.parent.name == "RandomSummonPanel");
-            Skin(body, UiStyle.Plate, UiStyle.Border, true);
-
-            RectTransform window = rects.Single(r => r.name == "Window" && r.parent == body);
-            window.GetComponent<Image>().color = new Color(0.016f, 0.022f, 0.027f, 1f);
-            rects.Single(r => r.name == "Name" && r.parent.name == "RowTemplate").GetComponent<TMP_Text>().color = UiStyle.TextPrimary;
 
             RectTransform breakPlate = rects.Single(r => r.name == "Plate" && r.parent.name == "RoundBreakPanel");
             breakPlate.sizeDelta = new Vector2(980f, 380f);

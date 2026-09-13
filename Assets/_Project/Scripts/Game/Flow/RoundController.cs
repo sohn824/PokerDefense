@@ -16,7 +16,6 @@ namespace PokerDefense.Game
 
         public enum AssistMode { Disabled, ChooseThree, RandomOne }
 
-        [SerializeField] StageController stage;
         [SerializeField] AssistMode assistMode = AssistMode.ChooseThree;
         RoundContext round;
 
@@ -32,11 +31,11 @@ namespace PokerDefense.Game
 
         public bool RevealCandidates(int index)
         {
-            if (GameSession.IsPaused || assistMode == AssistMode.Disabled || stage == null || round == null)
+            if (GameSession.IsPaused || assistMode == AssistMode.Disabled || round == null)
             {
                 return false;
             }
-            if (round.TryRevealCandidates(index, stage.Stage, assistMode == AssistMode.RandomOne ? 1 : 3) == false)
+            if (round.TryRevealCandidates(index, assistMode == AssistMode.RandomOne ? 1 : 3) == false)
             {
                 return false;
             }
@@ -45,6 +44,8 @@ namespace PokerDefense.Game
         }
 
         public HandResult PreviewCandidate(int index) => round.PreviewCandidate(index);
+
+        public IReadOnlyList<HandGoal> FindGoals() => round.FindGoals(assistMode != AssistMode.Disabled);
 
         public void ChooseCandidate(int index)
         {
@@ -56,7 +57,6 @@ namespace PokerDefense.Game
             HandChanged?.Invoke(round.Hand);
             AssistanceChanged?.Invoke();
         }
-
 
         public event Action<IReadOnlyList<Card>> HandChanged;
         public event Action<RoundPhase> PhaseChanged;
@@ -76,25 +76,17 @@ namespace PokerDefense.Game
 
         // 새 라운드가 시작될 때 호출 (호출부는 GameFlowController)
         // 덱을 새로 셔플하고 5장 뽑는다
-        // heldCards(상점 보유 카드)는 이 라운드 덱에서 빠진다
-        public void StartRound(IReadOnlyList<Card> heldCards = null)
+        public void StartRound()
         {
             LastSeed = seedSource.Next();
-            round = new RoundContext(LastSeed, heldCards);
+            round = new RoundContext(LastSeed);
             round.Draw();
 
             PhaseChanged?.Invoke(round.Phase);
             HandChanged?.Invoke(round.Hand);
         }
 
-        // 상점 보유 카드 한 장을 손패 자리에 놓음
         // 인벤토리에서 빼는 것은 호출부(StageController) 책임
-        public void PlaceHeldCard(int handIndex, Card card)
-        {
-            round.PlaceHeldCard(handIndex, card);
-
-            HandChanged?.Invoke(round.Hand);
-        }
 
         // 고른 자리의 카드 교체
         public void ExchangeCards(IReadOnlyList<int> indices)

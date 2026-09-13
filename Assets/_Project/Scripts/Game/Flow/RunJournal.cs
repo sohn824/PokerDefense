@@ -24,9 +24,7 @@ namespace PokerDefense.Game
             public string hand;
             public int exchanges;
             public bool assisted;
-            public int chip;
             public int life;
-            public int held;
         }
 
         [Serializable]
@@ -34,11 +32,11 @@ namespace PokerDefense.Game
         {
             public string startedUtc;
             public string mode;
+            public string ruleset = "hand-loop-v1";
             public float trackLength;
             public float exchangeSeconds;
             public float placementSeconds;
             public float combatSeconds;
-            public float shopSeconds;
             public float breakSeconds;
             public List<Entry> entries = new List<Entry>();
         }
@@ -60,7 +58,6 @@ namespace PokerDefense.Game
             round.Evaluated += OnEvaluated;
             round.AssistanceChanged += OnAssistance;
             flow.FlowChanged += OnFlow;
-            flow.ShopOpened += OnShop;
             combat.CombatStarted += OnCombat;
             combat.CombatFinished += OnFinished;
             placement.Placed += OnPlaced;
@@ -78,10 +75,6 @@ namespace PokerDefense.Game
             {
                 journal.breakSeconds += delta;
             }
-            else if (flow.ShopCards != null)
-            {
-                journal.shopSeconds += delta;
-            }
             else if (combat.IsFighting)
             {
                 journal.combatSeconds += delta;
@@ -95,7 +88,6 @@ namespace PokerDefense.Game
 
         void OnEvaluated(HandResult result) => Record("hand:" + result.Category);
         void OnAssistance() => Record(round.IsChoosingCandidate ? "assist:reveal" : "assist:choose");
-        void OnShop(IReadOnlyList<Card> cards) => Record("shop:open");
         void OnCombat(CombatContext context) => Record("combat:start");
         void OnFinished(CombatOutcome outcome, int unresolved) => Record("combat:" + outcome);
         void OnPlaced(int index, PlacementResult result) => Record("board:" + result);
@@ -118,7 +110,7 @@ namespace PokerDefense.Game
                 }
             journal.entries.Add(new Entry { action = action, wave = flow.RoundNumber, seconds = elapsed,
                 seed = round.LastSeed, hand = hand.Trim(), exchanges = round.UsedExchanges, assisted = round.AssistUsed,
-                chip = stage.Stage.Chip, life = stage.Stage.Life, held = stage.HeldCards.Count });
+                life = stage.Stage.Life });
         }
 
         void OnApplicationPause(bool paused)
@@ -134,7 +126,6 @@ namespace PokerDefense.Game
             round.Evaluated -= OnEvaluated;
             round.AssistanceChanged -= OnAssistance;
             flow.FlowChanged -= OnFlow;
-            flow.ShopOpened -= OnShop;
             combat.CombatStarted -= OnCombat;
             combat.CombatFinished -= OnFinished;
             placement.Placed -= OnPlaced;
