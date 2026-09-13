@@ -93,6 +93,8 @@ namespace PokerDefense.Game
         float startedAt;
 
         // 결과 비트가 떠 있어 다음 단계로 넘어가길 기다리는 중인지, 그리고 넘어갈 때 실행할 작업
+        public bool IsWaitingForBreak => waitingForBreak;
+
         bool waitingForBreak;
         Action afterBreak;
 
@@ -226,6 +228,7 @@ namespace PokerDefense.Game
         void StartNextRound()
         {
             RoundNumber++;
+            stage.Stage.EnterWave();
             round.StartRound(stage.Stage.HeldCards);
             FlowChanged?.Invoke();
         }

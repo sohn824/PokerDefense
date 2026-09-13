@@ -14,7 +14,49 @@ namespace PokerDefense.Game
     {
         readonly System.Random seedSource = new System.Random();
 
+        public enum AssistMode { Disabled, ChooseThree, RandomOne }
+
+        [SerializeField] StageController stage;
+        [SerializeField] AssistMode assistMode = AssistMode.ChooseThree;
         RoundContext round;
+
+        public int LastSeed { get; private set; }
+
+        public AssistMode Assistance => assistMode;
+        public bool IsChoosingCandidate => round != null && round.IsChoosingCandidate;
+        public bool AssistUsed => round != null && round.AssistUsed;
+        public IReadOnlyList<Card> Candidates => round.Candidates;
+        public IReadOnlyList<Card> Hand => round.Hand;
+        public bool CanAssist(int index) => assistMode != AssistMode.Disabled && round != null && round.CanAssist(index);
+        public event Action AssistanceChanged;
+
+        public bool RevealCandidates(int index)
+        {
+            if (GameSession.IsPaused || assistMode == AssistMode.Disabled || stage == null || round == null)
+            {
+                return false;
+            }
+            if (round.TryRevealCandidates(index, stage.Stage, assistMode == AssistMode.RandomOne ? 1 : 3) == false)
+            {
+                return false;
+            }
+            AssistanceChanged?.Invoke();
+            return true;
+        }
+
+        public HandResult PreviewCandidate(int index) => round.PreviewCandidate(index);
+
+        public void ChooseCandidate(int index)
+        {
+            if (GameSession.IsPaused)
+            {
+                return;
+            }
+            round.ChooseCandidate(index);
+            HandChanged?.Invoke(round.Hand);
+            AssistanceChanged?.Invoke();
+        }
+
 
         public event Action<IReadOnlyList<Card>> HandChanged;
         public event Action<RoundPhase> PhaseChanged;
@@ -37,7 +79,8 @@ namespace PokerDefense.Game
         // heldCards(상점 보유 카드)는 이 라운드 덱에서 빠진다
         public void StartRound(IReadOnlyList<Card> heldCards = null)
         {
-            round = new RoundContext(seedSource.Next(), heldCards);
+            LastSeed = seedSource.Next();
+            round = new RoundContext(LastSeed, heldCards);
             round.Draw();
 
             PhaseChanged?.Invoke(round.Phase);
@@ -64,6 +107,10 @@ namespace PokerDefense.Game
         // 교체를 끝내고 족보 확정
         public void ConfirmHand()
         {
+            if (GameSession.IsPaused || IsChoosingCandidate)
+            {
+                return;
+            }
             round.FinishExchange();
 
             HandResult result = round.Evaluate();

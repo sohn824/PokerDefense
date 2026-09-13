@@ -402,12 +402,14 @@ namespace PokerDefense.UI
             else
             {
                 exchangeButton.interactable = exchanging && picked > 0;
-                exchangeLabel.text = picked == 0 ? "교체" : $"교체 {picked}장";
+                exchangeLabel.text = picked > 0 ? $"일반 교체\n<size=30>선택한 {picked}장 바꾸기</size>"
+                    : controller.ExchangeableCount == 0 ? "일반 교체\n<size=30>교체할 카드 없음</size>"
+                    : "일반 교체\n<size=30>손패에서 카드 선택</size>";
             }
 
             if (!exchanging)
             {
-                confirmLabel.text = "확정";
+                confirmLabel.text = "손패 확정";
                 return;
             }
 
@@ -423,7 +425,7 @@ namespace PokerDefense.UI
             int left = controller.ExchangeableCount;
 
             categoryLabel.text = HandCategoryNames.Of(preview.Category);
-            confirmLabel.text = currentBonus > 0 ? $"확정 +{currentBonus}" : "확정";
+            confirmLabel.text = $"손패 확정\n<size=30>유지 보너스 +{currentBonus}</size>";
 
             if (selectedTrayCard != null)
             {
@@ -440,7 +442,7 @@ namespace PokerDefense.UI
 
             if (left == 0)
             {
-                statusLabel.text = $"확정하면 {unit.DisplayName} 소환 · 더 바꿀 카드 없음";
+                statusLabel.text = $"확정하면 {unit.DisplayName} 소환 · 일반 교체 완료";
                 return;
             }
 

@@ -101,7 +101,7 @@ namespace PokerDefense.UI
         {
             UpdateSlotArt();
 
-            if (Pointer.current == null || Pointer.current.press.wasPressedThisFrame == false)
+            if (GameSession.IsPaused || Pointer.current == null || Pointer.current.press.wasPressedThisFrame == false)
             {
                 return;
             }

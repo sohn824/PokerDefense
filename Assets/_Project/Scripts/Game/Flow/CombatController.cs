@@ -52,7 +52,7 @@ namespace PokerDefense.Game
 
         void Update()
         {
-            if (IsFighting == false)
+            if (IsFighting == false || GameSession.IsPaused)
             {
                 return;
             }

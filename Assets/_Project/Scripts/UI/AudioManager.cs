@@ -66,6 +66,7 @@ namespace PokerDefense.UI
         readonly System.Random random = new System.Random();
         readonly List<Button> buttons = new List<Button>();
         readonly AudioSource[] voices = new AudioSource[TotalVoices];
+        readonly float[] voiceGains = new float[TotalVoices];
         readonly double[] busyUntil = new double[TotalVoices];
 
         AudioSource musicB;
@@ -174,6 +175,11 @@ namespace PokerDefense.UI
 
         void LateUpdate()
         {
+            for (int i = 0; i < voices.Length; i++)
+            {
+                voices[i].volume = voiceGains[i] * AudioPreferences.EffectsGain;
+            }
+
             // 결과 -> 드로우 전환과 상점 콜백이 모두 끝난 뒤의 최종 상태를 읽는다
             AudioClip desired;
 
@@ -196,8 +202,8 @@ namespace PokerDefense.UI
             duck = Mathf.MoveTowards(duck, AudioSettings.dspTime < duckUntil ? 0.55f : 1f, Time.unscaledDeltaTime * 3f);
 
             // 두 소스가 같은 곡을 이어 재생하므로 볼륨 합이 1이 되게 섞어 가운데서 +3 dB 튀는 것을 막는다
-            musicSource.volume = musicVolume * (1f - blend) * duck;
-            musicB.volume = musicVolume * blend * duck;
+            musicSource.volume = musicVolume * (1f - blend) * duck * AudioPreferences.MusicGain;
+            musicB.volume = musicVolume * blend * duck * AudioPreferences.MusicGain;
 
             if (blend == 0f && targetBlend == 0f && musicB.isPlaying)
             {
@@ -397,7 +403,7 @@ namespace PokerDefense.UI
             {
                 if (busyUntil[i] > now)
                 {
-                    usedGain += voices[i].volume;
+                    usedGain += voiceGains[i];
                 }
             }
 
@@ -413,7 +419,8 @@ namespace PokerDefense.UI
             AudioSource source = voices[slot];
             source.clip = clip;
             source.pitch = 1f + (float)(random.NextDouble() * 2 - 1) * cue.pitchVariation;
-            source.volume = gain;
+            voiceGains[slot] = gain;
+            source.volume = gain * AudioPreferences.EffectsGain;
             source.Play();
 
             if (id == Sfx.EnemyDeathBig)

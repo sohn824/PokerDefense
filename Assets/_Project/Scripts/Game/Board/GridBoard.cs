@@ -53,79 +53,21 @@ namespace PokerDefense.Game
         // 적이 도는 트랙이 보드 바깥으로 떨어진 거리
         public const float TrackMargin = 0.9f;
 
-        // 적이 도는 트랙은 보드를 감싸는 닫힌 사각 루프
-        public static float TrackHalfWidth => Columns * 0.5f * CellSize + TrackMargin;
-        public static float TrackHalfHeight => Rows * 0.5f * CellSize + TrackMargin;
-        public static float TrackLength => 4f * (TrackHalfWidth + TrackHalfHeight);
+        // 배경 아트에 맞춘 공통 경로. 전투 판정과 화면이 같은 좌표를 읽는다.
+        public static float TrackHalfWidth => TrackPath.Arena.HalfWidth;
+        public static float TrackHalfHeight => TrackPath.Arena.HalfHeight;
+        public static float TrackLength => TrackPath.Arena.Length;
 
-        // 트랙 위 적 진행 로직
-        // 진행도(progress)는 좌상단에서 시작해 시계 방향으로 한 바퀴가 1임
-        // 1을 넘으면 한바퀴 돈 것으로 보고 리셋
-        public static Vector2 TrackPosition(float progress)
-        {
-            float wrapped = progress - Mathf.Floor(progress);
-            float distance = wrapped * TrackLength;
+        public static Vector2 TrackPosition(float progress) => TrackPath.Arena.Position(progress);
 
-            float width = TrackHalfWidth * 2f;
-            float height = TrackHalfHeight * 2f;
-
-            // 트랙 위쪽 (진행 방향: 왼쪽 -> 오른쪽)
-            if (distance < width)
-            {
-                return new Vector2(-TrackHalfWidth + distance, TrackHalfHeight);
-            }
-
-            distance -= width;
-
-            // 트랙 오른쪽 (진행 방향: 위 -> 아래)
-            if (distance < height)
-            {
-                return new Vector2(TrackHalfWidth, TrackHalfHeight - distance);
-            }
-
-            distance -= height;
-
-            // 트랙 아래쪽 (진행 방향: 오른쪽 -> 왼쪽)
-            if (distance < width)
-            {
-                return new Vector2(TrackHalfWidth - distance, -TrackHalfHeight);
-            }
-
-            distance -= width;
-
-            // 트랙 왼쪽 (진행 방향: 아래 -> 위쪽)
-            return new Vector2(-TrackHalfWidth, -TrackHalfHeight + distance);
-        }
-
-        // 트랙 위 진행 방향(TrackPosition과 같은 구간 분기). 적 아트를 이동 방향에 맞춰 고르는 데 쓴다
         public static AimDirection TrackDirection(float progress)
         {
-            float wrapped = progress - Mathf.Floor(progress);
-            float distance = wrapped * TrackLength;
-
-            float width = TrackHalfWidth * 2f;
-            float height = TrackHalfHeight * 2f;
-
-            if (distance < width)
+            Vector2 tangent = TrackPath.Arena.Tangent(progress);
+            if (Mathf.Abs(tangent.x) >= Mathf.Abs(tangent.y))
             {
-                return AimDirection.Right;
+                return tangent.x >= 0f ? AimDirection.Right : AimDirection.Left;
             }
-
-            distance -= width;
-
-            if (distance < height)
-            {
-                return AimDirection.Down;
-            }
-
-            distance -= height;
-
-            if (distance < width)
-            {
-                return AimDirection.Left;
-            }
-
-            return AimDirection.Up;
+            return tangent.y >= 0f ? AimDirection.Up : AimDirection.Down;
         }
 
         // UnitInstance의 indexer

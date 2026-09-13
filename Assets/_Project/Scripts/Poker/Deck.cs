@@ -70,6 +70,20 @@ namespace PokerDefense.Poker
             return cards[nextIndex++];
         }
 
+        public Card[] DrawUpTo(int count)
+        {
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count));
+            }
+            Card[] drawn = new Card[Math.Min(count, Remaining)];
+            for (int i = 0; i < drawn.Length; i++)
+            {
+                drawn[i] = Draw();
+            }
+            return drawn;
+        }
+
         // Fisher-Yates Shuffle 알고리즘으로 덱 셔플
         void Shuffle(Random random)
         {

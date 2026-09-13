@@ -2,7 +2,6 @@ using System.Text;
 using PokerDefense.Game;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace PokerDefense.UI
@@ -90,7 +89,7 @@ namespace PokerDefense.UI
 
         static void Restart()
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            GameSession.Load(GameSession.GameScene);
         }
     }
 }

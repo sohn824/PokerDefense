@@ -24,6 +24,64 @@ namespace PokerDefense.Game
         // 실제로 교체한 장수. 자리 잠금(locked)과 분리
         // (상점 카드 배치도 자리를 잠그지만 유지 보너스는 실제로 교체했을 때만 줄여야 하기 때문)
         int exchangedCount;
+        readonly bool[] normallyExchanged = new bool[HandSize];
+        Card[] candidates = Array.Empty<Card>();
+        int assistTarget = -1;
+
+        public bool AssistUsed { get; private set; }
+        public bool IsChoosingCandidate => assistTarget >= 0;
+        public IReadOnlyList<Card> Candidates => candidates;
+        public int AssistTarget => assistTarget;
+
+        public bool CanAssist(int index) => Phase == RoundPhase.Exchange && AssistUsed == false
+            && index >= 0 && index < HandSize && normallyExchanged[index] && deck.Remaining > 0;
+
+        // 소비와 후보 추첨을 한 동작으로 처리한다. 공개 뒤에는 같은 후보에서 반드시 한 장을 골라야 한다.
+        public bool TryRevealCandidates(int index, StageContext stage, int count = 3)
+        {
+            if (stage == null || CanAssist(index) == false || (count != 1 && count != 3))
+            {
+                return false;
+            }
+            if (stage.TryUseAssist() == false)
+            {
+                return false;
+            }
+            candidates = deck.DrawUpTo(count);
+            assistTarget = index;
+            AssistUsed = true;
+            return true;
+        }
+
+        public HandResult PreviewCandidate(int index)
+        {
+            ValidateCandidate(index);
+            Card[] preview = (Card[])hand.Clone();
+            preview[assistTarget] = candidates[index];
+            return HandEvaluator.Evaluate(preview);
+        }
+
+        public void ChooseCandidate(int index)
+        {
+            ValidateCandidate(index);
+            hand[assistTarget] = candidates[index];
+            exchangedCount++;
+            assistTarget = -1;
+            candidates = Array.Empty<Card>();
+        }
+
+        void ValidateCandidate(int index)
+        {
+            if (Phase != RoundPhase.Exchange || IsChoosingCandidate == false)
+            {
+                throw new InvalidOperationException("공개된 승부 교체 후보가 없습니다");
+            }
+            if (index < 0 || index >= candidates.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+        }
+
 
         public RoundContext(int seed, IReadOnlyList<Card> heldCards = null)
         {
@@ -87,12 +145,17 @@ namespace PokerDefense.Game
             }
 
             Validate(indices);
+            if (indices.Count > deck.Remaining)
+            {
+                throw new InvalidOperationException("교체할 카드가 덱에 부족합니다");
+            }
 
             for (int i = 0; i < indices.Count; i++)
             {
                 int index = indices[i];
                 hand[index] = deck.Draw();
                 locked[index] = true;
+                normallyExchanged[index] = true;
             }
 
             exchangedCount += indices.Count;
@@ -188,6 +251,11 @@ namespace PokerDefense.Game
 
         void Require(RoundPhase expected)
         {
+            if (IsChoosingCandidate)
+            {
+                throw new InvalidOperationException("승부 교체 후보를 먼저 선택하세요");
+            }
+
             if (Phase != expected)
             {
                 throw new InvalidOperationException($"{expected} 페이즈에서만 가능한 동작입니다. 현재: {Phase}");

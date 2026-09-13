@@ -208,11 +208,11 @@ namespace PokerDefense.Tests
         [Test]
         public void Multi는_사거리_안이라도_첫_타겟에서_MultiSpread보다_먼_적은_제외한다()
         {
-            // 트랙 절반(11.6 = TrackLength/2)을 1초에 주파하는 속도. 1초 간격으로 스폰하면
+            // 트랙 절반(TrackLength/2)을 1초에 주파하는 속도. 1초 간격으로 스폰하면
             // 두 번째 발사 시점에 두 적이 트랙 반대편에 있어 사거리 안이라도 서로 아주 멀다
             var board = BoardWith(MakeUnit(
                 AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 2, multiSpread: 1f));
-            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 11.6f), 2, 1f, 100f));
+            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, GridBoard.TrackLength / 2f), 2, 1f, 100f));
 
             Run(combat, 1.2f);
 
@@ -225,7 +225,7 @@ namespace PokerDefense.Tests
             // 위 테스트와 같은 배치인데 MultiSpread만 넉넉하면 둘 다 맞아야 한다
             var board = BoardWith(MakeUnit(
                 AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 2, multiSpread: 100f));
-            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 11.6f), 2, 1f, 100f));
+            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, GridBoard.TrackLength / 2f), 2, 1f, 100f));
 
             Run(combat, 1.2f);
 
@@ -307,17 +307,21 @@ namespace PokerDefense.Tests
         [Test]
         public void Pierce는_타겟보다_앞선_적은_때리지_않는다()
         {
-            // 관통 길이를 트랙 전체보다 길게 줘도 앞으로는 뻗지 않는다
-            // 사거리 3이면 닿는 구간이 진행거리 1.6~5.2뿐이라 앞선 두 기는 사거리 밖에 있다
-            var board = BoardWith(MakeUnit(AttackPattern.Pierce, 10f, 1f, range: 3f, pierceLength: 100f));
+            // 앞선 두 기는 사거리 밖, 마지막 기만 사거리 안인 구간에서 비교한다.
+            // 트랙 형태와 별개로 이 전제가 맞는지도 매 스텝 검증한다.
+            var board = new GridBoard();
+            board.TryPlace(0, new UnitInstance(MakeUnit(AttackPattern.Pierce, 10f, 1f, range: 1.6f, pierceLength: 100f)));
             var combat = new CombatContext(board, MakeWave(MakeEnemy(1000000f, 1f), 3, 3f, 100f));
-
-            // 9초: 진행거리 9.0 / 6.0 / 3.0 - 사거리 안은 맨 뒤 한 기뿐이고 나머지는 그보다 앞서 있다
-            Run(combat, 9f);
-
+            Run(combat, 6f);
             float[] before = { combat.Enemies[0].Hp, combat.Enemies[1].Hp, combat.Enemies[2].Hp };
-
-            Run(combat, 2f);
+            for (int i = 0; i < 21; i++)
+            {
+                Vector2 origin = GridBoard.SlotToLocalPosition(0);
+                Assert.Greater(Vector2.Distance(origin, combat.Enemies[0].Position), 1.6f);
+                Assert.Greater(Vector2.Distance(origin, combat.Enemies[1].Position), 1.6f);
+                Assert.Less(Vector2.Distance(origin, combat.Enemies[2].Position), 1.6f);
+                combat.Tick(.05f);
+            }
 
             Assert.Greater(combat.Enemies[0].Progress, combat.Enemies[2].Progress, "앞뒤 관계가 뒤집혔다");
             Assert.AreEqual(before[0], combat.Enemies[0].Hp, 0.001f, "관통이 앞으로 뻗었다");

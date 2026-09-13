@@ -138,10 +138,12 @@ namespace PokerDefense.Tests
             for (int i = 0; i <= 100; i++)
             {
                 Vector2 p = GridBoard.TrackPosition(i / 100f);
-                bool onVertical = Mathf.Abs(Mathf.Abs(p.x) - GridBoard.TrackHalfWidth) < 0.0001f;
-                bool onHorizontal = Mathf.Abs(Mathf.Abs(p.y) - GridBoard.TrackHalfHeight) < 0.0001f;
-
-                Assert.IsTrue(onVertical || onHorizontal, $"진행도 {i / 100f}의 좌표 {p}가 트랙 위가 아니다");
+                float radius = TrackPath.Arena.Radius;
+                Vector2 q = new Vector2(Mathf.Abs(p.x), Mathf.Abs(p.y))
+                    - new Vector2(GridBoard.TrackHalfWidth - radius, GridBoard.TrackHalfHeight - radius);
+                float signedDistance = new Vector2(Mathf.Max(q.x, 0f), Mathf.Max(q.y, 0f)).magnitude
+                    + Mathf.Min(Mathf.Max(q.x, q.y), 0f) - radius;
+                Assert.AreEqual(0f, signedDistance, .0001f, $"진행도 {i / 100f}: {p}");
             }
         }
 

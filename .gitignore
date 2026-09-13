@@ -102,3 +102,7 @@ __pycache__/
 /Assets/_Project/Audio/bgm_boss.wav.meta
 /Assets/_Project/Audio/bgm_result.wav
 /Assets/_Project/Audio/bgm_result.wav.meta
+
+# Unity MCP diagnostic captures (not runtime assets).
+/Assets/Screenshots/
+/Assets/Screenshots.meta

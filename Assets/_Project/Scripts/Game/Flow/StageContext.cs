@@ -33,6 +33,32 @@ namespace PokerDefense.Game
 
         public int Life { get; private set; }
 
+        public int AssistCharges { get; private set; } = 1;
+        int lastAssistMilestone;
+
+        // 실제 웨이브 진입 시 호출한다. 같은 이정표로 다시 들어와도 지급하지 않는다.
+        public void EnterWave()
+        {
+            int milestone = WaveIndex / 5;
+            if (IsGameOver || IsAllWavesCleared || milestone <= lastAssistMilestone)
+            {
+                return;
+            }
+            AssistCharges = Math.Min(2, AssistCharges + milestone - lastAssistMilestone);
+            lastAssistMilestone = milestone;
+        }
+
+        public bool TryUseAssist()
+        {
+            if (AssistCharges <= 0 || IsGameOver || IsAllWavesCleared)
+            {
+                return false;
+            }
+            AssistCharges--;
+            return true;
+        }
+
+
         // 상점에서 산 카드
         // 스테이지 동안 유지되고 상한이 있다
         public IReadOnlyList<Card> HeldCards => heldCards;
