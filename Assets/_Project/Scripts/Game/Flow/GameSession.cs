@@ -16,20 +16,33 @@ namespace PokerDefense.Game
 
         public static bool IsPaused { get; private set; }
         public static bool IsLoading { get; private set; }
+        public static float Speed { get; private set; } = 1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void Reset()
         {
             SceneManager.sceneLoaded -= OnLoaded;
             IsLoading = false;
+            Speed = 1f;
             SetPaused(false);
         }
 
         public static void SetPaused(bool paused)
         {
             IsPaused = paused;
-            Time.timeScale = paused ? 0f : 1f;
+            Time.timeScale = paused ? 0f : Speed;
             AudioListener.pause = paused;
+        }
+
+        // 배속 토글이 호출한다. 일시정지 중에는 실제 timeScale에 반영하지 않고 값만 기억해 둔다
+        public static void SetSpeed(float speed)
+        {
+            Speed = speed;
+
+            if (IsPaused == false)
+            {
+                Time.timeScale = Speed;
+            }
         }
 
         public static void Load(string scene)

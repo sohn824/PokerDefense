@@ -36,6 +36,7 @@ namespace PokerDefense.Editor
             InstallAssist();
             InstallGuides();
             InstallHandLoop();
+            InstallSpeedToggle();
             InstallMenu(false);
             EditorSceneManager.SaveScene(game);
 
@@ -201,6 +202,39 @@ namespace PokerDefense.Editor
             TMP_Text goals = Label("Goals", goalPanel, "", Vector2.zero, new Vector2(970f, 100f), 30f);
             Set(roundScreen, "goalPanel", goalPanel.gameObject);
             Set(roundScreen, "goalLabel", goals);
+        }
+
+        // 배속 버튼만 설치·갱신한다. 기존 HUD 배치는 그대로 둔다.
+        [MenuItem("Tools/Poker Defense/Install Speed Toggle")]
+        public static void InstallSpeedToggleMenu()
+        {
+            if (Application.isPlaying)
+            {
+                throw new InvalidOperationException("Stop Play Mode first.");
+            }
+            EditorSceneManager.SaveOpenScenes();
+            Scene game = EditorSceneManager.OpenScene(Scenes + "Game.unity");
+            font = UnityEngine.Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include).First(t => t.font != null).font;
+            InstallSpeedToggle();
+            EditorSceneManager.SaveScene(game);
+        }
+
+        static void InstallSpeedToggle()
+        {
+            Transform hudBar = GameObject.Find("HudBar").transform;
+            Transform old = hudBar.Find("SpeedButton");
+            if (old != null)
+            {
+                UnityEngine.Object.DestroyImmediate(old.gameObject);
+            }
+            Button button = Button("SpeedButton", hudBar, "1x", 0f, UiStyle.ButtonSecondary);
+            RectTransform rt = (RectTransform)button.transform;
+            rt.anchoredPosition = new Vector2(150f, 0f);
+            rt.sizeDelta = new Vector2(130f, 90f);
+            button.GetComponentInChildren<TMP_Text>().fontSize = UiStyle.ActionSize;
+            GameSpeedButton speed = button.gameObject.AddComponent<GameSpeedButton>();
+            Set(speed, "button", button);
+            Set(speed, "label", button.GetComponentInChildren<TMP_Text>());
         }
 
         static void InstallAssist()
