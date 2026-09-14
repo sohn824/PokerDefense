@@ -30,12 +30,39 @@ namespace PokerDefense.Game
 
         public List<HandGoal> FindGoals(bool includeAssist = true)
         {
-            var unseen = Deck.BuildCards().FindAll(card => deck.ContainsRemaining(card) && Array.IndexOf(hand, card) < 0);
             var changeable = new bool[HandSize];
             for (int i = 0; i < HandSize; i++)
                 changeable[i] = Phase == RoundPhase.Exchange && (locked[i] == false || (includeAssist && CanAssist(i)));
-            return HandGoals.Find(hand, unseen, changeable);
+            return HandGoals.Find(hand, BuildUnseen(), changeable);
         }
+
+        // 실제로 일반 교체할 자리들을 한꺼번에 채웠을 때 나올 수 있는 족보의 경우의 수
+        public List<HandOddsEntry> FindExchangeOdds(IReadOnlyList<int> indices)
+        {
+            if (Phase != RoundPhase.Exchange || indices == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < indices.Count; i++)
+            {
+                if (locked[indices[i]])
+                {
+                    return null;
+                }
+            }
+
+            return HandOdds.Find(hand, BuildUnseen(), indices);
+        }
+
+        // 선택 교체로 후보를 공개하기 전, 그 자리 하나를 채웠을 때 나올 수 있는 족보의 경우의 수
+        public List<HandOddsEntry> FindAssistOdds(int index)
+        {
+            return CanAssist(index) ? HandOdds.Find(hand, BuildUnseen(), new[] { index }) : null;
+        }
+
+        List<Card> BuildUnseen() => Deck.BuildCards().FindAll(card => deck.ContainsRemaining(card) && Array.IndexOf(hand, card) < 0);
+
         public bool IsChoosingCandidate => assistTarget >= 0;
         public IReadOnlyList<Card> Candidates => candidates;
         public int AssistTarget => assistTarget;

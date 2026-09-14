@@ -18,7 +18,6 @@ namespace PokerDefense.UI
     public sealed class RoundScreen : MonoBehaviour
     {
         [SerializeField] RoundController controller;
-        [SerializeField] PlacementController placement;
         [SerializeField] TMP_Text goalLabel;
         [SerializeField] GameObject goalPanel;
         [SerializeField] HandUnitTable unitTable;
@@ -218,15 +217,7 @@ namespace PokerDefense.UI
 
         void OnExchange()
         {
-            List<int> indices = new List<int>();
-
-            for (int i = 0; i < cardViews.Length; i++)
-            {
-                if (cardViews[i].Selected)
-                {
-                    indices.Add(i);
-                }
-            }
+            List<int> indices = SelectedIndices();
 
             controller.ExchangeCards(indices);
 
@@ -291,7 +282,30 @@ namespace PokerDefense.UI
             confirmLabel.text = "손패 확정\n<size=30>유닛 소환</size>";
             statusLabel.text = picked > 0 ? $"선택한 {picked}장을 새 카드로 바꿉니다"
                 : $"확정하면 {unit.DisplayName} 소환 · 일반 교체 가능 {controller.ExchangeableCount}장";
-            goalLabel.text = HandGoalText.Describe(controller.FindGoals(), placement.Board, unitTable, preview.Category);
+
+            // 카드를 선택했을 때만 그 교체의 확률을 보여준다. 선택 전 족보 추천은 하지 않는다
+            bool showOdds = picked > 0 && picked <= HandOdds.MaxSlots;
+            goalPanel.SetActive(showOdds);
+
+            if (showOdds)
+            {
+                goalLabel.text = HandOddsText.Describe(controller.FindExchangeOdds(SelectedIndices()));
+            }
+        }
+
+        List<int> SelectedIndices()
+        {
+            List<int> indices = new List<int>();
+
+            for (int i = 0; i < cardViews.Length; i++)
+            {
+                if (cardViews[i].Selected)
+                {
+                    indices.Add(i);
+                }
+            }
+
+            return indices;
         }
     }
 }

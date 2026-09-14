@@ -13,7 +13,7 @@
 - 선택 교체는 **매 손패 1회, 무료, 이월 없음**. 일반 교체한 자리 하나에서 남은 덱의 서로 다른 후보 3장 중 한 장을 고른다. 공개 전 취소 가능, 공개 시 사용 완료, 공개 후 재추첨/확정/일반 교체 불가. 다음 손패에서 초기화한다.
 - Chip·유지 보너스·판매 수입·상점·보유 카드·랜덤 소환은 **삭제**했다. 5라운드마다 상점을 열거나 보조 횟수를 충전하지 않는다.
 - 15칸 보드의 동일 유닛·동일 성급 합치기(최대 ★3), 이동/자리 교환, 보스 보상 승급권은 유지한다. 기존 유닛 교체·퇴장·소환 포기는 확인 창을 거치며 환급은 없다.
-- 목표 안내는 실제 남은 카드와 바꿀 수 있는 자리를 기준으로 최대 두 줄을 표시한다. 합치기 가능성을 우선하며 확률이나 최적 전략을 보장하지 않는다.
+- 손패 아래 패널은 카드를 1~3장 선택했을 때만 뜨며 그 교체의 확률 분포를 보여준다(DESIGN §19, `HandOdds`). 선택이 없거나 4장 이상이면 패널을 숨긴다 — 선택 전 족보 추천은 하지 않는다. 어느 자리가 최선인지도 추천하지 않는다.
 - 타이틀·음량 옵션·일시정지·도움말·재도전·타이틀 복귀는 구현됐다. **런 저장/이어하기는 없다.** 옵션 저장과 구분한다.
 - 어두운 투기장 비주얼과 현재 채택한 Arena Breaks BGM을 유지한다. 과거 오디오 후보를 다시 적용하지 않는다. 상세는 AUDIO_REQUEST.md·ART_REQUEST.md를 참조한다.
 
@@ -23,17 +23,17 @@
 
 | 책임 | 읽을 파일 |
 |---|---|
-| 카드/덱/족보와 목표 탐색 | `Scripts/Poker/Deck.cs`, `HandGoals.cs`, `HandEvaluator.cs` |
+| 카드/덱/족보와 목표·확률 탐색 | `Scripts/Poker/Deck.cs`, `HandGoals.cs`, `HandOdds.cs`, `HandEvaluator.cs` |
 | 손패 단계·자리 잠금·후보·손패당 사용 여부 | `Scripts/Game/Flow/RoundContext.cs`, `RoundController.cs` |
 | 라운드/전투 전이와 다음 손패 | `Scripts/Game/Flow/GameFlowController.cs` |
 | 라이프·웨이브·승급권 | `Scripts/Game/Flow/StageContext.cs`, `StageController.cs`, `Scripts/Game/Data/StageDefinition.cs`, `Data/Stage_1.asset` |
 | 보드와 소환 대기·합치기·교체/퇴장/포기 | `Scripts/Game/Board/GridBoard.cs`, `PlacementController.cs` |
-| 손패 행동·후보·목표 문구 | `Scripts/UI/RoundScreen.cs`, `AssistScreen.cs`, `HandGoalText.cs`, `ActionBarController.cs` |
+| 손패 행동·후보·확률 문구 | `Scripts/UI/RoundScreen.cs`, `AssistScreen.cs`, `HandOddsText.cs`, `ActionBarController.cs` |
 | 파괴적 보드 조작 확인 | `Scripts/UI/BoardDecisionScreen.cs`, `BoardScreen.cs` |
 | 첫 손패/배치/합치기 안내와 메뉴 | `Scripts/UI/OnboardingGuide.cs`, `MenuScreen.cs` |
 | 결과·위협·기록 | `Scripts/UI/RoundBreakScreen.cs`, `RoundRecap.cs`, `ThreatPreview.cs`, `Scripts/Game/Flow/RunJournal.cs` |
 | 씬 설치와 개발 비교 | `Editor/GameLoopSetup.cs`, `BalanceSimRunner.cs`, `WaveSkipWindow.cs` |
-| 회귀 테스트 | `Scripts/Tests/Editor/HandLoopTests.cs`, `AssistTests.cs`, `RoundContextTests.cs`, `StageTests.cs` |
+| 회귀 테스트 | `Scripts/Tests/Editor/HandLoopTests.cs`, `AssistTests.cs`, `RoundContextTests.cs`, `StageTests.cs`, `HandOddsTests.cs` |
 
 `TryReplace`는 예상한 기존 유닛 인스턴스가 그대로 있을 때만 교체하고, 합칠 수 있는 조합은 교체로 우회하지 않는다. 확인 창은 취소 시 상태를 바꾸지 않으며 메뉴 중첩 이후에도 정지 상태를 복원한다.
 
@@ -41,7 +41,7 @@
 
 아래는 직전 구현 작업에서 기록한 결과다. 이번 문서 갱신에서 테스트나 빌드를 재실행하지 않았다.
 
-- EditMode **201/201 통과**. 손패별 사용/초기화, 후보 중복·재공개 방지, 목표의 실제 덱/자리 조건, 가득 찬 보드 교체와 기존 인스턴스/합치기 가드 포함. 삭제 기능 테스트를 제거했으므로 과거 241개와 개수로 회귀를 판단하지 않는다.
+- EditMode **207/207 통과**(2026-09-15). 손패별 사용/초기화, 후보 중복·재공개 방지, 목표의 실제 덱/자리 조건, 가득 찬 보드 교체와 기존 인스턴스/합치기 가드, `HandOdds`의 경우의 수·확률·조합 상한 6개 포함. 삭제 기능 테스트를 제거했으므로 과거 241개와 개수로 회귀를 판단하지 않는다.
 - Editor Play: 후보 선택 후 다음 손패 초기화, W5→W6 상점 없음, 15칸 보드 교체 확인/취소/메뉴 중첩, 승급권 성장과 전투 시작 확인. 1080×1920 및 360×800 목표 문구 확인, Missing Script 0.
 - Windows 빌드 `Builds/LoopReview/PokerDefense.exe` 성공. 빌드 보고서 오류 0/경고 3. 실행 파일에서 정상 50웨이브를 완주한 검증은 아니다.
 - TMP `Maplestory Light SDF.asset`의 `Importer(NativeFormatImporter) generated inconsistent result` 문제가 남아 있다. 빌드 성공과 콘솔 전체 오류 없음은 다른 주장이다.

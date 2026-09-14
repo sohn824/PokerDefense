@@ -183,6 +183,7 @@ namespace PokerDefense.UI
             preview.text = eligible
                 ? (target >= 0 ? "선택한 " + CardText.Of(round.Hand[target]) + " 카드 대신 들어올 후보를 확인하세요." : "위에서 다시 바꿀 카드 한 장을 선택하세요.")
                     + $"\n매 라운드 1회 · 후보 공개 전에는 취소 가능\n공개한 뒤에는 후보 한 장을 반드시 골라야 합니다."
+                    + (target >= 0 ? "\n" + HandOddsText.Describe(round.FindAssistOdds(target)) : "")
                 : "먼저 손패에서 카드를 한 번 교체하세요.\n그때 바뀐 카드만 여기에서 다시 바꿀 수 있어요.";
             if (choosing && selected < 0)
             {

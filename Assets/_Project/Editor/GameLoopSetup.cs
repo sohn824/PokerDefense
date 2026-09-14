@@ -192,7 +192,6 @@ namespace PokerDefense.Editor
             overlay.gameObject.SetActive(false);
             Set(UnityEngine.Object.FindAnyObjectByType<BoardScreen>(), "decision", decision);
             RoundScreen roundScreen = UnityEngine.Object.FindAnyObjectByType<RoundScreen>();
-            Set(roundScreen, "placement", UnityEngine.Object.FindAnyObjectByType<PlacementController>());
             Transform previous = roundScreen.transform.Find("HandGoals");
             if (previous != null) UnityEngine.Object.DestroyImmediate(previous.gameObject);
             RectTransform goalPanel = Rect("HandGoals", roundScreen.transform, new Vector2(0f, 340f), new Vector2(1000f, 104f));

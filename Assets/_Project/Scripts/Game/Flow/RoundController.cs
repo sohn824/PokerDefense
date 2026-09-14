@@ -47,6 +47,10 @@ namespace PokerDefense.Game
 
         public IReadOnlyList<HandGoal> FindGoals() => round.FindGoals(assistMode != AssistMode.Disabled);
 
+        public IReadOnlyList<HandOddsEntry> FindExchangeOdds(IReadOnlyList<int> indices) => round?.FindExchangeOdds(indices);
+
+        public IReadOnlyList<HandOddsEntry> FindAssistOdds(int index) => round?.FindAssistOdds(index);
+
         public void ChooseCandidate(int index)
         {
             if (GameSession.IsPaused)
