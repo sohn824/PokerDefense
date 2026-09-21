@@ -173,9 +173,13 @@ namespace PokerDefense.UI
 
         void LateUpdate()
         {
+            // AudioPreferences의 각 프로퍼티는 접근할 때마다 PlayerPrefs를 다시 읽는다.
+            // 보이스 16개 루프 안에서 매번 읽으면 프레임당 불필요한 재할당이 쌓이므로 한 번만 읽어 재사용한다.
+            float effectsGain = AudioPreferences.EffectsGain;
+
             for (int i = 0; i < voices.Length; i++)
             {
-                voices[i].volume = voiceGains[i] * AudioPreferences.EffectsGain;
+                voices[i].volume = voiceGains[i] * effectsGain;
             }
 
             // 결과 -> 드로우 전환이 끝난 뒤의 최종 상태를 읽는다
@@ -200,8 +204,9 @@ namespace PokerDefense.UI
             duck = Mathf.MoveTowards(duck, AudioSettings.dspTime < duckUntil ? 0.55f : 1f, Time.unscaledDeltaTime * 3f);
 
             // 두 소스가 같은 곡을 이어 재생하므로 볼륨 합이 1이 되게 섞어 가운데서 +3 dB 튀는 것을 막는다
-            musicSource.volume = musicVolume * (1f - blend) * duck * AudioPreferences.MusicGain;
-            musicB.volume = musicVolume * blend * duck * AudioPreferences.MusicGain;
+            float musicGain = AudioPreferences.MusicGain;
+            musicSource.volume = musicVolume * (1f - blend) * duck * musicGain;
+            musicB.volume = musicVolume * blend * duck * musicGain;
 
             if (blend == 0f && targetBlend == 0f && musicB.isPlaying)
             {
