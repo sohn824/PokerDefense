@@ -15,7 +15,7 @@ using UnityEngine.UI;
 namespace PokerDefense.Editor
 {
     // 기존 씬 배선을 유지하며 메뉴 씬과 공통 UI를 설치한다. 같은 메뉴를 다시 실행해도 중복되지 않는다.
-    public static class GameLoopSetup
+    public static partial class GameLoopSetup
     {
         const string Scenes = "Assets/_Project/Scenes/";
         static TMP_FontAsset font;
@@ -36,6 +36,7 @@ namespace PokerDefense.Editor
             InstallAssist();
             InstallGuides();
             InstallHandLoop();
+            InstallHandOdds();
             InstallSpeedToggle();
             InstallMenu(false);
             EditorSceneManager.SaveScene(game);
@@ -74,11 +75,12 @@ namespace PokerDefense.Editor
             InstallAssist();
             InstallGuides();
             InstallHandLoop();
+            InstallHandOdds();
             MenuScreen menu = UnityEngine.Object.FindAnyObjectByType<MenuScreen>();
             SerializedObject so = new SerializedObject(menu);
             SerializedProperty groups = so.FindProperty("inputGroups");
-            groups.arraySize = 4;
-            string[] names = { "Canvas", "AssistCanvas", "GuideCanvas", "DecisionCanvas" };
+            groups.arraySize = 5;
+            string[] names = { "Canvas", "AssistCanvas", "GuideCanvas", "DecisionCanvas", "OddsCanvas" };
             for (int i = 0; i < names.Length; i++)
             {
                 groups.GetArrayElementAtIndex(i).objectReferenceValue = GameObject.Find(names[i]).GetComponent<CanvasGroup>();
@@ -369,13 +371,14 @@ namespace PokerDefense.Editor
             Set(menu, "titleScene", title);
             SerializedObject menuObject = new SerializedObject(menu);
             SerializedProperty inputGroups = menuObject.FindProperty("inputGroups");
-            inputGroups.arraySize = title ? 0 : 4;
+            inputGroups.arraySize = title ? 0 : 5;
             if (title == false)
             {
                 inputGroups.GetArrayElementAtIndex(0).objectReferenceValue = GameObject.Find("Canvas").GetComponent<CanvasGroup>();
                 inputGroups.GetArrayElementAtIndex(1).objectReferenceValue = GameObject.Find("AssistCanvas").GetComponent<CanvasGroup>();
                 inputGroups.GetArrayElementAtIndex(2).objectReferenceValue = GameObject.Find("GuideCanvas").GetComponent<CanvasGroup>();
                 inputGroups.GetArrayElementAtIndex(3).objectReferenceValue = GameObject.Find("DecisionCanvas").GetComponent<CanvasGroup>();
+                inputGroups.GetArrayElementAtIndex(4).objectReferenceValue = GameObject.Find("OddsCanvas").GetComponent<CanvasGroup>();
             }
             menuObject.ApplyModifiedPropertiesWithoutUndo();
             Set(menu, "flow", UnityEngine.Object.FindAnyObjectByType<GameFlowController>());

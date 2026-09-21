@@ -37,6 +37,7 @@ namespace PokerDefense.Game
         }
 
         // 실제로 일반 교체할 자리들을 한꺼번에 채웠을 때 나올 수 있는 족보의 경우의 수
+        // UI는 이제 CaptureOdds + HandOddsWorker(비동기)를 쓴다. 이 동기 메서드는 테스트의 기준값 계산에만 남겨둔다.
         public List<HandOddsEntry> FindExchangeOdds(IReadOnlyList<int> indices)
         {
             if (Phase != RoundPhase.Exchange || indices == null)
@@ -55,10 +56,33 @@ namespace PokerDefense.Game
             return HandOdds.Find(hand, BuildUnseen(), indices);
         }
 
-        // 선택 교체로 후보를 공개하기 전, 그 자리 하나를 채웠을 때 나올 수 있는 족보의 경우의 수
-        public List<HandOddsEntry> FindAssistOdds(int index)
+        // 호출 시점의 검증과 복사는 메인에서 끝낸다. 워커는 RoundContext를 읽지 않는다.
+        public HandOddsRequest CaptureOdds(int version, HandOddsSource source, IReadOnlyList<int> indices)
         {
-            return CanAssist(index) ? HandOdds.Find(hand, BuildUnseen(), new[] { index }) : null;
+            if (Phase != RoundPhase.Exchange || IsChoosingCandidate || indices == null
+                || indices.Count == 0 || indices.Count > HandOdds.MaxSlots) return null;
+            if (source == HandOddsSource.Assist && (indices.Count != 1 || CanAssist(indices[0]) == false))
+            {
+                return null;
+            }
+
+            int seen = 0;
+            foreach (int index in indices)
+            {
+                if (index < 0 || index >= HandSize || (seen & (1 << index)) != 0)
+                {
+                    return null;
+                }
+
+                if (source == HandOddsSource.Exchange && locked[index])
+                {
+                    return null;
+                }
+
+                seen |= 1 << index;
+            }
+
+            return new HandOddsRequest(version, source, hand, BuildUnseen(), indices);
         }
 
         List<Card> BuildUnseen() => Deck.BuildCards().FindAll(card => deck.ContainsRemaining(card) && Array.IndexOf(hand, card) < 0);

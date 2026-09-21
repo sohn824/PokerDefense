@@ -19,6 +19,8 @@ namespace PokerDefense.UI
     {
         [SerializeField] RoundController controller;
         [SerializeField] TMP_Text goalLabel;
+        [SerializeField] Button oddsButton;
+        [SerializeField] HandOddsScreen oddsScreen;
         [SerializeField] GameObject goalPanel;
         [SerializeField] HandUnitTable unitTable;
         [SerializeField] CardVisualSet cardVisuals;
@@ -62,11 +64,38 @@ namespace PokerDefense.UI
             }
 
             exchangeButton.onClick.AddListener(OnExchange);
+            oddsButton.onClick.AddListener(OpenOdds);
             confirmButton.onClick.AddListener(controller.ConfirmHand);
 
             controller.PhaseChanged += ShowPhase;
             controller.HandChanged += ShowHand;
             controller.Evaluated += ShowResult;
+            controller.OddsChanged += Refresh;
+            controller.AssistanceChanged += Refresh;
+        }
+
+        void OnDisable()
+        {
+            controller.CancelOdds(HandOddsSource.Exchange);
+            goalPanel.SetActive(false);
+        }
+
+        void OnEnable()
+        {
+            if (controller.Phase == RoundPhase.Exchange)
+            {
+                phase = controller.Phase;
+                Refresh();
+            }
+        }
+
+        void OnDestroy()
+        {
+            controller.PhaseChanged -= ShowPhase;
+            controller.HandChanged -= ShowHand;
+            controller.Evaluated -= ShowResult;
+            controller.OddsChanged -= Refresh;
+            controller.AssistanceChanged -= Refresh;
         }
 
         // 페이즈 전환 반영 - Exchange로 돌아오면 이전 라운드 축포 이펙트를 정리
@@ -230,6 +259,10 @@ namespace PokerDefense.UI
         // 카드 상태, 조작 가능 여부, 버튼 상태, 안내 문구를 현재 상태에 맞추기
         void Refresh()
         {
+            if (isActiveAndEnabled == false)
+            {
+                return;
+            }
             bool exchanging = phase == RoundPhase.Exchange;
             goalPanel.SetActive(exchanging);
             int picked = 0;
@@ -266,6 +299,7 @@ namespace PokerDefense.UI
 
             if (!exchanging)
             {
+                controller.CancelOdds(HandOddsSource.Exchange);
                 confirmLabel.text = "손패 확정";
                 return;
             }
@@ -284,13 +318,27 @@ namespace PokerDefense.UI
                 : $"확정하면 {unit.DisplayName} 소환 · 일반 교체 가능 {controller.ExchangeableCount}장";
 
             // 카드를 선택했을 때만 그 교체의 확률을 보여준다. 선택 전 족보 추천은 하지 않는다
-            bool showOdds = picked > 0 && picked <= HandOdds.MaxSlots;
+            bool showOdds = picked > 0 && picked <= HandOdds.MaxSlots
+                && controller.IsAssistOddsActive == false && controller.IsChoosingCandidate == false;
             goalPanel.SetActive(showOdds);
 
             if (showOdds)
             {
-                goalLabel.text = HandOddsText.Describe(controller.FindExchangeOdds(SelectedIndices()));
+                controller.RequestOdds(HandOddsSource.Exchange, SelectedIndices());
+                oddsButton.interactable = controller.OddsState == HandOddsState.Ready;
+                goalLabel.text = $"선택한 {picked}장 교체 시\n" + (controller.OddsState == HandOddsState.Ready ? HandOddsText.Summary(controller.Odds, preview.Category)
+                    : controller.OddsState == HandOddsState.Failed ? "확률을 계산하지 못했습니다. 교체는 가능합니다."
+                    : "교체 확률 계산 중...");
             }
+            else
+            {
+                controller.CancelOdds(HandOddsSource.Exchange);
+            }
+        }
+
+        void OpenOdds()
+        {
+            oddsScreen.Open($"선택한 {SelectedIndices().Count}장 교체 시", false);
         }
 
         List<int> SelectedIndices()

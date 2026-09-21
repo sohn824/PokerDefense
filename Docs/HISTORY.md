@@ -1,5 +1,33 @@
 # 작업 히스토리
 
+## 2026-09-21 — 병렬 임계값과 교체 상한 분리
+
+- 1~2장 워커 순차, 3~4장 병렬도 2로 조정. 교체 상한이 실행 정책까지 바꾸던 연결을 제거.
+- 포트폴리오 설명도 동일하게 갱신. 기존 측정 수치는 유지하며 재측정한 값은 아님.
+- Unity 6000.4.0f1 배치 모드 EditMode 225/225 통과. 결과: Artifacts/PortfolioUpdate/Policy/tests.xml.
+
+
+## 2026-09-21 — AudioManager GC 할당 프로파일링·수정
+
+- Unity Profiler(Hierarchy)로 실측, `AudioManager.LateUpdate()`가 프레임당 GC Alloc 2.6KB(36회 할당, 0.98ms)로 Scripts 레이어 최대 할당원임을 확인 — 원인은 `AudioPreferences`의 각 프로퍼티가 접근마다 `PlayerPrefs`를 문자열 키 조립과 함께 캐싱 없이 재조회하는 것(보이스 16개 루프 안에서 18회 이상 반복 호출).
+- `AudioManager.LateUpdate()`에서 `EffectsGain`/`MusicGain`을 지역 변수로 한 번만 읽도록 수정(동작 불변, 읽기 횟수만 감소). 동일 방법으로 재측정: GC Alloc 288B(-89%), 호출 4회(-89%), Time 0.16ms(-84%). 두 프레임 연속 확인으로 우연 배제, 수정 전/후 각각 전후 프레임 비교로 검증.
+- 검증: `Assets > Refresh` 컴파일 오류 없음, EditMode 225/225 통과(MonoBehaviour 콜백 리팩터라 테스트 수 불변). 상세: [PROFILING_RESULTS.md](PROFILING_RESULTS.md).
+
+## 2026-09-21 — 확률 계산 상한 3→4 확장, 코드 리뷰 정리
+
+- 코드 리뷰에서 나온 항목 정리: HANDOFF/HISTORY의 상충된 최신 테스트 수(219 vs 225)를 225로 통일, `HandOddsBenchmark`의 관찰되지 않는 예외를 콘솔에 남기도록 수정, `HandOddsWorker.ParallelSlotThreshold`가 `HandOdds.MaxSlots`를 직접 참조하도록 중복 상수 제거, 테스트에서만 쓰이던 `RoundContext.FindAssistOdds`/`RoundController.FindAssistOdds` 삭제(`FindExchangeOdds`는 테스트 기준값 용도로 주석 남기고 유지).
+- `DevMode > 교체 확률 벤치마크`로 k=1~4를 seed 17·42에서 재측정([CSV](Benchmarks/2026-09-21-hand-odds-4slots.csv)). 4장의 워커 순차→병렬 2 개선은 약 16%(200ms→168ms 중앙값), 3장 때(약 17~18%)와 비슷한 폭. THREADING_PLAN이 정한 순서(상한 3 유지 → 검증 → 측정 후 결정)대로 `HandOdds.MaxSlots`를 3에서 4로 올렸다. 병렬 임계값도 함께 4로 올라가 1~3장은 이제 워커 순차, 4장만 병렬도 2를 탄다.
+- DESIGN §19~20, HANDOFF, THREADING_PLAN/RESULTS, POLISH PERF-01의 "3자리 상한" 서술을 갱신. `HandOddsTests`/`HandOddsThreadingTests`의 경계값 테스트(4장 거부 가정)를 5장 거부로 고쳐 상한 변경과 일치시켰다.
+- 검증: EditMode 225/225 통과(Unity Test Runner 직접 실행 확인). 포트폴리오 문서(덱·경력기술서·QnA)의 "3자리 상한" 서술은 이번 범위에 포함하지 않았다.
+
+## 2026-09-20 — 교체 확률 요약 및 상세 창
+
+- 후속 수정: 일반 교체 요약의 장식 패널에서 raycastTarget이 꺼져 클릭되지 않던 문제 수정. 씬과 재설치 코드에 반영. Play Mode에서 일반/선택 교체의 자세히 좌표를 EventSystem으로 raycast하고 최상위 hit에 클릭 이벤트를 전달하여 상세 창 열림 확인.
+
+- 긴 분포 문자열을 고정 두 줄 요약과 별도 스크롤 창으로 분리. 일반/선택 교체 공통 적용, 작은 확률은 `<0.1%`로 표시.
+- 750×1334 Play Mode에서 글자 넘침 없음, 메뉴 중첩 및 선택 교체 입력 복원 확인. EditMode 225/225 통과(새 표시 검증 6개 포함).
+
+
 ## 이 문서의 관리 규칙
 
 - **최신 항목이 위로.** 각 항목은 `날짜 — 제목` / 결정과 이유 / 검증 순으로 적는다.
@@ -22,7 +50,8 @@
 - **UX:** 고정된 일반/선택 교체/확정 버튼, 카드 1~3장 선택 시에만 나오는 확률 표시(나올 수 있는 족보와 확률 전부, DESIGN §19) — 선택 전 족보 추천은 없앴다, 보드 교체·퇴장·포기 확인, 독립 안내 3종, 메뉴·옵션·회고·위협 안내, 둥근 트랙, 배속(1x/2x/3x) 구현.
 - **씬/구조:** Boot→Title→Game. URP 2D, 모바일 세로, 월드 보드와 uGUI. Poker→Game→UI, asmdef 없음, 테스트는 Scripts/Tests/Editor.
 - **데이터/오디오:** 유닛 13종·적 7종·50웨이브·Stage_1. Economy 에셋 없음. 채택 BGM Arena Breaks와 현행 총성 유지; AUDIO_REQUEST 참조.
-- **최근 검증:** EditMode 207/207(2026-09-15, `HandOdds` 6개 포함). Editor Play에서 확률 분포 표시(일반 교체 1~2장, 선택 교체 대상 슬롯)를 실측값과 대조해 확인. 나머지(후보 초기화·W5→W6·가득 찬 보드·메뉴 중첩·360×800·Windows 빌드)는 2026-09-13 시점 검증 그대로이며 이번에 재실행하지 않았다.
+- **최신 기술 검증:** 2026-09-20 멀티스레드/종류 판정과 표시 검증 추가 후 EditMode 225/225 및 실제 Play 수명 검증. THREADING_RESULTS 참조.
+- **이전 검증:** EditMode 207/207(2026-09-15, `HandOdds` 6개 포함). Editor Play에서 확률 분포 표시(일반 교체 1~2장, 선택 교체 대상 슬롯)를 실측값과 대조해 확인. 나머지(후보 초기화·W5→W6·가득 찬 보드·메뉴 중첩·360×800·Windows 빌드)는 2026-09-13 시점 검증 그대로이며 이번에 재실행하지 않았다.
 - **미완료:** 현행 공급량 기준 정상 50웨이브 사람 런·밸런스 검증, 기기 UX/오디오 QA, TMP Light 폰트 임포터 문제. 런 저장/이어하기는 미구현. 다음 순서는 POLISH 참조.
 - **문서 정리:** 과거 §14~17은 LEGACY_LOOP_PLAN으로 분리하고 현행 설계·백로그를 갱신했다. 아래 날짜별 과거 검증은 당시 규칙에만 해당한다.
 
@@ -89,6 +118,19 @@
 ---
 
 ## 이력
+
+### 2026-09-20 — 멀티스레드 코드 관례 정리
+
+- 추가 코드의 Allman 중괄호·런타임 명시적 타입·상태 이름·한글 주석·멤버 배치를 기존 코드에 맞췄다. 벤치마크를 EditorTools / DevMode로 통일했다.
+- 동작 변경 없이 컴파일과 EditMode 219/219 재검증. 성능·빌드 결과는 직전 구현 기록을 유지한다.
+
+### 2026-09-20 — 교체 확률 비동기·제한 병렬화
+
+- HandOddsRequest 불변 복사, HandOddsWorker의 활성 1개/최신 대기 1개, RoundController의 메인 완료 반영으로 UI 동기 계산을 대체했다. 취소·예외·비활성화/씬 종료를 처리한다.
+- 승리 카드 목록을 만들지 않는 CategoryOf를 추가하고 기존 Evaluate와의 일치를 검증했다. 1~2장 워커 순차, 3장 병렬도 최대 2, 표시 상한 3 유지.
+- EditMode 219/219, 실제 Play에서 최신 선택·선택 교체 전환·계산 중 확정/타이틀 이동 확인. Windows 빌드 성공(오류 0/경고 3). 측정 수치와 한계는 [THREADING_RESULTS.md](THREADING_RESULTS.md). 모바일 성능은 미검증, 긴 확률 문자열 overflow와 기존 TMP 임포터 문제는 남았다.
+- TCP는 이번 변경에 포함하지 않았다. 구조와 다음 단계는 THREADING_PLAN을 따른다.
+
 
 ### 2026-09-15 — 교체 확률 표시 (원칙 뒤집기)
 

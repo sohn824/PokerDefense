@@ -18,6 +18,13 @@ namespace PokerDefense.Game
 
         [SerializeField] AssistMode assistMode = AssistMode.ChooseThree;
         RoundContext round;
+        HandOddsWorker odds;
+        int oddsVersion;
+
+        public bool IsAssistOddsActive { get; private set; }
+        public HandOddsState OddsState => odds?.State ?? HandOddsState.Idle;
+        public IReadOnlyList<HandOddsEntry> Odds => odds?.Result;
+        public event Action OddsChanged;
 
         public int LastSeed { get; private set; }
 
@@ -39,6 +46,7 @@ namespace PokerDefense.Game
             {
                 return false;
             }
+            InvalidateOdds();
             AssistanceChanged?.Invoke();
             return true;
         }
@@ -47,9 +55,8 @@ namespace PokerDefense.Game
 
         public IReadOnlyList<HandGoal> FindGoals() => round.FindGoals(assistMode != AssistMode.Disabled);
 
+        // UI는 이제 CaptureOdds + HandOddsWorker(비동기)를 쓴다. 이 동기 메서드는 테스트의 기준값 계산에만 남겨둔다.
         public IReadOnlyList<HandOddsEntry> FindExchangeOdds(IReadOnlyList<int> indices) => round?.FindExchangeOdds(indices);
-
-        public IReadOnlyList<HandOddsEntry> FindAssistOdds(int index) => round?.FindAssistOdds(index);
 
         public void ChooseCandidate(int index)
         {
@@ -58,6 +65,7 @@ namespace PokerDefense.Game
                 return;
             }
             round.ChooseCandidate(index);
+            InvalidateOdds();
             HandChanged?.Invoke(round.Hand);
             AssistanceChanged?.Invoke();
         }
@@ -78,10 +86,87 @@ namespace PokerDefense.Game
         // 지금 확정하면 어떤 족보가 되는지 표시용
         public HandResult PreviewHand() => HandEvaluator.Evaluate(round.Hand);
 
+        void OnEnable()
+        {
+            if (odds == null)
+            {
+                odds = new HandOddsWorker();
+            }
+        }
+
+        // 재사용을 위해 워커는 살려두고 진행 중인 계산만 취소한다
+        void OnDisable()
+        {
+            odds?.Cancel();
+            IsAssistOddsActive = false;
+        }
+
+        void OnDestroy() => odds?.Dispose();
+
+        // 매 프레임 완료 여부만 확인 - 계산 자체는 워커 스레드에서 돈다
+        void Update()
+        {
+            if (odds != null && odds.Poll())
+            {
+                if (odds.Error != null)
+                {
+                    Debug.LogException(odds.Error, this);
+                }
+
+                OddsChanged?.Invoke();
+            }
+        }
+
+        public void SetAssistOddsActive(bool active)
+        {
+            if (IsAssistOddsActive == active)
+            {
+                return;
+            }
+
+            IsAssistOddsActive = active;
+            odds?.Cancel();
+            OddsChanged?.Invoke();
+        }
+
+        // 일반 교체·선택 교체는 워커 하나를 공유한다. 지금 활성 모드와 다른 출처의 요청은 무시
+        public void RequestOdds(HandOddsSource source, IReadOnlyList<int> indices)
+        {
+            if (odds == null || (source == HandOddsSource.Assist) != IsAssistOddsActive)
+            {
+                return;
+            }
+
+            if (source == HandOddsSource.Assist && assistMode == AssistMode.Disabled)
+            {
+                odds.Cancel();
+                return;
+            }
+
+            odds.Submit(round?.CaptureOdds(oddsVersion, source, indices));
+        }
+
+        // 워커가 지금 그 출처의 요청을 들고 있을 때만 취소 - 다른 출처의 진행 중인 계산은 건드리지 않는다
+        public void CancelOdds(HandOddsSource source)
+        {
+            if (odds?.Source == source)
+            {
+                odds.Cancel();
+            }
+        }
+
+        void InvalidateOdds()
+        {
+            oddsVersion++;
+            odds?.Cancel();
+        }
+
         // 새 라운드가 시작될 때 호출 (호출부는 GameFlowController)
         // 덱을 새로 셔플하고 5장 뽑는다
         public void StartRound()
         {
+            InvalidateOdds();
+            IsAssistOddsActive = false;
             LastSeed = seedSource.Next();
             round = new RoundContext(LastSeed);
             round.Draw();
@@ -96,6 +181,7 @@ namespace PokerDefense.Game
         public void ExchangeCards(IReadOnlyList<int> indices)
         {
             round.Exchange(indices);
+            InvalidateOdds();
 
             HandChanged?.Invoke(round.Hand);
         }
@@ -108,6 +194,7 @@ namespace PokerDefense.Game
                 return;
             }
             round.FinishExchange();
+            InvalidateOdds();
 
             HandResult result = round.Evaluate();
             PhaseChanged?.Invoke(round.Phase);
@@ -122,6 +209,7 @@ namespace PokerDefense.Game
         public void DevForceHand(IReadOnlyList<Card> cards)
         {
             round.ForceHand(cards);
+            InvalidateOdds();
 
             HandChanged?.Invoke(round.Hand);
         }

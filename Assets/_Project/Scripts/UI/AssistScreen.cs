@@ -26,6 +26,9 @@ namespace PokerDefense.UI
         [SerializeField] Button cancelButton;
         [SerializeField] TMP_Text instruction;
         [SerializeField] TMP_Text preview;
+        [SerializeField] TMP_Text oddsLabel;
+        [SerializeField] Button oddsButton;
+        [SerializeField] HandOddsScreen oddsScreen;
 
         int target = -1;
         int selected = -1;
@@ -33,7 +36,9 @@ namespace PokerDefense.UI
         void Awake()
         {
             panel.SetActive(false);
+            round.OddsChanged += OnOddsChanged;
             openButton.onClick.AddListener(Open);
+            oddsButton.onClick.AddListener(() => oddsScreen.Open("선택 교체 · 한 장 기준", true));
             cancelButton.onClick.AddListener(Close);
             revealButton.onClick.AddListener(Reveal);
             chooseButton.onClick.AddListener(Choose);
@@ -48,6 +53,29 @@ namespace PokerDefense.UI
                 candidates[i].onClick.AddListener(() => { selected = index; Refresh(); });
             }
         }
+
+        void OnOddsChanged()
+        {
+            if (isActiveAndEnabled && panel.activeSelf)
+            {
+                Refresh();
+            }
+        }
+
+        void OnDisable()
+        {
+            round.CancelOdds(HandOddsSource.Assist);
+        }
+
+        void OnEnable()
+        {
+            if (panel.activeSelf)
+            {
+                Refresh();
+            }
+        }
+
+        void OnDestroy() => round.OddsChanged -= OnOddsChanged;
 
         void Update()
         {
@@ -92,6 +120,7 @@ namespace PokerDefense.UI
             previousInput = gameInput.interactable;
             gameInput.interactable = false;
             panel.SetActive(true);
+            round.SetAssistOddsActive(true);
             Refresh();
         }
 
@@ -118,6 +147,7 @@ namespace PokerDefense.UI
                 gameInput.interactable = previousInput;
             }
             panel.SetActive(false);
+            round.SetAssistOddsActive(false);
         }
 
         void Reveal()
@@ -143,6 +173,21 @@ namespace PokerDefense.UI
         void Refresh()
         {
             bool choosing = round.IsChoosingCandidate;
+            // 대상을 고른 뒤에만 확률을 요청 - 같은 대상이면 워커가 재계산 없이 기존 결과를 유지한다
+            if (choosing == false && target >= 0)
+            {
+                round.RequestOdds(HandOddsSource.Assist, new[] { target });
+            }
+            else
+            {
+                round.CancelOdds(HandOddsSource.Assist);
+            }
+            string oddsText = round.OddsState == HandOddsState.Ready ? HandOddsText.Summary(round.Odds, round.PreviewHand().Category)
+                : round.OddsState == HandOddsState.Failed ? "확률을 계산하지 못했습니다. 후보 공개는 가능합니다."
+                : "교체 확률 계산 중...";
+            oddsButton.gameObject.SetActive(choosing == false && target >= 0);
+            oddsButton.interactable = round.OddsState == HandOddsState.Ready;
+            oddsLabel.text = "남은 덱에서 한 장을 뽑을 때\n" + oddsText;
             int count = round.Assistance == RoundController.AssistMode.RandomOne ? 1 : 3;
             bool eligible = false;
             for (int i = 0; i < slots.Length; i++)
@@ -183,7 +228,7 @@ namespace PokerDefense.UI
             preview.text = eligible
                 ? (target >= 0 ? "선택한 " + CardText.Of(round.Hand[target]) + " 카드 대신 들어올 후보를 확인하세요." : "위에서 다시 바꿀 카드 한 장을 선택하세요.")
                     + $"\n매 라운드 1회 · 후보 공개 전에는 취소 가능\n공개한 뒤에는 후보 한 장을 반드시 골라야 합니다."
-                    + (target >= 0 ? "\n" + HandOddsText.Describe(round.FindAssistOdds(target)) : "")
+
                 : "먼저 손패에서 카드를 한 번 교체하세요.\n그때 바뀐 카드만 여기에서 다시 바꿀 수 있어요.";
             if (choosing && selected < 0)
             {

@@ -1,32 +1,43 @@
 using System.Collections.Generic;
-using System.Text;
+using System.Globalization;
 using PokerDefense.Poker;
 
 namespace PokerDefense.UI
 {
-    // 선택한 자리를 교체했을 때 나올 수 있는 족보 전부와 그 확률을 나열한다. 하나를 추천하지 않는다
+    /** 교체 확률의 요약과 작은 확률 표시를 모든 화면에서 공유한다. */
     public static class HandOddsText
     {
-        public static string Describe(IReadOnlyList<HandOddsEntry> odds)
+        public static string Percent(int count, int total)
+        {
+            if (count <= 0 || total <= 0)
+            {
+                return "0%";
+            }
+            double percent = 100d * count / total;
+            return percent < 0.1d ? "<0.1%" : percent.ToString("0.#", CultureInfo.InvariantCulture) + "%";
+        }
+
+        public static string Summary(IReadOnlyList<HandOddsEntry> odds, HandCategory current)
         {
             if (odds == null || odds.Count == 0)
             {
                 return "남은 덱으로는 계산할 수 없습니다";
             }
-
-            StringBuilder text = new StringBuilder();
-
-            for (int i = 0; i < odds.Count; i++)
+            int higher = 0;
+            int same = 0;
+            int rank = HandRarity.RankOf(current);
+            foreach (HandOddsEntry entry in odds)
             {
-                if (i > 0) text.Append(" · ");
-
-                HandOddsEntry entry = odds[i];
-                text.Append(HandCategoryNames.Of(entry.Category)).Append(' ')
-                    .Append((entry.Probability * 100f).ToString("0.#")).Append("% (")
-                    .Append(entry.Count).Append('/').Append(entry.Total).Append(')');
+                if (HandRarity.RankOf(entry.Category) > rank)
+                {
+                    higher += entry.Count;
+                }
+                if (entry.Category == current)
+                {
+                    same += entry.Count;
+                }
             }
-
-            return text.ToString();
+            return "높은 족보 " + Percent(higher, odds[0].Total) + " · 같은 족보 " + Percent(same, odds[0].Total);
         }
     }
 }

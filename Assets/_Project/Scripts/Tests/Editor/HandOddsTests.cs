@@ -49,9 +49,8 @@ namespace PokerDefense.Tests
             var hand = Hand.Of("As Ah 3d 5c 9h");
             var unseen = Deck.BuildCards();
 
-            var odds = HandOdds.Find(hand, unseen, new[] { 0, 1, 2, 3 });
-
-            Assert.IsNull(odds);
+            Assert.IsNotNull(HandOdds.Find(hand, unseen, new[] { 0, 1, 2, 3 })); // MaxSlots(4)와 같음 - 계산함
+            Assert.IsNull(HandOdds.Find(hand, unseen, new[] { 0, 1, 2, 3, 4 })); // MaxSlots(4)보다 한 자리 많음
         }
 
         [Test]
