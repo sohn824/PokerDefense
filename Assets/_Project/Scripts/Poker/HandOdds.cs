@@ -30,7 +30,7 @@ namespace PokerDefense.Poker
     public static class HandOdds
     {
         // 이 이상 자리를 한꺼번에 채우면 조합 수가 너무 커져 정확히 세지 않는다
-        // 4장은 병렬 계산(FindParallel) 도입 후 벤치마크로 확인하고 올린 상한이다 - THREADING_RESULTS.md 참조
+        // 4장은 병렬 계산(FindParallel) 도입 후 벤치마크로 확인하고 올린 상한이다
         public const int MaxSlots = 4;
 
         public static List<HandOddsEntry> Find(IReadOnlyList<Card> hand, IReadOnlyList<Card> unseen, IReadOnlyList<int> indices,
