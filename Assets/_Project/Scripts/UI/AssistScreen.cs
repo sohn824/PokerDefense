@@ -173,7 +173,7 @@ namespace PokerDefense.UI
         void Refresh()
         {
             bool choosing = round.IsChoosingCandidate;
-            // 대상을 고른 뒤에만 확률을 요청 - 같은 대상이면 워커가 재계산 없이 기존 결과를 유지한다
+            // 대상을 고른 뒤에만 확률을 요청 - 같은 대상이면 Worker가 재계산 없이 기존 결과를 유지한다
             if (choosing == false && target >= 0)
             {
                 round.RequestOdds(HandOddsSource.Assist, new[] { target });

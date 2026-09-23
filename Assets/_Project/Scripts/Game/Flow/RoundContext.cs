@@ -56,7 +56,7 @@ namespace PokerDefense.Game
             return HandOdds.Find(hand, BuildUnseen(), indices);
         }
 
-        // 호출 시점의 검증과 복사는 메인에서 끝낸다. 워커는 RoundContext를 읽지 않는다.
+        // 호출 시점의 검증과 복사는 메인에서 끝낸다. Worker는 RoundContext를 읽지 않는다.
         public HandOddsRequest CaptureOdds(int version, HandOddsSource source, IReadOnlyList<int> indices)
         {
             if (Phase != RoundPhase.Exchange || IsChoosingCandidate || indices == null

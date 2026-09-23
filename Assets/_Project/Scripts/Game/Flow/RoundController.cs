@@ -94,7 +94,7 @@ namespace PokerDefense.Game
             }
         }
 
-        // 재사용을 위해 워커는 살려두고 진행 중인 계산만 취소한다
+        // 재사용을 위해 Worker는 살려두고 진행 중인 계산만 취소한다
         void OnDisable()
         {
             odds?.Cancel();
@@ -103,7 +103,7 @@ namespace PokerDefense.Game
 
         void OnDestroy() => odds?.Dispose();
 
-        // 매 프레임 완료 여부만 확인 - 계산 자체는 워커 스레드에서 돈다
+        // 매 프레임 완료 여부만 확인 - 계산 자체는 Worker 스레드에서 돈다
         void Update()
         {
             if (odds != null && odds.Poll())
@@ -129,7 +129,7 @@ namespace PokerDefense.Game
             OddsChanged?.Invoke();
         }
 
-        // 일반 교체·선택 교체는 워커 하나를 공유한다. 지금 활성 모드와 다른 출처의 요청은 무시
+        // 일반 교체·선택 교체는 Worker 하나를 공유한다. 지금 활성 모드와 다른 출처의 요청은 무시
         public void RequestOdds(HandOddsSource source, IReadOnlyList<int> indices)
         {
             if (odds == null || (source == HandOddsSource.Assist) != IsAssistOddsActive)
@@ -146,7 +146,7 @@ namespace PokerDefense.Game
             odds.Submit(round?.CaptureOdds(oddsVersion, source, indices));
         }
 
-        // 워커가 지금 그 출처의 요청을 들고 있을 때만 취소 - 다른 출처의 진행 중인 계산은 건드리지 않는다
+        // Worker가 지금 그 출처의 요청을 들고 있을 때만 취소 - 다른 출처의 진행 중인 계산은 건드리지 않는다
         public void CancelOdds(HandOddsSource source)
         {
             if (odds?.Source == source)

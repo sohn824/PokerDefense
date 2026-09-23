@@ -116,6 +116,7 @@ namespace PokerDefense.Tests
                 var versions = new List<int>();
                 int owner = Thread.CurrentThread.ManagedThreadId;
                 int workerThread = owner;
+                // 진짜 계산은 금방 끝나 연타 상황을 만들 수 없다. 첫 요청을 신호가 올 때까지 붙잡아두는 함수를 끼운다.
                 using (var worker = new HandOddsWorker((request, token) =>
                 {
                     workerThread = Thread.CurrentThread.ManagedThreadId;
@@ -174,6 +175,7 @@ namespace PokerDefense.Tests
             using (var stopped = new ManualResetEventSlim())
             {
                 int calls = 0;
+                // 취소가 걸릴 때까지 계산을 붙잡아둬야 대기 요청이 제거되는지 확인할 수 있다.
                 var worker = new HandOddsWorker((request, token) =>
                 {
                     Interlocked.Increment(ref calls);
@@ -207,6 +209,7 @@ namespace PokerDefense.Tests
         [UnityTest]
         public IEnumerator 오류를_회수하고_다음_요청은_정상_실행한다()
         {
+            // 진짜 계산으로는 실패를 만들 수 없다. 첫 요청만 예외를 던지는 함수를 끼운다.
             using (var worker = new HandOddsWorker((request, token) =>
             {
                 if (request.Version == 1)
