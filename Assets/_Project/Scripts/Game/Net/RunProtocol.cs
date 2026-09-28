@@ -1,0 +1,313 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using PokerDefense.Poker;
+
+namespace PokerDefense.Game
+{
+    // 클라이언트 처리: Accepted·Duplicate → 기록 삭제, Rejected → 다시 보내지 않음
+    public enum RunAckStatus : byte
+    {
+        Accepted = 0,   // 새로 저장
+        Duplicate = 1,  // 이미 저장된 runId (성공으로 취급)
+        Rejected = 2,   // 규칙 위반
+    }
+
+    // RunAck - 제출에 대한 서버 응답 (저장까지 끝났다는 확인, TCP의 도착 확인과 다름)
+    public readonly struct RunAck
+    {
+        public RunAck(Guid runId, RunAckStatus status, byte reason, int rank, int total)
+        {
+            RunId = runId;
+            Status = status;
+            Reason = reason;
+            Rank = rank;
+            Total = total;
+        }
+
+        public Guid RunId { get; }
+        public RunAckStatus Status { get; }
+        public byte Reason { get; }
+        public int Rank { get; }
+        public int Total { get; }
+    }
+
+    /**
+     * RunProtocol
+     *
+     * 결과 제출 프로토콜 v1 인코딩·디코딩 (연결은 하지 않고 바이트 변환만)
+     * 프레임: [본문 길이 u32][본문], 정수는 빅엔디언
+     * C++ Protocol.cpp와 바이트 단위로 동일 (양쪽 테스트가 같은 바이트열로 확인)
+     */
+    public static class RunProtocol
+    {
+        // 형식이 바뀌면 올림
+        public const byte Version = 1;
+
+        // 본문 최대 크기, 넘으면 오류
+        public const int MaxPayloadSize = 256;
+
+        // 족보를 한 번도 확정하지 않은 판의 bestHand
+        const byte NoHand = 0xFF;
+
+        // 본문 두 번째 바이트 (버전 다음)
+        const byte SubmitRunType = 1;
+        const byte SubmitAckType = 2;
+
+        // EncodeSubmit - 제출 본문 (전송과 outbox 파일 저장에 같이 사용)
+        public static byte[] EncodeSubmit(RunResult result)
+        {
+            byte[] ruleset = Encoding.ASCII.GetBytes(result.Ruleset);
+            if (ruleset.Length > byte.MaxValue)
+            {
+                throw new ArgumentException("ruleset 이름이 너무 김", nameof(result));
+            }
+
+            List<byte> bytes = new List<byte>(64);
+            bytes.Add(Version);
+            bytes.Add(SubmitRunType);
+            bytes.AddRange(result.RunId.ToByteArray());
+            bytes.Add((byte)ruleset.Length);
+            bytes.AddRange(ruleset);
+            WriteU16(bytes, result.Wave);
+            WriteU16(bytes, result.TotalWaves);
+            bytes.Add(result.Cleared ? (byte)1 : (byte)0);
+            WriteU16(bytes, result.Life);
+            WriteU16(bytes, result.Summons);
+            bytes.Add(result.BestHand.HasValue ? (byte)result.BestHand.Value : NoHand);
+            WriteU32(bytes, (uint)Math.Max(0, result.ElapsedMs));
+            return bytes.ToArray();
+        }
+
+        // TryDecodeSubmit - outbox 파일 읽기용. 형식이 어긋나면 false
+        public static bool TryDecodeSubmit(byte[] payload, out RunResult result)
+        {
+            result = null;
+            Reader reader = new Reader(payload);
+            if (reader.U8() != Version || reader.U8() != SubmitRunType)
+            {
+                return false;
+            }
+
+            Guid runId = new Guid(reader.Bytes(16));
+            int rulesetLength = reader.U8();
+            string ruleset = Encoding.ASCII.GetString(reader.Bytes(rulesetLength));
+            int wave = reader.U16();
+            int totalWaves = reader.U16();
+            int cleared = reader.U8();
+            int life = reader.U16();
+            int summons = reader.U16();
+            byte bestHand = reader.U8();
+            uint elapsed = reader.U32();
+
+            // 바이트가 모자라거나 남으면 형식 오류
+            if (reader.Ok == false || reader.Remaining != 0 || cleared > 1 || elapsed > int.MaxValue)
+            {
+                return false;
+            }
+
+            HandCategory? hand = bestHand == NoHand ? (HandCategory?)null : (HandCategory)bestHand;
+            result = new RunResult(runId, ruleset, wave, totalWaves, cleared == 1, life, summons, hand, (int)elapsed);
+            return true;
+        }
+
+        // EncodeAck - 응답 본문 (테스트의 가짜 서버 전용)
+        public static byte[] EncodeAck(RunAck ack)
+        {
+            List<byte> bytes = new List<byte>(32);
+            bytes.Add(Version);
+            bytes.Add(SubmitAckType);
+            bytes.AddRange(ack.RunId.ToByteArray());
+            bytes.Add((byte)ack.Status);
+            bytes.Add(ack.Reason);
+            WriteU32(bytes, (uint)ack.Rank);
+            WriteU32(bytes, (uint)ack.Total);
+            return bytes.ToArray();
+        }
+
+        // TryDecodeAck - 응답 해석. 형식이 어긋나거나 모르는 상태 값이면 false
+        public static bool TryDecodeAck(byte[] payload, out RunAck ack)
+        {
+            ack = default;
+            Reader reader = new Reader(payload);
+            if (reader.U8() != Version || reader.U8() != SubmitAckType)
+            {
+                return false;
+            }
+
+            Guid runId = new Guid(reader.Bytes(16));
+            byte status = reader.U8();
+            byte reason = reader.U8();
+            uint rank = reader.U32();
+            uint total = reader.U32();
+
+            if (reader.Ok == false || reader.Remaining != 0 || status > (byte)RunAckStatus.Rejected
+                || rank > int.MaxValue || total > int.MaxValue)
+            {
+                return false;
+            }
+
+            ack = new RunAck(runId, (RunAckStatus)status, reason, (int)rank, (int)total);
+            return true;
+        }
+
+        // Frame - 본문 앞에 길이 4바이트를 붙임
+        public static byte[] Frame(byte[] payload)
+        {
+            byte[] frame = new byte[payload.Length + 4];
+            frame[0] = (byte)(payload.Length >> 24);
+            frame[1] = (byte)(payload.Length >> 16);
+            frame[2] = (byte)(payload.Length >> 8);
+            frame[3] = (byte)payload.Length;
+            Buffer.BlockCopy(payload, 0, frame, 4, payload.Length);
+            return frame;
+        }
+
+        // 범위를 넘는 값은 잘라서 씀 (거부 판단은 서버 Validate)
+        static void WriteU16(List<byte> bytes, int value)
+        {
+            int clamped = Math.Max(0, Math.Min(ushort.MaxValue, value));
+            bytes.Add((byte)(clamped >> 8));
+            bytes.Add((byte)clamped);
+        }
+
+        static void WriteU32(List<byte> bytes, uint value)
+        {
+            bytes.Add((byte)(value >> 24));
+            bytes.Add((byte)(value >> 16));
+            bytes.Add((byte)(value >> 8));
+            bytes.Add((byte)value);
+        }
+
+        // Reader - 앞에서부터 읽음. 모자라면 Ok = false, 이후 읽기는 0 (확인은 마지막에 한 번)
+        sealed class Reader
+        {
+            readonly byte[] data;
+            int position;
+
+            public Reader(byte[] data)
+            {
+                this.data = data ?? Array.Empty<byte>();
+            }
+
+            public bool Ok { get; private set; } = true;
+            public int Remaining => data.Length - position;
+
+            public byte U8()
+            {
+                return Require(1) ? data[position++] : (byte)0;
+            }
+
+            public int U16()
+            {
+                if (Require(2) == false)
+                {
+                    return 0;
+                }
+
+                int value = (data[position] << 8) | data[position + 1];
+                position += 2;
+                return value;
+            }
+
+            public uint U32()
+            {
+                if (Require(4) == false)
+                {
+                    return 0;
+                }
+
+                uint value = ((uint)data[position] << 24) | ((uint)data[position + 1] << 16)
+                    | ((uint)data[position + 2] << 8) | data[position + 3];
+                position += 4;
+                return value;
+            }
+
+            public byte[] Bytes(int count)
+            {
+                byte[] bytes = new byte[count];
+                if (Require(count))
+                {
+                    Buffer.BlockCopy(data, position, bytes, 0, count);
+                    position += count;
+                }
+
+                return bytes;
+            }
+
+            bool Require(int count)
+            {
+                if (Ok == false || Remaining < count)
+                {
+                    Ok = false;
+                    return false;
+                }
+
+                return true;
+            }
+        }
+    }
+
+    /**
+     * RunFrameReader
+     *
+     * 받은 바이트를 [길이][본문] 프레임 단위로 잘라냄
+     * TCP는 보낸 단위를 지키지 않음 (반쪽만 오거나 두 개가 붙어 옴)
+     * 사용법: 받은 만큼 Append → NeedMore가 나올 때까지 Next 반복
+     */
+    public sealed class RunFrameReader
+    {
+        public enum Result
+        {
+            NeedMore,
+            Frame,
+            Error,
+        }
+
+        readonly List<byte> buffer = new List<byte>();  // 아직 꺼내지 않은 바이트
+        bool failed;  // 잘못된 길이를 받으면 이후 계속 Error
+
+        // Append - recv로 받은 바이트를 뒤에 붙임
+        public void Append(byte[] data, int count)
+        {
+            if (failed == false)
+            {
+                buffer.AddRange(new ArraySegment<byte>(data, 0, count));
+            }
+        }
+
+        // Next - 프레임 하나가 다 모였으면 꺼내고, 아니면 NeedMore
+        public Result Next(out byte[] payload)
+        {
+            payload = null;
+            if (failed)
+            {
+                return Result.Error;
+            }
+
+            // 길이 4바이트가 다 와야 판단 가능
+            if (buffer.Count < 4)
+            {
+                return Result.NeedMore;
+            }
+
+            uint length = ((uint)buffer[0] << 24) | ((uint)buffer[1] << 16) | ((uint)buffer[2] << 8) | buffer[3];
+
+            // 본문을 기다리기 전에 길이부터 검사 (거대한 길이로 메모리를 잡는 입력 차단)
+            if (length == 0 || length > RunProtocol.MaxPayloadSize)
+            {
+                failed = true;
+                return Result.Error;
+            }
+
+            if (buffer.Count < 4 + length)
+            {
+                return Result.NeedMore;
+            }
+
+            payload = buffer.GetRange(4, (int)length).ToArray();
+            buffer.RemoveRange(0, 4 + (int)length);
+            return Result.Frame;
+        }
+    }
+}

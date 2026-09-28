@@ -106,3 +106,9 @@ __pycache__/
 # Unity MCP diagnostic captures (not runtime assets).
 /Assets/Screenshots/
 /Assets/Screenshots.meta
+
+# Rank server (C++) - keep the hand-made solution, ignore build output and local data
+!/Server/RankServer.sln
+/Server/bin/
+/Server/obj/
+/Server/runs.txt

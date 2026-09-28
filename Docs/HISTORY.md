@@ -1,5 +1,13 @@
 # 작업 히스토리
 
+## 2026-09-27 — 게임 결과 TCP 제출과 C++ 랭킹 서버
+
+- THREADING_PLAN의 "다음 단계: TCP 결과 제출"을 구현했다. 상세는 [NETWORK.md](NETWORK.md).
+- 서버(`Server/`): C++17, Winsock, select 단일 스레드. 길이 프리픽스 프레임 조립, 최대 크기 검사, 유휴 시간 초과, 동시 연결 한도, 규칙상 모순 값 거부, runId 중복 제거, 파일 저장 후 ACK.
+- 클라이언트(`Scripts/Game/Net/`): outbox 파일에 먼저 저장 → `Task.Run`에서 전송 → ACK를 받으면 삭제. 결과는 `Update`에서 확인해 결과 화면에 한 줄로 표시. 웨이브 스킵을 쓴 판은 보내지 않도록 `GameFlowController.UsedDevSkip`을 추가했다.
+- 결정: 서버 I/O는 IOCP 대신 select(규모에 비해 IOCP는 과함, 한 스레드라 저장소 락 불필요), 형식은 JSON 대신 고정 바이너리(메시지 2종), 재시도는 타이머 없이 다음 실행·다음 게임 종료 때.
+- 검증: C++ 테스트 16개 통과. C# 네트워크 테스트 21개는 Unity 밖에서 .NET으로 컴파일해 통과를 확인했고, 실제 C++ 서버와 붙여 Accepted → Duplicate(같은 순위) → Rejected를 확인했다. 이후 Unity Test Runner에서 EditMode 246/246 통과(기존 225 + 네트워크 21).
+
 ## 2026-09-27 — 멀티스레드 주석 정리 검증, README 추가, 문서 정리
 
 - 멀티스레드 3파일(HandOdds·HandOddsWorker·HandOddsRequest)의 주석을 정리한 커밋에 동작 불변 코드 변경 2건이 포함됐다: `Poll`의 지역 변수 `publish` → `isPublishNeeded`, `Find`/`FindParallel`의 인라인 람다를 `Action onCombo` 변수로 추출.

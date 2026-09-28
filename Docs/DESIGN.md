@@ -9,7 +9,7 @@
 
 | 항목 | 결정 |
 |---|---|
-| 게임 모드 | **싱글 PvE만.** 네트워크 코드 없음 |
+| 게임 모드 | **싱글 PvE만.** 게임 진행에는 네트워크를 쓰지 않는다. 끝난 결과만 선택적으로 서버에 보낸다([NETWORK.md](NETWORK.md)) |
 | 렌더링 | **2D 스프라이트 (URP 2D Renderer)** |
 | 소환 규칙 | **족보 1개 = 유닛 1기** |
 | 배치 규칙 | **계속 쌓아 배치하고, 같은 유닛끼리 합친다** |
@@ -655,7 +655,7 @@ Joker 보상은 `WaveDefinition.jokerReward`에 적는다. **웨이브를 클리
 
 메인 스레드에서 `RoundContext.CaptureOdds`로 손패, 남은 덱, 고른 자리를 복사하면 `HandOddsWorker`가 계산한다. `RoundController.Update`가 끝났는지 확인해서 지금 요청의 결과만 UI에 넘긴다. 실행 중인 작업은 최대 1개, 대기 요청은 가장 최근 것 1개만 둔다. 취소돼서 중간까지만 센 집계는 보여주지 않는다. 족보 종류만 판정하는 경로와 기존 손패 판정이 같은 결과를 내는지는 테스트로 보장한다. 병렬 기준은 3으로, 교체 상한 4와 따로 정한다. 1~2장은 워커에서 순차로, 3~4장은 최대 2스레드 병렬로 계산하며, 논리 CPU가 하나면 순차로 돈다.
 
-구조, 수명, 다시 측정하는 방법은 [THREADING_PLAN.md](THREADING_PLAN.md), 측정 결과와 검증 한계는 [THREADING_RESULTS.md](THREADING_RESULTS.md)에 있다. TCP나 서버 랭킹은 지금 게임 기능이 아니다.
+구조, 수명, 다시 측정하는 방법은 [THREADING_PLAN.md](THREADING_PLAN.md), 측정 결과와 검증 한계는 [THREADING_RESULTS.md](THREADING_RESULTS.md)에 있다. 게임이 끝난 뒤의 결과 제출과 랭킹은 [NETWORK.md](NETWORK.md)에 있다.
 
 ### 교체 확률 UI (2026-09-20)
 

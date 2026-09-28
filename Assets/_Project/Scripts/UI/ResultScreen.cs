@@ -22,11 +22,16 @@ namespace PokerDefense.UI
         [SerializeField] TMP_Text titleLabel;
         [SerializeField] TMP_Text bodyLabel;
         [SerializeField] Button restartButton;
+        [SerializeField] RunReporter reporter;  // 없으면 랭킹 줄을 표시하지 않음
 
         void Awake()
         {
             restartButton.onClick.AddListener(Restart);
             flow.FlowChanged += Refresh;
+            if (reporter != null)
+            {
+                reporter.StatusChanged += Refresh;
+            }
 
             panel.SetActive(false);
         }
@@ -69,7 +74,37 @@ namespace PokerDefense.UI
                 }
             }
 
+            string ranking = RankingLine();
+            if (ranking != null)
+            {
+                body.AppendLine();
+                body.Append(ranking);
+            }
+
             bodyLabel.text = body.ToString();
+        }
+
+        // RankingLine - 결과 전송 상태를 한 줄로 표시. 보낼 대상이 아니면 null
+        string RankingLine()
+        {
+            if (reporter == null)
+            {
+                return null;
+            }
+
+            switch (reporter.Status)
+            {
+                case RunReportStatus.Sending:
+                    return "랭킹   기록 전송 중...";
+                case RunReportStatus.Sent:
+                    return $"랭킹   기록 {reporter.Total}개 중 {reporter.Rank}위";
+                case RunReportStatus.Offline:
+                    return "랭킹   서버 연결 실패 · 다음 실행 때 다시 전송";
+                case RunReportStatus.Rejected:
+                    return "랭킹   서버가 기록을 받지 않음";
+                default:
+                    return null;
+            }
         }
 
         static string BestHand(RunStats stats)

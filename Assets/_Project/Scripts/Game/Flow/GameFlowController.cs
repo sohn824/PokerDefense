@@ -178,6 +178,9 @@ namespace PokerDefense.Game
         // 이미 끝난 판이면 스킵 불가
         public bool CanDevSkip => combat.IsFighting == false && IsFinished == false;
 
+        // 이번 판에 웨이브 스킵을 한 번이라도 썼는지 (결과 전송에서 제외하는 데 사용)
+        public bool UsedDevSkip { get; private set; }
+
         // 개발 전용
         // 전투 없이 지금 웨이브를 클리어한 것으로 치고 다음 라운드로 넘김
         public void DevSkipWave()
@@ -187,6 +190,7 @@ namespace PokerDefense.Game
                 return;
             }
 
+            UsedDevSkip = true;
             stage.ApplyCombatResult(CombatOutcome.Cleared, 0, 0);
             AdvanceRound(CombatOutcome.Cleared);
         }

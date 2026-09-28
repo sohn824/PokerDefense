@@ -1,6 +1,6 @@
 # 교체 확률 멀티스레드 구현·검증
 
-구조와 설계 이유는 [THREADING_PLAN.md](THREADING_PLAN.md), 현재 게임 규칙은 [DESIGN.md](DESIGN.md) §19~20을 따른다. TCP는 아직 구현하지 않았다.
+구조와 설계 이유는 [THREADING_PLAN.md](THREADING_PLAN.md), 현재 게임 규칙은 [DESIGN.md](DESIGN.md) §19~20을 따른다. 게임 결과의 TCP 제출은 [NETWORK.md](NETWORK.md)에 따로 정리했다.
 
 이 문서는 2026-09-20 구현과 2026-09-21 조정 기록을 함께 담는다. **현재 동작은 바로 아래 "현재 동작"이 기준**이고, 그 아래 날짜별 절은 당시 상태를 기록한 것이다.
 
@@ -106,4 +106,4 @@ THREADING_PLAN "상한과 측정"에서 정한 순서(상한 3 유지 → 구현
 
 - 기존 폰트(Light SDF)의 NativeFormatImporter 일관성 오류가 Play 검증 중 다시 보였다. 새 C# 컴파일 오류나 워커 예외와는 별개의 문제다.
 - 확률 요약 UI(2026-09-20 보완): 750×1334 GameView에서 3장 교체 요약이 2줄로 나오고 TMP overflow가 없음을 확인했다. 당시 EditMode 225/225.
-- 실제 모바일·Player에서의 성능과 프레임 QA, 긴 확률 문구 UX, TCP 결과 제출과 랭킹은 이후 작업이다. 오프라인 게임 구조와 저장 규칙은 바꾸지 않았다.
+- 실제 모바일·Player에서의 성능과 프레임 QA, 긴 확률 문구 UX는 이후 작업이다. TCP 결과 제출은 2026-09-27에 구현했다([NETWORK.md](NETWORK.md)). 오프라인 게임 구조와 저장 규칙은 바꾸지 않았다.

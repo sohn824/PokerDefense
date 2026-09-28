@@ -15036,6 +15036,7 @@ MonoBehaviour:
   titleLabel: {fileID: 2005218190}
   bodyLabel: {fileID: 1744732342}
   restartButton: {fileID: 555971384}
+  reporter: {fileID: 1911605826}
 --- !u!114 &746656855
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36404,6 +36405,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1911605825}
   - component: {fileID: 1911605824}
+  - component: {fileID: 1911605826}
   m_Layer: 0
   m_Name: GameFlowController
   m_TagString: Untagged
@@ -36441,6 +36443,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1911605826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1911605823}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 325258a36c36ef846b48a09b4c26e142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.RunReporter
+  flow: {fileID: 1911605824}
+  stage: {fileID: 2017484794}
+  submitEnabled: 1
+  host: 127.0.0.1
+  port: 7777
+  timeoutSeconds: 3
 --- !u!1 &1914004089
 GameObject:
   m_ObjectHideFlags: 0
