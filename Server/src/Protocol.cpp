@@ -6,13 +6,14 @@ namespace rank
 {
     namespace
     {
-        // hand-loop-v1 규칙의 값 범위 - 게임 데이터(Stage_1.asset, HandCategory)가 바뀌면 같이 고침
+        // hand-loop-v1 규칙에서 나올 수 있는 값의 범위
+        // 게임 데이터(Stage_1.asset, HandCategory)가 바뀌면 같이 고침
         constexpr const char* HandLoopRuleset = "hand-loop-v1";
         constexpr uint16_t HandLoopTotalWaves = 50;
         constexpr uint16_t HandLoopStartingLife = 20;
-        constexpr uint8_t HandLoopLastHand = 12;  // RoyalStraightFlush
+        constexpr uint8_t HandLoopLastHand = 12;  // 가장 높은 족보 (RoyalStraightFlush)
 
-        // 버전·종류가 기대한 메시지인지 확인
+        // ReadHeader - 본문 앞 두 바이트(버전, 종류)가 기대한 메시지인지 확인
         bool ReadHeader(ByteReader& reader, MessageType expected)
         {
             uint8_t version = reader.U8();
@@ -21,7 +22,9 @@ namespace rank
         }
     }
 
-    // EncodeSubmit - 필드를 정해진 순서대로 씀
+    // EncodeSubmit - RunRecord -> 서버로 보낼 바이트 (길이 4바이트 제외)
+    // 테스트 전용 함수 - 실제 클라이언트는 C#의 RunProtocol.EncodeSubmit을 사용
+    // 필드는 Protocol.h 머리 설명의 순서대로 씀
     std::vector<uint8_t> EncodeSubmit(const RunRecord& record)
     {
         std::vector<uint8_t> out;
@@ -40,7 +43,8 @@ namespace rank
         return out;
     }
 
-    // DecodeSubmit - 끝까지 읽고 마지막에 한 번만 검사. 실패하면 record는 그대로
+    // DecodeSubmit - 클라이언트에서 받은 바이트 -> RunRecord (길이 4바이트 제외)
+    // 끝까지 읽은 뒤 한 번만 검사하고, 실패하면 record는 건드리지 않음
     bool DecodeSubmit(const uint8_t* data, size_t size, RunRecord& record)
     {
         ByteReader reader(data, size);
@@ -68,7 +72,7 @@ namespace rank
         decoded.bestHand = reader.U8();
         decoded.elapsedMs = reader.U32();
 
-        // 바이트가 모자라거나 남으면 형식 오류 (다른 버전 메시지를 잘못 읽지 않게)
+        // 바이트가 모자라거나 남으면 형식 오류
         if (reader.Ok() == false || reader.Remaining() != 0 || cleared > 1)
         {
             return false;
@@ -79,7 +83,7 @@ namespace rank
         return true;
     }
 
-    // EncodeAck - 응답 본문을 만듦
+    // EncodeAck - SubmitAck -> 클라이언트로 보낼 바이트 (길이 4바이트 제외)
     std::vector<uint8_t> EncodeAck(const SubmitAck& ack)
     {
         std::vector<uint8_t> out;
@@ -93,7 +97,9 @@ namespace rank
         return out;
     }
 
-    // DecodeAck - 응답 해석 (테스트 전용). 모르는 상태 값이면 실패
+    // DecodeAck - 서버에서 받은 바이트 -> SubmitAck (길이 4바이트 제외)
+    // 테스트 전용 함수 - 실제 클라이언트는 C#의 RunProtocol.TryDecodeAck를 사용
+    // 형식이 어긋나거나 모르는 상태·이유 값이면 실패
     bool DecodeAck(const uint8_t* data, size_t size, SubmitAck& ack)
     {
         ByteReader reader(data, size);
@@ -122,7 +128,7 @@ namespace rank
         return true;
     }
 
-    // MakeFrame - [길이 u32][본문]
+    // MakeFrame - 본문 앞에 길이 4바이트를 붙여 보낼 메시지로 만듦
     std::vector<uint8_t> MakeFrame(const std::vector<uint8_t>& payload)
     {
         std::vector<uint8_t> frame;
@@ -132,7 +138,7 @@ namespace rank
         return frame;
     }
 
-    // Validate - 규칙상 나올 수 없는 값이면 거부
+    // Validate - 게임 규칙상 나올 수 없는 값이면 거부 이유를 돌려줌
     RejectReason Validate(const RunRecord& record)
     {
         if (record.ruleset != HandLoopRuleset)
@@ -140,20 +146,20 @@ namespace rank
             return RejectReason::UnknownRuleset;
         }
 
-        // 값 범위 - 소환은 라운드당 최대 1기라 웨이브 수를 넘을 수 없음
+        // 1) 값마다 범위 확인 (소환은 라운드당 최대 1기라 웨이브 수를 넘을 수 없음)
         bool inRange = record.totalWaves == HandLoopTotalWaves
             && record.wave >= 1 && record.wave <= record.totalWaves
             && record.life <= HandLoopStartingLife
             && record.summons <= record.wave
             && (record.bestHand <= HandLoopLastHand || record.bestHand == NoHand);
 
-        // 값끼리 모순 - 클리어면 마지막 웨이브까지, 아니면 라이프 0으로 끝난 판
+        // 2) 값끼리 맞는지 확인: 클리어면 마지막 웨이브까지 갔어야 하고, 아니면 라이프 0으로 끝났어야 함
         bool consistent = record.cleared ? record.wave == record.totalWaves : record.life == 0;
 
         return inRange && consistent ? RejectReason::None : RejectReason::OutOfRange;
     }
 
-    // ToHex - runId를 32자리 16진수 문자열로
+    // ToHex - runId 16바이트를 32자리 16진수 문자열로 변환 (1바이트 = 16진수 2자리)
     std::string ToHex(const RunId& id)
     {
         static const char* digits = "0123456789abcdef";

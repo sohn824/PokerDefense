@@ -36,12 +36,19 @@ namespace PokerDefense.Game
      * RunProtocol
      *
      * 결과 제출 프로토콜 v1 인코딩·디코딩 (연결은 하지 않고 바이트 변환만)
-     * 프레임: [본문 길이 u32][본문], 정수는 빅엔디언
-     * C++ Protocol.cpp와 바이트 단위로 동일 (양쪽 테스트가 같은 바이트열로 확인)
+     * C++ 서버의 Protocol.h와 같은 형식 (양쪽 테스트가 같은 바이트열로 확인)
+     *
+     * 메시지 하나 = [길이 4바이트][본문]
+     * TCP는 메시지 경계가 없어서, 받는 쪽이 본문 끝을 알 수 있게 길이를 먼저 보냄
+     * 1바이트는 0~255(256가지)라 큰 수는 여러 바이트로 나눠 씀
+     * 숫자는 큰 자리 바이트부터 씀 (빅엔디언, 예: 300 = 1×256 + 44 → 01 2C)
+     *
+     * 메시지 본문은 Encode 함수에 적힌 순서대로 값을 이어 붙임
+     * Encode = 객체 → 바이트, Decode = 바이트 → 객체
      */
     public static class RunProtocol
     {
-        // 형식이 바뀌면 올림
+        // 프로토콜 형식이 바뀌면 이 값을 올림
         public const byte Version = 1;
 
         // 본문 최대 크기, 넘으면 오류
@@ -50,11 +57,12 @@ namespace PokerDefense.Game
         // 족보를 한 번도 확정하지 않은 판의 bestHand
         const byte NoHand = 0xFF;
 
-        // 본문 두 번째 바이트 (버전 다음)
+        // 메시지 종류 - 본문 [버전][종류][…] 중 두 번째 바이트, 받는 쪽이 이 값으로 제출/답장을 구분
         const byte SubmitRunType = 1;
         const byte SubmitAckType = 2;
 
-        // EncodeSubmit - 제출 본문 (전송과 outbox 파일 저장에 같이 사용)
+        // EncodeSubmit - RunResult -> 보낼 바이트 (길이 4바이트 제외)
+        // 전송할 때와 outbox 파일에 저장할 때 같이 사용
         public static byte[] EncodeSubmit(RunResult result)
         {
             byte[] ruleset = Encoding.ASCII.GetBytes(result.Ruleset);
@@ -79,7 +87,8 @@ namespace PokerDefense.Game
             return bytes.ToArray();
         }
 
-        // TryDecodeSubmit - outbox 파일 읽기용. 형식이 어긋나면 false
+        // TryDecodeSubmit - 저장된 바이트 -> RunResult (길이 4바이트 제외, outbox 파일을 읽을 때 사용)
+        // 형식이 어긋나면 false
         public static bool TryDecodeSubmit(byte[] payload, out RunResult result)
         {
             result = null;
@@ -111,7 +120,7 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // EncodeAck - 응답 본문 (테스트의 가짜 서버 전용)
+        // EncodeAck - RunAck -> 보낼 바이트 (길이 4바이트 제외, 테스트의 가짜 서버 전용)
         public static byte[] EncodeAck(RunAck ack)
         {
             List<byte> bytes = new List<byte>(32);
@@ -125,7 +134,8 @@ namespace PokerDefense.Game
             return bytes.ToArray();
         }
 
-        // TryDecodeAck - 응답 해석. 형식이 어긋나거나 모르는 상태 값이면 false
+        // TryDecodeAck - 받은 바이트 -> RunAck (길이 4바이트 제외)
+        // 형식이 어긋나거나 모르는 상태 값이면 false
         public static bool TryDecodeAck(byte[] payload, out RunAck ack)
         {
             ack = default;
@@ -151,7 +161,7 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // Frame - 본문 앞에 길이 4바이트를 붙임
+        // Frame - 본문 앞에 길이 4바이트를 붙여 보낼 메시지로 만듦
         public static byte[] Frame(byte[] payload)
         {
             byte[] frame = new byte[payload.Length + 4];
@@ -179,7 +189,8 @@ namespace PokerDefense.Game
             bytes.Add((byte)value);
         }
 
-        // Reader - 앞에서부터 읽음. 모자라면 Ok = false, 이후 읽기는 0 (확인은 마지막에 한 번)
+        // Reader - 본문을 앞에서부터 차례로 읽음
+        // 바이트가 모자라면 Ok = false, 이후 읽기는 0을 돌려줌 (그래서 확인은 마지막에 한 번만)
         sealed class Reader
         {
             readonly byte[] data;

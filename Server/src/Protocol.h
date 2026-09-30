@@ -8,19 +8,22 @@
 namespace rank
 {
     /**
-     * 결과 제출 프로토콜 v1 - C# RunProtocol.cs와 바이트 단위로 동일
+     * 결과 제출 프로토콜 v1 (C# 클라이언트의 RunProtocol.cs와 같은 형식)
      *
-     * 프레임: [본문 길이 u32][본문], 정수는 빅엔디언
+     * 메시지 하나 = [길이 4바이트][본문]
+     * TCP는 메시지 경계가 없어서, 받는 쪽이 본문 끝을 알 수 있게 길이를 먼저 보냄
+     * 1바이트는 0~255(256가지)라 큰 수는 여러 바이트로 나눠 씀
+     * 숫자는 큰 자리 바이트부터 씀 (빅엔디언, 예: 300 = 1×256 + 44 → 01 2C)
      *
-     * SubmitRun (클라이언트 → 서버)
-     *   version u8 | type u8 | runId u8[16] | rulesetLength u8 | ruleset
-     *   wave u16 | totalWaves u16 | cleared u8 | life u16 | summons u16 | bestHand u8 | elapsedMs u32
-     * SubmitAck (서버 → 클라이언트)
-     *   version u8 | type u8 | runId u8[16] | status u8 | reason u8 | rank u32 | total u32
+     * 메시지 본문은 아래 값을 순서대로 이어 붙임 (크기는 구조체 타입과 같음)
+     *   SubmitRun  클라 → 서버: version, type, runId, 규칙 이름 길이, 규칙 이름,
+     *                           wave, totalWaves, cleared, life, summons, bestHand, elapsedMs
+     *   SubmitAck  서버 → 클라: version, type, runId, status, reason, rank, total
      *
-     * Ack = 검사하고 파일 저장까지 끝났다는 확인 (TCP의 도착 확인과 다름)
+     * Ack = 서버가 검사하고 파일 저장까지 끝낸 뒤 보내는 답장 (TCP의 도착 확인과 다름)
      */
-    // 형식이 바뀌면 올림
+
+    // 프로토콜 형식이 바뀌면 이 값을 올림
     constexpr uint8_t ProtocolVersion = 1;
 
     // 본문 최대 크기, 넘으면 연결 끊음
@@ -29,14 +32,14 @@ namespace rank
     // 족보를 한 번도 확정하지 않은 판의 bestHand
     constexpr uint8_t NoHand = 0xFF;
 
-    // 본문 두 번째 바이트 (버전 다음)
+    // 메시지 종류 - 본문 [버전][종류][…] 중 두 번째 바이트, 받는 쪽이 이 값으로 제출/답장을 구분
     enum class MessageType : uint8_t
     {
         SubmitRun = 1,
         SubmitAck = 2,
     };
 
-    // 클라이언트 처리: Accepted·Duplicate → 기록 삭제, Rejected → 다시 보내지 않음
+    // 클라이언트 처리: Accepted·Duplicate -> 기록 삭제, Rejected -> 다시 보내지 않음
     enum class AckStatus : uint8_t
     {
         Accepted = 0,   // 새로 저장
@@ -44,7 +47,7 @@ namespace rank
         Rejected = 2,   // 규칙 위반
     };
 
-    // Rejected 이유
+    // Rejected된 이유
     enum class RejectReason : uint8_t
     {
         None = 0,
@@ -52,7 +55,7 @@ namespace rank
         OutOfRange = 2,      // 나올 수 없는 값
     };
 
-    // 판마다 클라이언트가 만드는 Guid, 중복 제출 판별용
+    // 판마다 클라이언트가 만드는 Guid(전역 고유 식별자), 중복 제출 판별용
     using RunId = std::array<uint8_t, 16>;
 
     // RunRecord - 한 판의 결과 (C# RunResult와 동일)
@@ -60,13 +63,13 @@ namespace rank
     {
         RunId runId{};
         std::string ruleset;       // 규칙 버전 Key
-        uint16_t wave = 0;         // 도달 웨이브 (실패한 웨이브 포함)
-        uint16_t totalWaves = 0;
-        bool cleared = false;      // 마지막 웨이브까지 버텼는지
-        uint16_t life = 0;         // 게임 오버면 0
-        uint16_t summons = 0;
-        uint8_t bestHand = NoHand; // HandCategory 값
-        uint32_t elapsedMs = 0;
+        uint16_t wave = 0;         // 마지막으로 치른 웨이브 번호 (1부터, 게임 오버를 낸 웨이브 포함)
+        uint16_t totalWaves = 0;   // 전체 웨이브 수 (hand-loop-v1은 50)
+        bool cleared = false;      // 모든 웨이브를 치렀는지 (마지막 웨이브에서 라이프가 0이 돼도 true)
+        uint16_t life = 0;         // 남은 라이프 (게임 오버면 0)
+        uint16_t summons = 0;      // 총 소환 수 (라운드당 최대 1, 소환 포기·퇴장한 유닛도 포함)
+        uint8_t bestHand = NoHand; // 확정한 족보 중 가장 희귀한 것의 HandCategory 값, 확정한 적 없으면 NoHand
+        uint32_t elapsedMs = 0;    // 게임 시간 기준 (ms). 일시정지는 빠지고, 배속 중에는 실제 시간보다 빨리 흐름
     };
 
     // SubmitAck - 제출에 대한 서버 응답
@@ -79,20 +82,26 @@ namespace rank
         uint32_t total = 0;         // 전체 기록 수
     };
 
-    // 아래 Encode/Decode는 본문만 다룸 (길이 4바이트는 MakeFrame · FrameReader 담당)
+    // Encode = 구조체 -> 바이트, Decode = 바이트 -> 구조체
+    // 둘 다 메시지 본문만 다룸
+    // 앞의 길이 4바이트는 MakeFrame · FrameReader가 담당
 
-    // 서버용: TcpServer::Handle에서 Decode → Validate → 저장 → EncodeAck → MakeFrame
-    bool DecodeSubmit(const uint8_t* data, size_t size, RunRecord& record);
+    // [서버가 쓰는 함수]
+    // 제출을 받아 답장하는 순서 (TcpServer::Handle)
+    //   DecodeSubmit → Validate → 파일 저장 → EncodeAck → MakeFrame
+    bool DecodeSubmit(const uint8_t* data, size_t size, RunRecord& record);  // 형식이 어긋나면 false
     std::vector<uint8_t> EncodeAck(const SubmitAck& ack);
-    std::vector<uint8_t> MakeFrame(const std::vector<uint8_t>& payload);
+    std::vector<uint8_t> MakeFrame(const std::vector<uint8_t>& payload);     // 본문 앞에 길이를 붙임
 
-    // 클라이언트용: 실제 클라이언트는 C#, 여기서는 테스트 전용
+    // [테스트만 쓰는 함수]
+    // 실제 클라이언트가 아니라 서버 테스트에서 클라이언트 역할을 할 때 사용
     std::vector<uint8_t> EncodeSubmit(const RunRecord& record);
     bool DecodeAck(const uint8_t* data, size_t size, SubmitAck& ack);
 
-    // Validate - 규칙상 나올 수 없는 값이면 거부 (제출 받을 때 · 파일 다시 읽을 때)
+    // Validate - 게임 규칙상 나올 수 없는 값이면 거부 이유를 돌려줌
+    // 제출을 받을 때, 서버 시작 시 저장 파일을 다시 읽을 때 사용
     RejectReason Validate(const RunRecord& record);
 
-    // ToHex - runId를 32자리 16진수로 (중복 키 · 파일 · 로그)
+    // ToHex - runId 16바이트를 32자리 16진수 문자열로 변환 (중복 확인 키 · 저장 파일 · 로그에 사용)
     std::string ToHex(const RunId& id);
 }
