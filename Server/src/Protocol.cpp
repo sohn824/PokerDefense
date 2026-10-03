@@ -16,8 +16,8 @@ namespace rank
         // ReadHeader - 본문 앞 두 바이트(버전, 종류)가 기대한 메시지인지 확인
         bool ReadHeader(ByteReader& reader, MessageType expected)
         {
-            uint8_t version = reader.U8();
-            uint8_t type = reader.U8();
+            uint8_t version = reader.ReadByte();
+            uint8_t type = reader.ReadByte();
             return reader.Ok() && version == ProtocolVersion && type == static_cast<uint8_t>(expected);
         }
     }
@@ -28,18 +28,18 @@ namespace rank
     std::vector<uint8_t> EncodeSubmit(const RunRecord& record)
     {
         std::vector<uint8_t> out;
-        WriteU8(out, ProtocolVersion);
-        WriteU8(out, static_cast<uint8_t>(MessageType::SubmitRun));
+        WriteByte(out, ProtocolVersion);
+        WriteByte(out, static_cast<uint8_t>(MessageType::SubmitRun));
         out.insert(out.end(), record.runId.begin(), record.runId.end());
-        WriteU8(out, static_cast<uint8_t>(record.ruleset.size()));
+        WriteByte(out, static_cast<uint8_t>(record.ruleset.size()));
         out.insert(out.end(), record.ruleset.begin(), record.ruleset.end());
-        WriteU16(out, record.wave);
-        WriteU16(out, record.totalWaves);
-        WriteU8(out, record.cleared ? 1 : 0);
-        WriteU16(out, record.life);
-        WriteU16(out, record.summons);
-        WriteU8(out, record.bestHand);
-        WriteU32(out, record.elapsedMs);
+        WriteUInt16(out, record.wave);
+        WriteUInt16(out, record.totalWaves);
+        WriteByte(out, record.cleared ? 1 : 0);
+        WriteUInt16(out, record.life);
+        WriteUInt16(out, record.summons);
+        WriteByte(out, record.bestHand);
+        WriteUInt32(out, record.elapsedMs);
         return out;
     }
 
@@ -54,23 +54,23 @@ namespace rank
         }
 
         RunRecord decoded;
-        reader.Bytes(decoded.runId.data(), decoded.runId.size());
+        reader.ReadBytes(decoded.runId.data(), decoded.runId.size());
 
-        uint8_t rulesetLength = reader.U8();
+        uint8_t rulesetLength = reader.ReadByte();
         std::vector<uint8_t> ruleset(rulesetLength);
         if (rulesetLength > 0)
         {
-            reader.Bytes(ruleset.data(), rulesetLength);
+            reader.ReadBytes(ruleset.data(), rulesetLength);
         }
 
         decoded.ruleset.assign(ruleset.begin(), ruleset.end());
-        decoded.wave = reader.U16();
-        decoded.totalWaves = reader.U16();
-        uint8_t cleared = reader.U8();
-        decoded.life = reader.U16();
-        decoded.summons = reader.U16();
-        decoded.bestHand = reader.U8();
-        decoded.elapsedMs = reader.U32();
+        decoded.wave = reader.ReadUInt16();
+        decoded.totalWaves = reader.ReadUInt16();
+        uint8_t cleared = reader.ReadByte();
+        decoded.life = reader.ReadUInt16();
+        decoded.summons = reader.ReadUInt16();
+        decoded.bestHand = reader.ReadByte();
+        decoded.elapsedMs = reader.ReadUInt32();
 
         // 바이트가 모자라거나 남으면 형식 오류
         if (reader.Ok() == false || reader.Remaining() != 0 || cleared > 1)
@@ -87,13 +87,13 @@ namespace rank
     std::vector<uint8_t> EncodeAck(const SubmitAck& ack)
     {
         std::vector<uint8_t> out;
-        WriteU8(out, ProtocolVersion);
-        WriteU8(out, static_cast<uint8_t>(MessageType::SubmitAck));
+        WriteByte(out, ProtocolVersion);
+        WriteByte(out, static_cast<uint8_t>(MessageType::SubmitAck));
         out.insert(out.end(), ack.runId.begin(), ack.runId.end());
-        WriteU8(out, static_cast<uint8_t>(ack.status));
-        WriteU8(out, static_cast<uint8_t>(ack.reason));
-        WriteU32(out, ack.rank);
-        WriteU32(out, ack.total);
+        WriteByte(out, static_cast<uint8_t>(ack.status));
+        WriteByte(out, static_cast<uint8_t>(ack.reason));
+        WriteUInt32(out, ack.rank);
+        WriteUInt32(out, ack.total);
         return out;
     }
 
@@ -109,11 +109,11 @@ namespace rank
         }
 
         SubmitAck decoded;
-        reader.Bytes(decoded.runId.data(), decoded.runId.size());
-        uint8_t status = reader.U8();
-        uint8_t reason = reader.U8();
-        decoded.rank = reader.U32();
-        decoded.total = reader.U32();
+        reader.ReadBytes(decoded.runId.data(), decoded.runId.size());
+        uint8_t status = reader.ReadByte();
+        uint8_t reason = reader.ReadByte();
+        decoded.rank = reader.ReadUInt32();
+        decoded.total = reader.ReadUInt32();
 
         if (reader.Ok() == false || reader.Remaining() != 0
             || status > static_cast<uint8_t>(AckStatus::Rejected)
@@ -133,7 +133,7 @@ namespace rank
     {
         std::vector<uint8_t> frame;
         frame.reserve(payload.size() + 4);
-        WriteU32(frame, static_cast<uint32_t>(payload.size()));
+        WriteUInt32(frame, static_cast<uint32_t>(payload.size()));
         frame.insert(frame.end(), payload.begin(), payload.end());
         return frame;
     }

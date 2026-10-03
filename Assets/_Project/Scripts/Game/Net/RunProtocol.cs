@@ -5,7 +5,10 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Game
 {
-    // 클라이언트 처리: Accepted·Duplicate → 기록 삭제, Rejected → 다시 보내지 않음
+    // 서버가 제출을 처리한 결과 (SubmitAck의 status)
+    // 클라이언트는 이 값을 보고 결과 파일을 대기열에서 뺌 (파일 형식: <runId>.run)
+    //   Accepted·Duplicate -> 서버에 저장됐으므로 대기 파일 삭제
+    //   Rejected           -> 다시 보내도 같으므로 확장자를 .rejected로 바꿔 대기열에서 뺌 (파일은 남김)
     public enum RunAckStatus : byte
     {
         Accepted = 0,   // 새로 저장
@@ -13,7 +16,12 @@ namespace PokerDefense.Game
         Rejected = 2,   // 규칙 위반
     }
 
-    // RunAck - 제출에 대한 서버 응답 (저장까지 끝났다는 확인, TCP의 도착 확인과 다름)
+    // RunAck - 서버가 제출을 끝까지 처리한 뒤 보내는 답장
+    //   Accepted·Duplicate는 파일 저장까지 끝난 뒤, Rejected는 검사에서 걸린 뒤 보냄
+    //   TCP 도착 확인은 상대 OS가 바이트를 받았다는 뜻일 뿐 저장까지 보장하지 않으므로
+    //   클라이언트는 이 Ack를 받아야만 결과 파일을 대기열에서 뺌 (삭제하거나 .rejected로 변경)
+    //   (저장에 실패했거나 해석할 수 없는 메시지면 Ack 없이 연결을 끊음
+    //    -> 클라이언트는 결과 파일을 남겨 두고 다음 판 시작·종료 때 다시 보냄)
     public readonly struct RunAck
     {
         public RunAck(Guid runId, RunAckStatus status, byte reason, int rank, int total)
@@ -36,7 +44,8 @@ namespace PokerDefense.Game
      * RunProtocol
      *
      * 결과 제출 프로토콜 v1 인코딩·디코딩 (연결은 하지 않고 바이트 변환만)
-     * C++ 서버의 Protocol.h와 같은 형식 (양쪽 테스트가 같은 바이트열로 확인)
+     * C++ 서버의 Protocol.h와 같은 형식
+     * (프로토콜 형식을 바꾸면 서버와 클라이언트 양쪽의 테스트용 SampleFrameHex도 같이 고쳐야 함)
      *
      * 메시지 하나 = [길이 4바이트][본문]
      * TCP는 메시지 경계가 없어서, 받는 쪽이 본문 끝을 알 수 있게 길이를 먼저 보냄
@@ -77,37 +86,37 @@ namespace PokerDefense.Game
             bytes.AddRange(result.RunId.ToByteArray());
             bytes.Add((byte)ruleset.Length);
             bytes.AddRange(ruleset);
-            WriteU16(bytes, result.Wave);
-            WriteU16(bytes, result.TotalWaves);
+            WriteUInt16(bytes, result.Wave);
+            WriteUInt16(bytes, result.TotalWaves);
             bytes.Add(result.Cleared ? (byte)1 : (byte)0);
-            WriteU16(bytes, result.Life);
-            WriteU16(bytes, result.Summons);
+            WriteUInt16(bytes, result.Life);
+            WriteUInt16(bytes, result.Summons);
             bytes.Add(result.BestHand.HasValue ? (byte)result.BestHand.Value : NoHand);
-            WriteU32(bytes, (uint)Math.Max(0, result.ElapsedMs));
+            WriteUInt32(bytes, (uint)Math.Max(0, result.ElapsedMs));
             return bytes.ToArray();
         }
 
         // TryDecodeSubmit - 저장된 바이트 -> RunResult (길이 4바이트 제외, outbox 파일을 읽을 때 사용)
-        // 형식이 어긋나면 false
+        // 형식이 어긋나면 false 반환
         public static bool TryDecodeSubmit(byte[] payload, out RunResult result)
         {
             result = null;
             Reader reader = new Reader(payload);
-            if (reader.U8() != Version || reader.U8() != SubmitRunType)
+            if (reader.ReadByte() != Version || reader.ReadByte() != SubmitRunType)
             {
                 return false;
             }
 
-            Guid runId = new Guid(reader.Bytes(16));
-            int rulesetLength = reader.U8();
-            string ruleset = Encoding.ASCII.GetString(reader.Bytes(rulesetLength));
-            int wave = reader.U16();
-            int totalWaves = reader.U16();
-            int cleared = reader.U8();
-            int life = reader.U16();
-            int summons = reader.U16();
-            byte bestHand = reader.U8();
-            uint elapsed = reader.U32();
+            Guid runId = new Guid(reader.ReadBytes(16));
+            int rulesetLength = reader.ReadByte();
+            string ruleset = Encoding.ASCII.GetString(reader.ReadBytes(rulesetLength));
+            int wave = reader.ReadUInt16();
+            int totalWaves = reader.ReadUInt16();
+            int cleared = reader.ReadByte();
+            int life = reader.ReadUInt16();
+            int summons = reader.ReadUInt16();
+            byte bestHand = reader.ReadByte();
+            uint elapsed = reader.ReadUInt32();
 
             // 바이트가 모자라거나 남으면 형식 오류
             if (reader.Ok == false || reader.Remaining != 0 || cleared > 1 || elapsed > int.MaxValue)
@@ -129,8 +138,8 @@ namespace PokerDefense.Game
             bytes.AddRange(ack.RunId.ToByteArray());
             bytes.Add((byte)ack.Status);
             bytes.Add(ack.Reason);
-            WriteU32(bytes, (uint)ack.Rank);
-            WriteU32(bytes, (uint)ack.Total);
+            WriteUInt32(bytes, (uint)ack.Rank);
+            WriteUInt32(bytes, (uint)ack.Total);
             return bytes.ToArray();
         }
 
@@ -140,16 +149,16 @@ namespace PokerDefense.Game
         {
             ack = default;
             Reader reader = new Reader(payload);
-            if (reader.U8() != Version || reader.U8() != SubmitAckType)
+            if (reader.ReadByte() != Version || reader.ReadByte() != SubmitAckType)
             {
                 return false;
             }
 
-            Guid runId = new Guid(reader.Bytes(16));
-            byte status = reader.U8();
-            byte reason = reader.U8();
-            uint rank = reader.U32();
-            uint total = reader.U32();
+            Guid runId = new Guid(reader.ReadBytes(16));
+            byte status = reader.ReadByte();
+            byte reason = reader.ReadByte();
+            uint rank = reader.ReadUInt32();
+            uint total = reader.ReadUInt32();
 
             if (reader.Ok == false || reader.Remaining != 0 || status > (byte)RunAckStatus.Rejected
                 || rank > int.MaxValue || total > int.MaxValue)
@@ -173,15 +182,19 @@ namespace PokerDefense.Game
             return frame;
         }
 
-        // 범위를 넘는 값은 잘라서 씀 (거부 판단은 서버 Validate)
-        static void WriteU16(List<byte> bytes, int value)
+        // 쓰기 - 정수를 큰 자리 바이트부터 bytes 끝에 덧붙임 (빅엔디언, CPU와 상관없이 같은 바이트)
+
+        // 2바이트. RunResult 값은 int라 0~65535 밖일 수 있음 - 예외를 던지면 결과 파일 저장까지 실패하므로
+        // 경계값으로 잘라 씀 (잘린 값은 규칙 범위를 벗어나 서버 Validate가 거부함)
+        static void WriteUInt16(List<byte> bytes, int value)
         {
             int clamped = Math.Max(0, Math.Min(ushort.MaxValue, value));
             bytes.Add((byte)(clamped >> 8));
             bytes.Add((byte)clamped);
         }
 
-        static void WriteU32(List<byte> bytes, uint value)
+        // 4바이트
+        static void WriteUInt32(List<byte> bytes, uint value)
         {
             bytes.Add((byte)(value >> 24));
             bytes.Add((byte)(value >> 16));
@@ -190,7 +203,8 @@ namespace PokerDefense.Game
         }
 
         // Reader - 본문을 앞에서부터 차례로 읽음
-        // 바이트가 모자라면 Ok = false, 이후 읽기는 0을 돌려줌 (그래서 확인은 마지막에 한 번만)
+        // 바이트가 모자라면 실패 상태(Ok = false)가 되고, 그 읽기부터는 모두 0을 돌려줌
+        // 그래서 읽는 쪽은 매번 확인하지 않고 마지막에 Ok를 한 번만 확인
         sealed class Reader
         {
             readonly byte[] data;
@@ -204,12 +218,14 @@ namespace PokerDefense.Game
             public bool Ok { get; private set; } = true;
             public int Remaining => data.Length - position;
 
-            public byte U8()
+            // 1바이트
+            public byte ReadByte()
             {
                 return Require(1) ? data[position++] : (byte)0;
             }
 
-            public int U16()
+            // 부호 없는 16비트 정수 = 2바이트, RunResult 필드에 맞춰 int로 돌려줌
+            public int ReadUInt16()
             {
                 if (Require(2) == false)
                 {
@@ -221,7 +237,8 @@ namespace PokerDefense.Game
                 return value;
             }
 
-            public uint U32()
+            // 부호 없는 32비트 정수 = 4바이트
+            public uint ReadUInt32()
             {
                 if (Require(4) == false)
                 {
@@ -234,7 +251,8 @@ namespace PokerDefense.Game
                 return value;
             }
 
-            public byte[] Bytes(int count)
+            // count바이트를 그대로 꺼냄 (runId·문자열용)
+            public byte[] ReadBytes(int count)
             {
                 byte[] bytes = new byte[count];
                 if (Require(count))

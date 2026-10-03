@@ -61,7 +61,9 @@ namespace
 
 namespace
 {
-    // Unity 쪽 RunProtocolTests와 같은 기록 - 두 언어가 같은 바이트를 만드는지 확인하는 기준
+    // 서버와 클라이언트가 같은 바이트를 만드는지 확인하는 기준
+    // Unity 쪽 RunProtocolTests에도 같은 기록과 같은 정답 바이트열이 들어 있고,
+    // 양쪽이 각자의 인코딩 결과를 이 바이트열과 비교함 - 형식이 어긋나면 어긋난 쪽 테스트가 실패
     RunRecord SampleRecord()
     {
         RunRecord record;

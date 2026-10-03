@@ -8,7 +8,9 @@ namespace PokerDefense.Tests
 {
     public class RunProtocolTests
     {
-        // C++ 서버 테스트(Server/tests/Tests.cpp)와 같은 기록과 같은 바이트열 - 두 언어의 형식이 어긋나면 한쪽이 깨짐
+        // 서버와 클라이언트가 같은 바이트를 만드는지 확인하는 기준
+        // C++ 서버 테스트(Server/tests/Tests.cpp)에도 같은 기록과 같은 정답 바이트열이 들어 있고,
+        // 양쪽이 각자의 인코딩 결과를 이 바이트열과 비교함 - 형식이 어긋나면 어긋난 쪽 테스트가 실패
         // [길이 45][버전 1][종류 1][runId 00~0f][ruleset 길이 12]["hand-loop-v1"]
         // [wave 37][total 50][cleared 0][life 0][summons 37][bestHand 7][elapsedMs 812345]
         const string SampleFrameHex =

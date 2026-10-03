@@ -6,19 +6,24 @@
 
 namespace rank
 {
-    // 정수를 빅엔디언으로 씀 - CPU와 상관없이 같은 바이트
-    inline void WriteU8(std::vector<uint8_t>& out, uint8_t value)
+    // 쓰기 - 정수를 큰 자리 바이트부터 out 끝에 덧붙임 (빅엔디언, CPU와 상관없이 같은 바이트)
+    // WriteByte는 1바이트라 순서가 없고, 순서가 의미 있는 건 WriteUInt16·WriteUInt32
+
+    // 1바이트
+    inline void WriteByte(std::vector<uint8_t>& out, uint8_t value)
     {
         out.push_back(value);
     }
 
-    inline void WriteU16(std::vector<uint8_t>& out, uint16_t value)
+    // 2바이트. value 타입이 uint16_t라 범위 검사가 필요 없음 (C#은 int를 받아 잘라서 씀)
+    inline void WriteUInt16(std::vector<uint8_t>& out, uint16_t value)
     {
         out.push_back(static_cast<uint8_t>(value >> 8));
         out.push_back(static_cast<uint8_t>(value));
     }
 
-    inline void WriteU32(std::vector<uint8_t>& out, uint32_t value)
+    // 4바이트
+    inline void WriteUInt32(std::vector<uint8_t>& out, uint32_t value)
     {
         out.push_back(static_cast<uint8_t>(value >> 24));
         out.push_back(static_cast<uint8_t>(value >> 16));
@@ -26,8 +31,9 @@ namespace rank
         out.push_back(static_cast<uint8_t>(value));
     }
 
-    // ByteReader - 버퍼를 앞에서부터 읽음
-    // 모자라면 실패 상태가 되고 이후 읽기는 0 - 호출 쪽은 마지막에 Ok()만 확인
+    // ByteReader - 본문을 앞에서부터 차례로 읽음
+    // 바이트가 모자라면 실패 상태(Ok() = false)가 되고, 그 읽기부터는 모두 0을 돌려줌
+    // 그래서 읽는 쪽은 매번 확인하지 않고 마지막에 Ok()를 한 번만 확인
     class ByteReader
     {
     public:
@@ -36,7 +42,8 @@ namespace rank
         {
         }
 
-        uint8_t U8()
+        // 1바이트
+        uint8_t ReadByte()
         {
             if (Require(1) == false)
             {
@@ -46,7 +53,8 @@ namespace rank
             return data[position++];
         }
 
-        uint16_t U16()
+        // 부호 없는 16비트 정수 = 2바이트
+        uint16_t ReadUInt16()
         {
             if (Require(2) == false)
             {
@@ -58,7 +66,8 @@ namespace rank
             return value;
         }
 
-        uint32_t U32()
+        // 부호 없는 32비트 정수 = 4바이트
+        uint32_t ReadUInt32()
         {
             if (Require(4) == false)
             {
@@ -73,7 +82,8 @@ namespace rank
             return value;
         }
 
-        bool Bytes(uint8_t* destination, size_t count)
+        // count바이트를 그대로 destination에 복사 (runId·문자열용)
+        bool ReadBytes(uint8_t* destination, size_t count)
         {
             if (Require(count) == false)
             {

@@ -9,6 +9,7 @@ namespace rank
 {
     /**
      * 결과 제출 프로토콜 v1 (C# 클라이언트의 RunProtocol.cs와 같은 형식)
+     * 형식을 바꾸면 양쪽 테스트의 SampleFrameHex도 같이 고쳐야 함
      *
      * 메시지 하나 = [길이 4바이트][본문]
      * TCP는 메시지 경계가 없어서, 받는 쪽이 본문 끝을 알 수 있게 길이를 먼저 보냄
@@ -20,7 +21,12 @@ namespace rank
      *                           wave, totalWaves, cleared, life, summons, bestHand, elapsedMs
      *   SubmitAck  서버 → 클라: version, type, runId, status, reason, rank, total
      *
-     * Ack = 서버가 검사하고 파일 저장까지 끝낸 뒤 보내는 답장 (TCP의 도착 확인과 다름)
+     * Ack = 서버가 제출을 끝까지 처리한 뒤 보내는 답장
+     *   Accepted·Duplicate는 파일 저장까지 끝난 뒤, Rejected는 검사에서 걸린 뒤 보냄
+     *   TCP 도착 확인은 상대 OS가 바이트를 받았다는 뜻일 뿐 저장까지 보장하지 않으므로,
+     *   클라이언트는 이 Ack를 받아야만 결과 파일을 대기열에서 뺌 (삭제하거나 .rejected로 변경)
+     *   (저장에 실패했거나 해석할 수 없는 메시지면 Ack 없이 연결을 끊음
+     *    -> 클라이언트는 결과 파일을 남겨 두고 다음 판 시작·종료 때 다시 보냄)
      */
 
     // 프로토콜 형식이 바뀌면 이 값을 올림
@@ -39,7 +45,10 @@ namespace rank
         SubmitAck = 2,
     };
 
-    // 클라이언트 처리: Accepted·Duplicate -> 기록 삭제, Rejected -> 다시 보내지 않음
+    // 서버가 제출을 처리한 결과 (SubmitAck의 status)
+    // 클라이언트는 이 값을 보고 결과 파일을 대기열에서 뺌 (파일 형식: <runId>.run)
+    //   Accepted·Duplicate -> 서버에 저장됐으므로 대기 파일 삭제
+    //   Rejected           -> 다시 보내도 같으므로 확장자를 .rejected로 바꿔 대기열에서 뺌 (파일은 남김)
     enum class AckStatus : uint8_t
     {
         Accepted = 0,   // 새로 저장
@@ -58,7 +67,7 @@ namespace rank
     // 판마다 클라이언트가 만드는 Guid(전역 고유 식별자), 중복 제출 판별용
     using RunId = std::array<uint8_t, 16>;
 
-    // RunRecord - 한 판의 결과 (C# RunResult와 동일)
+    // RunRecord - 한 판의 결과 (C# 클라이언트의 RunResult와 동일)
     struct RunRecord
     {
         RunId runId{};
@@ -93,7 +102,7 @@ namespace rank
     std::vector<uint8_t> EncodeAck(const SubmitAck& ack);
     std::vector<uint8_t> MakeFrame(const std::vector<uint8_t>& payload);     // 본문 앞에 길이를 붙임
 
-    // [테스트만 쓰는 함수]
+    // [테스트에서만 쓰는 함수]
     // 실제 클라이언트가 아니라 서버 테스트에서 클라이언트 역할을 할 때 사용
     std::vector<uint8_t> EncodeSubmit(const RunRecord& record);
     bool DecodeAck(const uint8_t* data, size_t size, SubmitAck& ack);
