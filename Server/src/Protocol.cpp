@@ -159,16 +159,17 @@ namespace rank
         return inRange && consistent ? RejectReason::None : RejectReason::OutOfRange;
     }
 
-    // ToHex - runId 16바이트를 32자리 16진수 문자열로 변환 (1바이트 = 16진수 2자리)
+    // ToHex - runId 16바이트를 32자리 소문자 16진수 문자열로 변환 (1바이트 = 2글자)
+    //   예: 00 01 … 0E 0F -> "000102…0e0f"
     std::string ToHex(const RunId& id)
     {
         static const char* digits = "0123456789abcdef";
         std::string text;
-        text.reserve(id.size() * 2);
+        text.reserve(id.size() * 2);  // 길이를 알고 있으니 미리 32글자만큼 잡아 둠
         for (uint8_t value : id)
         {
-            text.push_back(digits[value >> 4]);
-            text.push_back(digits[value & 0x0F]);
+            text.push_back(digits[value >> 4]);    // 위 4비트 (오른쪽으로 4칸 밀어서 남김)
+            text.push_back(digits[value & 0x0F]);  // 아래 4비트 (0000 1111과 AND해서 남김)
         }
 
         return text;

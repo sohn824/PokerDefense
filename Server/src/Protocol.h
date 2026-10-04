@@ -111,6 +111,12 @@ namespace rank
     // 제출을 받을 때, 서버 시작 시 저장 파일을 다시 읽을 때 사용
     RejectReason Validate(const RunRecord& record);
 
-    // ToHex - runId 16바이트를 32자리 16진수 문자열로 변환 (중복 확인 키 · 저장 파일 · 로그에 사용)
+    // ToHex - runId 16바이트를 32자리 소문자 16진수 문자열로 변환 (1바이트 = 2글자)
+    //   예: 00 01 … 0E 0F -> "000102…0e0f"
+    // 이진값 그대로 쓰지 않고 문자열로 바꾸는 이유
+    //   저장 파일 - 공백 구분 텍스트 한 줄이라, 바이트에 줄바꿈(0x0A)·공백(0x20)이 섞이면 줄·필드가 깨짐
+    //               (0-9a-f만 쓰면 안전하고 사람이 읽을 수도 있음, 다시 읽을 때는 ParseHex)
+    //   중복 확인 키 - std::array에는 표준 해시가 없어 unordered_map 키로 바로 못 씀
+    //   서버 로그 - 어떤 기록인지 바로 알아보게
     std::string ToHex(const RunId& id);
 }

@@ -25,7 +25,7 @@ namespace rank
         buffer.insert(buffer.end(), data, data + size);
     }
 
-    // Next - 프레임 하나가 다 모였으면 꺼내고, 아니면 NeedMore
+    // Next - 프레임 하나가 다 모였으면 꺼내고(Frame), 덜 왔으면 NeedMore, 길이가 잘못됐으면 Error
     FrameReader::Result FrameReader::Next(std::vector<uint8_t>& payload)
     {
         if (failed)
@@ -45,7 +45,8 @@ namespace rank
             | (static_cast<uint32_t>(head[2]) << 8)
             | static_cast<uint32_t>(head[3]);
 
-        // 본문이 다 오기를 기다리기 전에 길이부터 검사 - 거대한 길이로 메모리를 잡아두는 입력을 막음
+        // 본문이 다 오기를 기다리기 전에 길이부터 검사
+        // 거대한 길이를 그대로 믿으면 그만큼 받을 때까지 버퍼에 쌓으며 메모리를 잡아 두게 됨
         if (length == 0 || length > maxPayload)
         {
             failed = true;

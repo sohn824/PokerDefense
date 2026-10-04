@@ -286,7 +286,7 @@ TEST(순위는_웨이브_라이프_시간_순이다)
     CHECK(store.Submit(Record(5, 50, 5, 8000), outcome) && outcome.rank == 1 && outcome.total == 5);
 }
 
-TEST(같은_runId는_한_번만_저장하고_같은_순위를_돌려준다)
+TEST(같은_runId는_한_번만_저장하고_지금_기준_순위를_돌려준다)
 {
     RankingStore store("");
     RankingStore::Outcome outcome;
@@ -318,6 +318,37 @@ TEST(파일에서_다시_읽고_잘린_마지막_줄은_버린다)
 
     RankingStore::Outcome outcome;
     CHECK(reloaded.Submit(Record(1, 30, 0, 1000), outcome) && outcome.status == AckStatus::Duplicate);
+    std::remove(path.c_str());
+}
+
+TEST(잘린_마지막_줄_뒤에_저장한_새_기록도_다시_읽힌다)
+{
+    std::string path = TempPath("rank_store_append_after_cut.txt");
+    {
+        RankingStore store(path);
+        RankingStore::Outcome outcome;
+        CHECK(store.Submit(Record(1, 30, 0, 1000), outcome));
+    }
+
+    // 쓰는 도중 꺼진 상황 - 줄바꿈 없이 끊긴 마지막 줄
+    {
+        std::ofstream file(path, std::ios::app | std::ios::binary);
+        file << "03000000000000000000000000000000 hand-loop-v1 25";
+    }
+
+    // 다시 켠 뒤 새 기록을 저장 - 잘린 줄에 이어 붙으면 다음 Load 때 새 기록까지 깨진 줄로 버려짐
+    {
+        RankingStore store(path);
+        CHECK(store.Load() == 1);
+        RankingStore::Outcome outcome;
+        CHECK(store.Submit(Record(2, 40, 0, 1000), outcome) && outcome.status == AckStatus::Accepted);
+    }
+
+    RankingStore reloaded(path);
+    CHECK(reloaded.Load() == 2);
+
+    RankingStore::Outcome outcome;
+    CHECK(reloaded.Submit(Record(2, 40, 0, 1000), outcome) && outcome.status == AckStatus::Duplicate);
     std::remove(path.c_str());
 }
 

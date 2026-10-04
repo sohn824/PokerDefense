@@ -99,6 +99,8 @@ namespace PokerDefense.Game
         }
 
         // 파일 이름은 runId - 같은 기록이 두 파일로 나뉘지 않음
+        // 주의: Guid.ToString("N")은 앞 8바이트 표기 순서를 뒤집으므로 서버 로그의 runId(ToHex, 바이트 순서)와 글자가 다름
+        //   바이트 00 01 02 03 04 05 06 07 … -> 파일 이름 "0302010005040706…" / 서버 로그 "0001020304050607…"
         string PathOf(Guid runId, string extension)
         {
             return Path.Combine(directory, runId.ToString("N") + extension);

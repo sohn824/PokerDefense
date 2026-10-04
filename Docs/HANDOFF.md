@@ -42,7 +42,7 @@
 
 ## 검증 기록과 한계
 
-**최신:** EditMode **246/246 통과**(2026-09-27, Unity Test Runner 직접 실행). 기존 207개에 멀티스레드·판정 테스트 12개, 확률 표시 테스트 6개, 결과 제출 네트워크 테스트 21개를 더한 수다. C++ 서버 테스트 16개는 `Server/build.bat`(또는 솔루션의 RankTests)로 따로 돈다. 2026-09-21에 교체 상한을 바꿀 때는 기존 테스트의 입력값만 고쳤으므로 개수는 그대로다.
+**최신:** EditMode **246/246 통과**(2026-09-27, Unity Test Runner 직접 실행). 기존 207개에 멀티스레드·판정 테스트 12개, 확률 표시 테스트 6개, 결과 제출 네트워크 테스트 21개를 더한 수다. C++ 서버 테스트 17개는 `Server/build.bat`(또는 솔루션의 RankTests)로 따로 돈다. 2026-09-21에 교체 상한을 바꿀 때는 기존 테스트의 입력값만 고쳤으므로 개수는 그대로다.
 
 아래는 그 이전 구현 때 남긴 기록이며, 이후 다시 실행하지 않았다.
 
@@ -90,6 +90,6 @@ POLISH의 P0부터 한다. 먼저 실제 플레이에서 선택 교체를 이해
 [NETWORK.md](NETWORK.md)를 먼저 본다.
 
 - **구조.** 게임이 끝나면 `RunReporter`가 결과를 outbox 파일(`persistentDataPath/RunOutbox`)에 먼저 저장하고, `Task.Run`에서 C++ 서버로 보낸다. ACK를 받아야 파일을 지운다. 결과는 `Update`에서 확인해 메인 스레드에서만 결과 화면에 알린다.
-- **서버.** `Server/`의 C++ 프로젝트(select 단일 스레드, Winsock). `Server/RankServer.sln`을 Visual Studio로 열어 빌드·실행한다(F5 = RankServer, 인자 `--port 7777 --data runs.txt`). 명령줄은 `Server/build.bat`(빌드 + 테스트 16개). 솔루션과 프로젝트 파일은 직접 관리하는 파일이며, 소스를 추가하면 `.vcxproj`와 `.filters`에도 넣는다.
+- **서버.** `Server/`의 C++ 프로젝트(select 단일 스레드, Winsock). `Server/RankServer.sln`을 Visual Studio로 열어 빌드·실행한다(F5 = RankServer, 인자 `--port 7777 --data runs.txt`). 명령줄은 `Server/build.bat`(빌드 + 테스트 17개). 솔루션과 프로젝트 파일은 직접 관리하는 파일이며, 소스를 추가하면 `.vcxproj`와 `.filters`에도 넣는다.
 - **씬 연결.** `Tools/Poker Defense/Install Run Reporter`가 흐름 오브젝트에 `RunReporter`를 붙이고 `ResultScreen.reporter`를 연결한다. 여러 번 실행해도 된다.
 - **주의.** 전송은 게임 결과를 바꾸지 않는다. 웨이브 스킵을 쓴 판은 보내지 않는다. 서버는 값의 범위만 검사하는 데모 랭킹이며 점수를 재현해 검증하지 않는다. 프로토콜을 바꾸면 C#(`RunProtocol.cs`)과 C++(`Protocol.cpp`)의 고정 바이트열 테스트를 함께 고친다.
