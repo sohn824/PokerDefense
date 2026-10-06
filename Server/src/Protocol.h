@@ -14,12 +14,12 @@ namespace rank
      * 메시지 하나 = [길이 4바이트][본문]
      * TCP는 메시지 경계가 없어서, 받는 쪽이 본문 끝을 알 수 있게 길이를 먼저 보냄
      * 1바이트는 0~255(256가지)라 큰 수는 여러 바이트로 나눠 씀
-     * 숫자는 큰 자리 바이트부터 씀 (빅엔디언, 예: 300 = 1×256 + 44 → 01 2C)
+     * 숫자는 큰 자리 바이트부터 씀 (빅엔디언, 예: 300 = 1×256 + 44 -> 01 2C)
      *
      * 메시지 본문은 아래 값을 순서대로 이어 붙임 (크기는 구조체 타입과 같음)
-     *   SubmitRun  클라 → 서버: version, type, runId, 규칙 이름 길이, 규칙 이름,
-     *                           wave, totalWaves, cleared, life, summons, bestHand, elapsedMs
-     *   SubmitAck  서버 → 클라: version, type, runId, status, reason, rank, total
+     *   SubmitRun  클라 -> 서버: version, type, runId, 규칙 이름 길이, 규칙 이름,
+     *                            wave, totalWaves, cleared, life, summons, bestHand, elapsedMs
+     *   SubmitAck  서버 -> 클라: version, type, runId, status, reason, rank, total
      *
      * Ack = 서버가 제출을 끝까지 처리한 뒤 보내는 답장
      *   Accepted·Duplicate는 파일 저장까지 끝난 뒤, Rejected는 검사에서 걸린 뒤 보냄
@@ -97,7 +97,7 @@ namespace rank
 
     // [서버가 쓰는 함수]
     // 제출을 받아 답장하는 순서 (TcpServer::Handle)
-    //   DecodeSubmit → Validate → 파일 저장 → EncodeAck → MakeFrame
+    //   DecodeSubmit -> Validate -> 파일 저장 -> EncodeAck -> MakeFrame
     bool DecodeSubmit(const uint8_t* data, size_t size, RunRecord& record);  // 형식이 어긋나면 false
     std::vector<uint8_t> EncodeAck(const SubmitAck& ack);
     std::vector<uint8_t> MakeFrame(const std::vector<uint8_t>& payload);     // 본문 앞에 길이를 붙임

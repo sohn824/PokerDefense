@@ -415,7 +415,7 @@ namespace
         }
     }
 
-    // 클라이언트 작업이 끝날 때까지 서버를 한 단계씩 돌림
+    // 클라이언트 작업이 끝날 때까지 서버 Poll을 반복함
     void RunServerUntil(TcpServer& server, std::thread& client, const std::atomic<bool>& finished)
     {
         auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);

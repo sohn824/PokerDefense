@@ -16,10 +16,12 @@ namespace rank
     /**
      * TcpServer - 스레드 하나에서 select로 여러 연결을 처리하는 결과 수신 서버
      *
-     * 연결마다 받은 바이트를 FrameReader에 쌓고, 프레임이 완성되면 검증 → 저장 → ACK
-     * 논블로킹 소켓이라 느린 연결이 다른 연결을 막지 않음. 못 다 보낸 데이터는 다음 Poll에서 이어 보냄
-     * 잘못된 프레임, 오래 조용한 연결, 한도를 넘는 연결은 끊음
-     * Poll을 한 번씩 부르는 구조라 테스트에서 한 단계씩 돌릴 수 있음
+     * 메시지가 다 모이면 검증 -> 저장 -> 클라이언트에게 ACK 발송 (검증에 걸리면 저장 없이 Rejected ACK)
+     * 잘못된 메시지, 저장 실패, 오래 조용한 연결, 한도를 넘는 연결은 끊음
+     * TcpServer 안에는 계속 도는 루프가 없음 - Poll을 한 번 부르면 할 일을 기다렸다가(최대 timeoutMs) 처리하고 돌아옴
+     * 계속 돌리려면 부르는 쪽이 Poll을 반복 호출
+     *   (실제 서버 - main.cpp의 main 함수에서 Ctrl+C로 끌 때까지 반복 호출)
+     *   (테스트 - Tests.cpp의 RunServerUntil에서 클라이언트 작업이 끝날 때까지 반복 호출)
      */
     class TcpServer
     {
@@ -36,7 +38,8 @@ namespace rank
         bool Start(uint16_t port);
         void Stop();
 
-        // 최대 timeoutMs 동안 기다렸다가 온 이벤트를 처리하고 돌아옴
+        // Poll - 할 일(새 연결, 받을 데이터, 마저 보낼 ACK)이 생길 때까지 최대 timeoutMs 기다렸다가 처리하고 함수 종료
+        // 아무 일 없이 timeoutMs가 지나도 함수 종료
         void Poll(int timeoutMs);
 
         uint16_t Port() const { return port; }
@@ -46,13 +49,14 @@ namespace rank
         std::chrono::milliseconds idleTimeout{10000};
 
     private:
+        // Connection - 접속한 클라이언트 하나의 상태
         struct Connection
         {
-            SOCKET socket = INVALID_SOCKET;
-            FrameReader reader{MaxPayloadSize};
-            std::vector<uint8_t> outgoing;
-            std::chrono::steady_clock::time_point lastActivity;
-            bool closing = false;  // 끊기로 한 연결 - Poll이 끝날 때 정리
+            SOCKET socket = INVALID_SOCKET;                      // 이 클라이언트와 데이터를 주고받는 소켓 (AcceptAll에서 받음)
+            FrameReader reader{MaxPayloadSize};                  // 받은 바이트를 모아 다 모인 메시지를 하나씩 꺼냄
+            std::vector<uint8_t> outgoing;                       // 아직 다 못 보낸 ACK 바이트 (Send가 보낸 만큼 지움)
+            std::chrono::steady_clock::time_point lastActivity;  // 마지막으로 데이터를 받은 시각 (idleTimeout 판정 기준)
+            bool closing = false;                                // true면 이번 Poll 끝(5단계 CloseMarked)에 소켓을 닫고 목록에서 뺌
         };
 
         void AcceptAll();
@@ -63,7 +67,7 @@ namespace rank
 
         RankingStore& store;
         Logger logger;
-        SOCKET listener = INVALID_SOCKET;
+        SOCKET listener = INVALID_SOCKET;  // 리스너 - 새 연결을 받는 소켓 (데이터는 연결마다 만든 Connection::socket으로 주고받음)
         uint16_t port = 0;
         std::vector<Connection> connections;
     };
