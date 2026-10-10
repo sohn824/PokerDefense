@@ -72,10 +72,3 @@ Unity Profiler로 플레이 중 프레임을 확인해 보니, 사운드 관리 
 2. `Assets/_Project/Scenes/Boot` 씬을 열고 Play를 누릅니다.
 3. 테스트는 `Window > General > Test Runner`의 EditMode 탭에서 Run All을 누릅니다.
 4. 랭킹 서버(선택): `Server\RankServer.sln`을 Visual Studio로 열고 F5를 누릅니다. 자세한 방법은 [Server/README.md](Server/README.md)에 있습니다.
-
-## 한계
-
-- 50웨이브 전체를 직접 끝까지 플레이해 난이도를 검증하지는 않았습니다.
-- 성능 수치는 Windows 에디터에서 잰 값입니다. 모바일 실기기에서는 아직 측정하지 않았습니다.
-- 진행 저장과 이어하기는 없습니다.
-- 서버는 받은 값이 규칙 범위 안인지만 검사합니다. 전투를 다시 돌려 점수를 검증하지는 않습니다.

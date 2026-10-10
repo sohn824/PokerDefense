@@ -115,4 +115,5 @@ __pycache__/
 
 # Working docs kept locally only (not part of the public repo)
 /Docs/
+/CLAUDE.md
 /Tools/Audio/README.md
