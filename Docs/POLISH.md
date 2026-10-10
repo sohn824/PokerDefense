@@ -37,7 +37,7 @@
 
 **옵션 음량 추가 (2026-09-13, LOOP-01).** `AudioPreferences`가 마스터·BGM·효과음 배율과 음소거를 기기에 저장하고, 기존 믹스에 곱해 적용한다. 기본값은 모두 100%(기존 믹스 그대로)이므로, 기기에서 들어볼 때는 옵션을 기본값으로 둔다.
 
-> 에셋별 상태와 예전 피드백은 [AUDIO_REQUEST.md](AUDIO_REQUEST.md), 만드는 방법과 검증 방법은 Tools/Audio/README.md에 있다. 예전 WAV는 Artifacts/Audio/BeforePolish/에 보관했다. 아래 표는 이번 작업에서 연결한 범위다.
+> 에셋별 상태와 예전 피드백은 [AUDIO_REQUEST.md](AUDIO_REQUEST.md)에 있다. 예전 WAV는 Artifacts/Audio/BeforePolish/에 보관했다. 아래 표는 이번 작업에서 연결한 범위다.
 
 | 대상 | 내용 |
 |---|---|

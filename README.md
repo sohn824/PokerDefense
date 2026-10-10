@@ -89,7 +89,6 @@ Unity Profiler로 실제 플레이를 측정해 보니, 사운드를 관리하�
 | 문서 | 내용 |
 |---|---|
 | [DESIGN](Docs/DESIGN.md) | 게임 설계의 기준 |
-| [HANDOFF](Docs/HANDOFF.md) | 현재 상태, 코드 위치, 검증 범위 |
 | [POLISH](Docs/POLISH.md) | 앞으로 할 작업 |
 | [HISTORY](Docs/HISTORY.md) | 작업 이력과 결정한 이유 |
 

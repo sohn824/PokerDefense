@@ -112,3 +112,7 @@ __pycache__/
 /Server/bin/
 /Server/obj/
 /Server/runs.txt
+
+# Past loop plan kept locally only (not part of the public repo)
+/Docs/LEGACY_LOOP_PLAN.md
+/Tools/Audio/README.md

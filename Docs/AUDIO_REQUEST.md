@@ -113,7 +113,7 @@
 - **소스:** 외부 음원·샘플 없이 Python/NumPy로 직접 합성. 총성은 실사 녹음이 아닌 게임용 합성 대안이며, 아래의 과거 실총 라이브러리 방향과 비교해 청취 채택을 결정한다.
 - **형식:** 48kHz/24bit. SFX 모노 PCM 인메모리, BGM 스테레오 Vorbis 스트리밍. BGM RMS는 계획 -23/전투 -17/보스 -16/결과 -24 dBFS로 효과음 공간 확보. **-14 LUFS 달성을 측정한 것은 아니다.**
 - **검증:** WAV 45개 형식/피크/루프 경계 검증, EditMode 229/229 통과. 폰 스피커 청취와 최종 음색 승인, 스트리밍 루프 청감 확인은 남아 있다.
-- 재생 코드: Scripts/UI/AudioManager.cs. 생성·재현 방법: Tools/Audio/README.md.
+- 재생 코드: Scripts/UI/AudioManager.cs.
 - 원본 비교본: Artifacts/Audio/BeforePolish/. 새 파일·효과음 모음·수치 보고서: Artifacts/Audio/Polish/.
 
 ### 과거 피드백과 현재 처리
