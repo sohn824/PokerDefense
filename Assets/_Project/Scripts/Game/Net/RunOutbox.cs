@@ -6,13 +6,16 @@ using System.Linq;
 namespace PokerDefense.Game
 {
     /**
-     * RunOutbox
+     * RunOutbox - 서버에 보낼 결과를 파일로 보관하는 대기열
      *
-     * 보낼 결과를 파일로 보관하는 대기열 - ACK를 받아야 지우므로 꺼져도 다음 실행 때 다시 보냄
+     * ACK를 받기 전에는 지우지 않으므로, 게임이 꺼져도 기록이 남아 다음 판 종료나 다음 실행 때 다시 보낼 수 있음
      *
      * 파일 하나 = 기록 하나 (이름은 runId, 내용은 제출 본문 바이트)
-     * .tmp에 다 쓴 뒤 이름을 바꿔 넣어 쓰다 만 파일이 섞이지 않음
-     * 깨진 파일은 .bad, 거부된 기록은 .rejected로 옮겨 다시 보내지 않음
+     * 메서드마다 부르는 스레드가 다름 (모두 RunReporter가 부름)
+     *   Save() - 메인 스레드 (게임이 끝났을 때)
+     *   LoadPending()·Remove()·MarkRejected() - 워커 스레드 (전송 루프 안에서)
+     *   (Save()가 .tmp에 다 쓴 뒤 이름을 .run으로 바꾸므로, LoadPending()이 쓰다 만 파일을 읽는 일은 없음)
+     * 깨진 파일은 .bad, 거부된 기록은 .rejected로 확장자를 바꿔 대기열에서 뺌 (다시 보내지 않음)
      */
     public sealed class RunOutbox
     {
@@ -28,7 +31,7 @@ namespace PokerDefense.Game
             this.directory = directory ?? throw new ArgumentNullException(nameof(directory));
         }
 
-        // Save - 대기열에 추가 (같은 runId면 그대로)
+        // Save - 대기열에 추가 (같은 runId 파일이 이미 있으면 아무것도 안 함)
         public void Save(RunResult result)
         {
             Directory.CreateDirectory(directory);
@@ -38,13 +41,13 @@ namespace PokerDefense.Game
                 return;
             }
 
-            // 임시 파일에 쓴 뒤 이름만 바꿈 - .run은 항상 완성본
+            // 임시 파일에 쓴 뒤 이름만 바꿈 - 확장자 .run은 항상 완성본
             string temp = PathOf(result.RunId, TempExtension);
             File.WriteAllBytes(temp, RunProtocol.EncodeSubmit(result));
             File.Move(temp, path);
         }
 
-        // LoadPending - 보낼 기록을 오래된 순으로 읽음
+        // LoadPending - 보낼 기록을 오래된 순으로 읽음 (읽을 수 없는 파일은 이때 확장자를 .bad로 바꿈)
         public List<RunResult> LoadPending()
         {
             List<RunResult> results = new List<RunResult>();
@@ -64,11 +67,11 @@ namespace PokerDefense.Game
                 }
                 catch (IOException)
                 {
-                    // 막 옮겨지거나 지워진 파일 - 다음에 다시 봄
+                    // 막 옮겨지거나 지워진 파일은 다음에 다시 봄
                     continue;
                 }
 
-                // 깨졌거나 이름과 runId가 다르면 치움
+                // 깨졌거나 이름과 runId가 다르면 확장자를 .bad로 바꿔 대기열에서 뺌
                 if (RunProtocol.TryDecodeSubmit(bytes, out RunResult result) && FileNameMatches(file, result.RunId))
                 {
                     results.Add(result);
@@ -92,26 +95,32 @@ namespace PokerDefense.Game
             }
         }
 
-        // MarkRejected - 거부된 기록을 대기열에서 빼고 남겨 둠
+        // MarkRejected - 확장자를 .rejected로 바꿔 대기열에서 뺌 (파일은 남김)
         public void MarkRejected(Guid runId)
         {
             MoveAside(PathOf(runId, PendingExtension), PathOf(runId, RejectedExtension));
         }
 
-        // 파일 이름은 runId - 같은 기록이 두 파일로 나뉘지 않음
-        // 주의: Guid.ToString("N")은 앞 8바이트 표기 순서를 뒤집으므로 서버 로그의 runId(ToHex, 바이트 순서)와 글자가 다름
-        //   바이트 00 01 02 03 04 05 06 07 … -> 파일 이름 "0302010005040706…" / 서버 로그 "0001020304050607…"
+        // PathOf - runId로 대기열 파일 경로를 만듦
+        //   (이름이 runId 하나로 정해지므로 Remove·MarkRejected가 runId만으로 파일을 찾을 수 있고,
+        //    같은 기록을 두 번 Save해도 파일은 하나뿐임)
+        //
+        // 주의: Guid.ToString("N")은 앞 8바이트를 4·2·2바이트 묶음별로 뒤집어 써서, 서버 로그의 runId(ToHex)와 글자가 다름
+        //   예: 바이트 00 01 02 03 04 05 06 07 … -> 파일 이름 "0302010005040706…", 서버 로그 "0001020304050607…"
         string PathOf(Guid runId, string extension)
         {
             return Path.Combine(directory, runId.ToString("N") + extension);
         }
 
+        // 파일 이름과 내용의 runId가 같은지 확인
+        // (다르면 Remove·MarkRejected가 runId로 파일을 찾지 못해, 같은 기록을 끝없이 다시 보내게 됨)
         static bool FileNameMatches(FileInfo file, Guid runId)
         {
             return Path.GetFileNameWithoutExtension(file.Name) == runId.ToString("N");
         }
 
-        // MoveAside - 확장자를 바꿔 대기열에서 뺌 (같은 이름이면 덮어씀)
+        // MoveAside - from 파일을 to 경로로 옮김
+        // (from이 없으면 아무것도 안 함, to가 이미 있으면 지우고 덮어씀)
         static void MoveAside(string from, string to)
         {
             if (File.Exists(from) == false)
