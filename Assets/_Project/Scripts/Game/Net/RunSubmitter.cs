@@ -42,9 +42,9 @@ namespace PokerDefense.Game
     /**
      * RunSubmitter - 결과 하나를 서버에 보내고 ACK를 받을 때까지 기다림
      *
-     * 워커 스레드에서 돌도록 Unity API를 쓰지 않음
-     * 시간 제한(timeout)이 지나면 소켓을 닫아 기다림을 끝냄
-     * await마다 ConfigureAwait(false) - 메인 스레드로 돌아가지 않아, 메인이 멈춰 있어도 끝까지 진행됨
+     * 워커 스레드에서 실행되므로 Unity API는 쓰지 않음 (Unity API는 메인 스레드에서만 쓸 수 있음)
+     * 시간 제한(timeout)이 지나면 소켓을 닫아 기다리던 작업을 끝냄
+     * 모든 await에 ConfigureAwait(false)를 붙여 메인 스레드로 돌아가지 않게 함 (메인 스레드가 멈춰 있어도 전송은 끝까지 진행됨)
      */
     public sealed class RunSubmitter
     {
@@ -60,15 +60,16 @@ namespace PokerDefense.Game
         }
 
         // SubmitAsync - 연결 -> 결과 전송 -> ACK 수신 -> runId 확인 순서로 진행
-        // 다 보냈다고 성공이 아니라 ACK를 받아야 성공 (못 받으면 Failed - RunReporter가 나중에 다시 보냄)
+        // 다 보냈다고 성공이 아니라 ACK를 받아야 성공 (못 받으면 Failed로 표시 - RunReporter가 나중에 다시 보냄)
         public async Task<SubmitOutcome> SubmitAsync(RunResult result, CancellationToken cancellation)
         {
             using (CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
             using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
                 deadline.CancelAfter(timeout);
-                // 소켓 함수(ConnectAsync·SendAsync·ReceiveAsync)는 취소 토큰을 받지 않아 기다림을 직접 멈출 수 없음
-                // 그래서 deadline이 취소되면(시간 초과 또는 밖에서 취소) 소켓을 닫아, 기다리던 작업이 예외로 끝나게 함
+                // 소켓 함수(ConnectAsync·SendAsync·ReceiveAsync)는 CancellationToken을 인자로 받지 않으므로
+                // deadline.Token을 넘겨 멈출 수 없음
+                // 대신 deadline이 취소되면(시간 초과 또는 밖에서 취소) 소켓을 닫아, 기다리던 작업이 예외로 끝나게 함
                 using (deadline.Token.Register(socket.Close))
                 {
                     try
