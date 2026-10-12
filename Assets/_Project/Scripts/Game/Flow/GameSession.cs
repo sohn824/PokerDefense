@@ -18,6 +18,7 @@ namespace PokerDefense.Game
         public static bool IsLoading { get; private set; }
         public static float Speed { get; private set; } = 1f;
 
+        // 플레이를 시작할 때마다 static 멤버를 초기값으로 되돌린다 (도메인 리로드를 꺼도 이전 플레이 값이 남지 않게)
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void Reset()
         {
@@ -53,6 +54,7 @@ namespace PokerDefense.Game
             }
 
             IsLoading = true;
+            Speed = 1f;
             SetPaused(false);
             SceneManager.sceneLoaded += OnLoaded;
             try
