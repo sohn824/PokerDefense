@@ -10,8 +10,8 @@ namespace PokerDefense.Tests
     /**
      * StageTests
      *
-     * 15웨이브 스테이지의 규칙
-     * 라이프 피해 상한 / Joker 획득·사용 / 런 통계
+     * 스테이지 규칙
+     * 라이프 피해 상한 / 승급권(Joker) 획득·사용 / Run 통계
      */
     public class StageTests
     {
@@ -100,7 +100,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 상한은_Swarm_웨이브를_놓쳐도_한_번에_끝나지_않게_한다()
         {
-            // 적 20기짜리 웨이브를 통째로 놓쳐도 라이프 15가 즉시 0이 되면 안 된다
+            // 적 20기짜리 웨이브를 통째로 놓쳐도 라이프 15가 즉시 0이 되면 안 됨
             var stage = new StageContext(MakeStage(15, 5, MakeWave(1, 0), MakeWave(2, 0)));
 
             stage.ApplyResult(CombatOutcome.TimedOut, 20, 0);
@@ -112,7 +112,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 보스가_남으면_한_기여도_상한만큼_깎인다()
         {
-            // 보스 웨이브를 실패하고 라이프 1만 잃으면 보스가 벽으로 기능하지 못한다
+            // 보스 웨이브를 실패하고 라이프 1만 잃으면 보스가 벽으로 기능하지 못함
             var stage = new StageContext(MakeStage(15, 5, MakeWave(1, 1), MakeWave(2, 0)));
 
             stage.ApplyResult(CombatOutcome.TimedOut, 1, 1);
@@ -140,7 +140,7 @@ namespace PokerDefense.Tests
             Assert.AreEqual(15, stage.Life);
         }
 
-        // ---------- Joker ----------
+        // ---------- 승급권(Joker) ----------
 
         [Test]
         public void 보스_웨이브를_클리어하면_Joker를_받는다()
@@ -216,7 +216,7 @@ namespace PokerDefense.Tests
             Assert.IsFalse(board.TryPromoteAt(1), "빈 칸에는 쓸 수 없다");
         }
 
-        // ---------- 런 통계 ----------
+        // ---------- Run 통계 ----------
 
         [Test]
         public void 최고_족보는_enum_순서가_아니라_희귀도로_정해진다()
@@ -226,7 +226,7 @@ namespace PokerDefense.Tests
             stats.RecordHand(HandCategory.Straight);
             stats.RecordHand(HandCategory.BackStraight);
 
-            // BackStraight는 enum에서 Straight보다 뒤에 있지만, 그것과 무관하게 더 희귀하다
+            // BackStraight는 enum에서 Straight보다 뒤에 있지만, 그것과 무관하게 더 희귀함
             Assert.AreEqual(HandCategory.BackStraight, stats.BestHand);
 
             stats.RecordHand(HandCategory.OnePair);

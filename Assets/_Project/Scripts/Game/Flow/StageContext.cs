@@ -2,7 +2,13 @@ using System;
 
 namespace PokerDefense.Game
 {
-    // 한 런의 전투 진행과 라이프·승급권만 소유한다. 손패 기회는 RoundContext가 소유한다.
+    /**
+     * StageContext
+     *
+     * 한 Run의 웨이브 진행(WaveIndex)과 라이프·승급권을 소유함
+     * Joker는 보스 보상 승급권의 내부 이름
+     * 손패와 교체 상태는 라운드마다 새로 만드는 RoundContext가 소유함
+     */
     public sealed class StageContext
     {
         readonly StageDefinition definition;
@@ -21,6 +27,7 @@ namespace PokerDefense.Game
         public bool IsAllWavesCleared => WaveIndex >= TotalWaves;
         public WaveDefinition CurrentWave => IsAllWavesCleared ? null : definition.Waves[WaveIndex];
 
+        // 시간 초과면 라이프를 깎고, 클리어면 승급권 보상을 줌 (어느 쪽이든 다음 웨이브로 넘어감)
         public void ApplyResult(CombatOutcome outcome, int unresolvedEnemies, int unresolvedBosses)
         {
             if (outcome == CombatOutcome.InProgress || IsGameOver || IsAllWavesCleared)
@@ -42,6 +49,7 @@ namespace PokerDefense.Game
             WaveIndex++;
         }
 
+        // 깎을 라이프 - 보스가 하나라도 남으면 상한, 아니면 남은 적 수만큼 (상한까지)
         public int LifeDamageFor(int unresolvedEnemies, int unresolvedBosses)
         {
             return unresolvedBosses > 0 ? definition.MaxLifeDamagePerWave
