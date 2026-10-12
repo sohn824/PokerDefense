@@ -14,7 +14,7 @@ using UnityEngine.UI;
 
 namespace PokerDefense.Editor
 {
-    // 기존 씬 배선을 유지하며 메뉴 씬과 공통 UI를 설치한다. 같은 메뉴를 다시 실행해도 중복되지 않는다.
+    // 메뉴 씬과 공통 UI 설치 (이미 연결된 참조는 건드리지 않으므로 여러 번 실행해도 중복으로 생기지 않음)
     public static partial class GameLoopSetup
     {
         const string Scenes = "Assets/_Project/Scenes/";
@@ -61,7 +61,8 @@ namespace PokerDefense.Editor
             EditorSceneManager.OpenScene(Scenes + "Game.unity");
         }
 
-        // 피드백 반영용: 기존 타이틀·메뉴의 배치는 보존하고 해당 UI만 갱신한다.
+        // Update Guide and Assist UI - Install Game Loop의 가벼운 버전
+        // 타이틀 씬과 메뉴는 새로 만들지 않고 보조·안내·손패·확률 UI만 다시 설치
         [MenuItem("Tools/Poker Defense/Update Guide and Assist UI")]
         public static void UpdateGuideAndAssist()
         {
@@ -106,6 +107,9 @@ namespace PokerDefense.Editor
             }
         }
 
+        // InstallGuides - 첫 플레이 안내 팝업(GuideCanvas) 설치
+        //   OnboardingGuide에 안내창·본문·닫기 버튼을 연결하고, 안내 중 막을 입력(Canvas·AssistCanvas)을 지정
+        //   기존 GuideCanvas는 지우고 새로 만듦
         static void InstallGuides()
         {
             OnboardingGuide guide = UnityEngine.Object.FindAnyObjectByType<OnboardingGuide>();
@@ -161,6 +165,10 @@ namespace PokerDefense.Editor
 
         const string HelpText = "<b>손패로 유닛을 만드세요</b>\n바꿀 카드를 선택하고 일반 교체합니다.\n자리마다 한 번, 비용 없이 바꿀 수 있습니다.\n\n<b>매 라운드 선택 교체 1회</b>\n일반 교체했던 카드 한 장을 다시 바꿉니다.\n후보 3장 중 한 장을 반드시 골라야 합니다.\n남은 기회는 다음 라운드로 쌓이지 않습니다.\n\n<b>보드를 완성하세요</b>\n같은 유닛·같은 성급을 합치면 승급합니다.\n다른 유닛 칸에는 확인 후 새 유닛을 놓습니다.\n보스 보상 승급권으로도 한 단계 올릴 수 있습니다.\n\n<b>전투를 보고 배치를 바꾸세요</b>\n적의 특성과 사거리를 확인하세요.\n전투 중에도 유닛을 이동·합칠 수 있습니다.";
 
+        // InstallHandLoop - 유닛 변경 확인창(DecisionCanvas)과 라운드 화면의 HandGoals 패널 설치
+        //   BoardDecisionScreen을 만들어 BoardScreen에 연결하고, RoundScreen에 HandGoals 패널·라벨 연결
+        //   (HandGoals 안의 내용은 InstallHandOdds가 확률 요약 줄로 다시 채움)
+        //   예전 HeldCardTray와 기존 DecisionCanvas·HandGoals는 지우고 새로 만듦
         static void InstallHandLoop()
         {
             Transform tray = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include).FirstOrDefault(t => t.name == "HeldCardTray");
@@ -205,7 +213,7 @@ namespace PokerDefense.Editor
             Set(roundScreen, "goalLabel", goals);
         }
 
-        // 배속 버튼만 설치·갱신한다. 기존 HUD 배치는 그대로 둔다.
+        // 기존 HUD 배치는 그대로 두고 배속 버튼만 설치·갱신
         [MenuItem("Tools/Poker Defense/Install Speed Toggle")]
         public static void InstallSpeedToggleMenu()
         {
@@ -220,6 +228,8 @@ namespace PokerDefense.Editor
             EditorSceneManager.SaveScene(game);
         }
 
+        // InstallSpeedToggle - 상단 HUD(HudBar)에 배속 버튼(SpeedButton) 설치, GameSpeedButton 연결
+        //   기존 SpeedButton은 지우고 새로 만듦
         static void InstallSpeedToggle()
         {
             Transform hudBar = GameObject.Find("HudBar").transform;
@@ -238,9 +248,14 @@ namespace PokerDefense.Editor
             Set(speed, "label", button.GetComponentInChildren<TMP_Text>());
         }
 
+        // InstallAssist - 선택 교체 UI(AssistCanvas) 설치
+        //   행동 버튼 줄에 "선택 교체" 버튼을 넣고, 손패 5칸·후보 3장·미리보기·공개/교체/취소 버튼이 있는 후보 패널을 만듦
+        //   AssistScreen과 RunJournal(없으면 추가)의 참조 연결
+        //   기존 AssistCanvas·AssistButton은 지우고 새로 만듦
         static void InstallAssist()
         {
-            // 진입 버튼은 공통 행동 바 소속이므로 후보 Canvas와 별도로 정리한다.
+            // 이전에 설치한 AssistButton·ExchangeActionHint부터 지움
+            // (화면 아래 행동 버튼 줄(BottomActionArea)에 들어 있어서, AssistCanvas를 지워도 같이 지워지지 않음)
             foreach (Transform previous in UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include)
                 .Where(t => t.name == "AssistButton" || t.name == "ExchangeActionHint").ToArray())
             {
@@ -351,6 +366,11 @@ namespace PokerDefense.Editor
             overlay.gameObject.SetActive(false);
         }
 
+        // InstallMenu - 메뉴 UI(MenuCanvas) 설치 (title이 true면 타이틀 씬용, false면 게임 씬용)
+        //   공통 - 일시정지·오디오 옵션·도움말·포기 확인 페이지
+        //   타이틀 - 배경 그림과 시작 화면(게임 시작·옵션·도움말·게임 종료)
+        //   게임 - 오른쪽 위 메뉴 버튼, 메뉴가 열린 동안 막을 입력(inputGroups 5개), 결과 화면의 "타이틀로" 버튼
+        //   기존 MenuCanvas는 지우고 새로 만듦
         static void InstallMenu(bool title)
         {
             GameObject old = GameObject.Find("MenuCanvas");

@@ -12,7 +12,7 @@ namespace PokerDefense.Tests
     public class RunSubmitterTests
     {
         /**
-         * 테스트 안에서 띄우는 가짜 서버. 연결 하나를 받아 프레임 하나를 읽고, respond가 정한 대로 응답함
+         * 테스트 안에서 띄우는 가짜 서버. 연결 하나를 받아 메시지 하나를 읽고, respond가 정한 대로 응답함
          * 실제 C++ 서버 없이 정상 응답·끊김·지연·조각난 응답을 마음대로 만들기 위해 씀
          */
         sealed class FakeServer : IDisposable
@@ -20,7 +20,8 @@ namespace PokerDefense.Tests
             readonly TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
             readonly Task serving;
 
-            // respond: 받은 본문 → 보낼 바이트. null이면 아무것도 보내지 않고 끊음
+            // respond - 받은 제출 본문으로 돌려보낼 바이트를 만듦 (null을 돌려주면 아무것도 보내지 않고 끊음)
+            // delayMs - 응답 전에 기다릴 시간, dribble - true면 응답을 한 바이트씩 나눠 보냄
             public FakeServer(Func<byte[], byte[]> respond, int delayMs = 0, bool dribble = false)
             {
                 listener.Start();
@@ -90,6 +91,7 @@ namespace PokerDefense.Tests
             }
         }
 
+        // 받은 제출의 runId로 ACK 메시지를 만듦 (overrideId를 주면 그 runId로 - 다른 기록의 ACK 테스트용)
         static byte[] AckFor(byte[] payload, RunAckStatus status, int rank, int total, Guid? overrideId = null)
         {
             RunProtocol.TryDecodeSubmit(payload, out var result);

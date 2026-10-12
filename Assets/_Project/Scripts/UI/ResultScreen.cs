@@ -9,10 +9,10 @@ namespace PokerDefense.UI
     /**
      * ResultScreen
      *
-     * 루프가 멈추면(클리어 or 게임 오버) 성과를 보여주고 다시 시작한다
-     * 패배해도 보여주는 이유는 메타 성장이 없는 게임에서 "지난번보다 잘했다"를 느끼게 하는 유일한 장치이기 때문이다
+     * 게임이 끝나면(클리어 또는 게임 오버) 이번 판 결과를 보여주고, 재시작 버튼으로 새 판을 시작함
      *
-     * 재시작은 씬을 다시 로드한다 - 상태를 손으로 되돌리면 새 상태가 생길 때마다 하나씩 빠뜨린다
+     * 재시작하면 이번 판의 진행 상태(웨이브·라이프·덱·보드의 유닛과 적 등)를 하나씩 되돌리지 않고
+     * Game 씬을 다시 로드해 통째로 새로 만듦 (상태가 늘어날 때 초기화 누락 방지)
      */
     public sealed class ResultScreen : MonoBehaviour
     {
@@ -84,7 +84,8 @@ namespace PokerDefense.UI
             bodyLabel.text = body.ToString();
         }
 
-        // RankingLine - 결과 전송 상태를 한 줄로 표시. 보낼 대상이 아니면 null
+        // RankingLine - 결과 화면에 넣을 랭킹 줄 문구를 만듦
+        // 보여줄 상태가 아니면 null (RunReporter가 없거나 None·Disabled·Skipped일 때)
         string RankingLine()
         {
             if (reporter == null)
@@ -99,7 +100,7 @@ namespace PokerDefense.UI
                 case RunReportStatus.Sent:
                     return $"랭킹   기록 {reporter.Total}개 중 {reporter.Rank}위";
                 case RunReportStatus.Offline:
-                    return "랭킹   서버 연결 실패 · 다음 실행 때 다시 전송";
+                    return "랭킹   서버 연결 실패 · 다음에 다시 전송";
                 case RunReportStatus.Rejected:
                     return "랭킹   서버가 기록을 받지 않음";
                 default:

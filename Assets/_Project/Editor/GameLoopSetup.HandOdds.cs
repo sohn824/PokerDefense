@@ -35,6 +35,11 @@ namespace PokerDefense.Editor
             EditorSceneManager.SaveScene(game);
         }
 
+        // InstallHandOdds - 교체 확률 상세 창(OddsCanvas) 설치
+        //   족보별 13줄(문구 + 막대)이 있는 스크롤 목록을 만들고 HandOddsScreen에 연결
+        //   일반 교체 쪽(HandGoals)과 선택 교체 쪽(AssistScreen)에 확률 요약 줄을 넣고, 누르면 이 창이 열리게 함
+        //   선택 교체 패널의 미리보기·버튼 위치도 요약 줄이 들어갈 자리에 맞게 옮김
+        //   기존 OddsCanvas와 요약 줄은 지우고 새로 만듦
         static void InstallHandOdds()
         {
             GameObject previous = GameObject.Find("OddsCanvas");
@@ -130,6 +135,8 @@ namespace PokerDefense.Editor
             overlay.gameObject.SetActive(false);
         }
 
+        // InstallOddsSummary - panel을 누르면 확률 창이 열리는 요약 줄로 만듦 (요약 문구 + "자세히 >")
+        //   owner(RoundScreen·AssistScreen)의 labelField·oddsButton·oddsScreen 참조 연결
         static void InstallOddsSummary(UnityEngine.Object owner, RectTransform panel, string labelField, HandOddsScreen screen)
         {
             Button button = panel.GetComponent<Button>();

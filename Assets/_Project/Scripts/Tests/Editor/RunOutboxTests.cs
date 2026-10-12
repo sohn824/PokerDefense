@@ -65,7 +65,7 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 깨진_파일은_옆으로_치우고_나머지는_읽는다()
+        public void 깨진_파일은_bad로_바꾸고_나머지는_읽는다()
         {
             var outbox = new RunOutbox(directory);
             var sample = RunProtocolTests.Sample(Guid.NewGuid());

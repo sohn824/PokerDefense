@@ -1,4 +1,4 @@
-// 서버 테스트 - 외부 라이브러리 없이 실행 파일 하나로 돎 (ctest가 종료 코드로 판정)
+// 서버 테스트 - 외부 라이브러리 없이 실행 파일 하나로 돎 (build.bat이 실행, 실패가 있으면 종료 코드 1)
 
 #include <atomic>
 #include <chrono>
@@ -109,6 +109,7 @@ namespace
         return bytes;
     }
 
+    // 순위 테스트용 기록 - id·웨이브·라이프·시간만 바꿈 (라이프가 남으면 클리어한 판으로 보고 wave·summons를 50으로 맞춤)
     RunRecord Record(uint8_t id, uint16_t wave, uint16_t life, uint32_t elapsedMs)
     {
         RunRecord record = SampleRecord();
@@ -128,6 +129,7 @@ namespace
         return record;
     }
 
+    // 임시 폴더 안의 파일 경로 - 이전 실행이 남긴 같은 이름 파일은 지우고 시작
     std::string TempPath(const char* name)
     {
         char buffer[MAX_PATH];
@@ -356,7 +358,7 @@ TEST(잘린_마지막_줄_뒤에_저장한_새_기록도_다시_읽힌다)
 
 namespace
 {
-    // 테스트용 블로킹 클라이언트 - 서버는 메인 스레드에서 Poll로 돌리고 클라이언트는 별도 스레드에서 돎
+    // 테스트용 블로킹 클라이언트 - 서버는 메인 스레드에서 Poll로 돌리고 클라이언트는 별도 스레드에서 돎 (응답은 최대 3초 기다림)
     SOCKET Connect(uint16_t port)
     {
         SOCKET client = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -392,7 +394,8 @@ namespace
         return true;
     }
 
-    // 프레임 하나를 끝까지 받음. 연결이 끊기면 false
+    // 서버 응답 메시지 하나를 끝까지 받음
+    // 연결이 끊기거나, 3초 안에 응답이 없거나, 길이가 잘못되면 false
     bool ReceiveFrame(SOCKET socket, std::vector<uint8_t>& payload)
     {
         FrameReader reader(MaxPayloadSize);
@@ -510,6 +513,7 @@ TEST(잘못된_길이를_보내면_연결을_끊는다)
 
     RunServerUntil(server, client, finished);
     CHECK(closedByServer);
+    CHECK(server.ConnectionCount() == 0);
     CHECK(store.Count() == 0);
 }
 
