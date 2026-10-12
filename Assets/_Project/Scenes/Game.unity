@@ -20633,7 +20633,7 @@ GameObject:
   - component: {fileID: 1042813843}
   - component: {fileID: 1042813845}
   m_Layer: 0
-  m_Name: HandGoals
+  m_Name: ExchangeOdds
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

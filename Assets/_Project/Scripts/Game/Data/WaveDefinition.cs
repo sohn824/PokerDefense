@@ -39,20 +39,5 @@ namespace PokerDefense.Game
         public float TimeLimit => timeLimit;
         public int JokerReward => jokerReward;
         public IReadOnlyList<SpawnEntry> Entries => entries;
-
-        public int TotalEnemyCount
-        {
-            get
-            {
-                int total = 0;
-
-                for (int i = 0; i < entries.Length; i++)
-                {
-                    total += entries[i].count;
-                }
-
-                return total;
-            }
-        }
     }
 }

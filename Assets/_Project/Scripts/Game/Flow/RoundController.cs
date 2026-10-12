@@ -53,8 +53,6 @@ namespace PokerDefense.Game
 
         public HandResult PreviewCandidate(int index) => round.PreviewCandidate(index);
 
-        public IReadOnlyList<HandGoal> FindGoals() => round.FindGoals(assistMode != AssistMode.Disabled);
-
         // UI는 이제 CaptureOdds + HandOddsWorker(비동기)를 쓴다. 이 동기 메서드는 테스트의 기준값 계산에만 남겨둔다.
         public IReadOnlyList<HandOddsEntry> FindExchangeOdds(IReadOnlyList<int> indices) => round?.FindExchangeOdds(indices);
 

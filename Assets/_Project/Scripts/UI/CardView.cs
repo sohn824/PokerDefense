@@ -11,7 +11,7 @@ namespace PokerDefense.UI
      * CardView
      *
      * 손패 / 트레이 카드 한 장의 클래스
-     * 프레임·하이라이트·무늬는 CardVisualSet 스프라이트 묶음으로 사용, rank는 텍스트로 씀
+     * 무늬는 CardVisualSet 스프라이트 묶음으로 사용, rank는 텍스트로 씀
      *
      * 상태(CardState)는 색이 아니라 크기·테두리·아래쪽 배지 문구로 구분
      */
@@ -21,11 +21,7 @@ namespace PokerDefense.UI
         {
             Normal,      // 평소
             Pick,        // 교체하려고 고른 손패 카드
-            Locked,      // 이번 라운드에 이미 교체한 자리
-            Placed,      // 트레이 카드를 놓은 자리
-            Target,      // 트레이 카드를 고른 동안 놓을 수 있는 손패 자리
-            TrayPick,    // 배치하려고 고른 트레이 카드 (상점에서 고른 카드에도 재사용)
-            Bought       // 상점에서 이미 산 카드
+            Locked       // 이번 라운드에 이미 교체한 자리
         }
 
         static readonly Color RedSuit = new Color(0.80f, 0.15f, 0.15f);
@@ -120,12 +116,12 @@ namespace PokerDefense.UI
         {
             state = next;
 
-            bool up = next == CardState.Pick || next == CardState.TrayPick;
-            bool locked = next == CardState.Locked || next == CardState.Placed || next == CardState.Bought;
+            bool up = next == CardState.Pick;
+            bool locked = next == CardState.Locked;
 
             transform.localScale = baseScale * (up ? PickScale : locked ? LockedScale : 1f);
             group.alpha = locked ? LockedAlpha : 1f;
-            selectionFrame.enabled = up || next == CardState.Target;
+            selectionFrame.enabled = up;
 
             string badge = BadgeFor(next);
             badgeBg.gameObject.SetActive(badge.Length > 0);
@@ -138,10 +134,6 @@ namespace PokerDefense.UI
             {
                 case CardState.Pick: return "교체";
                 case CardState.Locked: return "교체 완료";
-                case CardState.Placed: return "배치 완료";
-                case CardState.Target: return "여기 놓기";
-                case CardState.TrayPick: return "선택";
-                case CardState.Bought: return "구매 완료";
                 default: return string.Empty;
             }
         }

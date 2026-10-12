@@ -111,12 +111,12 @@ namespace PokerDefense.Game
             // 게임이 끝났으면 결과 비트 없이 최종 결과 화면으로 바로 넘긴다
             if (stage.Stage.IsGameOver || stage.Stage.IsAllWavesCleared)
             {
-                AdvanceRound(outcome);
+                AdvanceRound();
                 return;
             }
 
             // 결과 비트를 띄우고, 닫힐 때 라운드 루프를 이어 간다 (전이는 DismissBreak 한 번으로만)
-            afterBreak = () => AdvanceRound(outcome);
+            afterBreak = () => AdvanceRound();
             waitingForBreak = true;
             RoundSettled?.Invoke(summary);
         }
@@ -152,7 +152,7 @@ namespace PokerDefense.Game
          * 전투 결과 하나를 라운드 루프에 반영한다 (StageContext에는 이미 반영된 뒤)
          * 실전 전투(OnCombatFinished)와 DevMode 웨이브 스킵이 이 판정을 공유한다
          */
-        void AdvanceRound(CombatOutcome outcome)
+        void AdvanceRound()
         {
             // 게임 오버나 게임 클리어 시 라운드 루프를 멈춤
             if (stage.Stage.IsGameOver || stage.Stage.IsAllWavesCleared)
@@ -192,7 +192,7 @@ namespace PokerDefense.Game
 
             UsedDevSkip = true;
             stage.ApplyCombatResult(CombatOutcome.Cleared, 0, 0);
-            AdvanceRound(CombatOutcome.Cleared);
+            AdvanceRound();
         }
 
         // 개발 전용

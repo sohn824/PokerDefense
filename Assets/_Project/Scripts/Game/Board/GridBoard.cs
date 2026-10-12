@@ -53,9 +53,6 @@ namespace PokerDefense.Game
             return new Vector2(x, y);
         }
 
-        // 적이 도는 트랙이 보드 바깥으로 떨어진 거리
-        public const float TrackMargin = 0.9f;
-
         // 배경 아트에 맞춘 공통 경로. 전투 판정과 화면이 같은 좌표를 읽는다.
         public static float TrackHalfWidth => TrackPath.Arena.HalfWidth;
         public static float TrackHalfHeight => TrackPath.Arena.HalfHeight;

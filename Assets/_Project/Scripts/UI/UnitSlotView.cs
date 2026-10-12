@@ -42,7 +42,6 @@ namespace PokerDefense.UI
         // 총구 화염 연출용 상수
         const float MuzzleSeconds = 0.06f;
         const float MuzzleScale = 0.40f;
-        const float MuzzleBackExtraY = 0.04f;
 
         [SerializeField] SpriteRenderer highlight;
 

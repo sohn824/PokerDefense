@@ -16,7 +16,6 @@ namespace PokerDefense.UI
         [SerializeField] RoundController round;
         [SerializeField] PlacementController placement;
         [SerializeField] GameFlowController flow;
-        [SerializeField] StageController stage;
         [SerializeField] CanvasGroup[] inputGroups;
         [SerializeField] GameObject cardHintRow;
         [SerializeField] TMP_Text cardHintLabel;

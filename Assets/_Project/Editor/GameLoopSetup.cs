@@ -165,14 +165,12 @@ namespace PokerDefense.Editor
 
         const string HelpText = "<b>손패로 유닛을 만드세요</b>\n바꿀 카드를 선택하고 일반 교체합니다.\n자리마다 한 번, 비용 없이 바꿀 수 있습니다.\n\n<b>매 라운드 선택 교체 1회</b>\n일반 교체했던 카드 한 장을 다시 바꿉니다.\n후보 3장 중 한 장을 반드시 골라야 합니다.\n남은 기회는 다음 라운드로 쌓이지 않습니다.\n\n<b>보드를 완성하세요</b>\n같은 유닛·같은 성급을 합치면 승급합니다.\n다른 유닛 칸에는 확인 후 새 유닛을 놓습니다.\n보스 보상 승급권으로도 한 단계 올릴 수 있습니다.\n\n<b>전투를 보고 배치를 바꾸세요</b>\n적의 특성과 사거리를 확인하세요.\n전투 중에도 유닛을 이동·합칠 수 있습니다.";
 
-        // InstallHandLoop - 유닛 변경 확인창(DecisionCanvas)과 라운드 화면의 HandGoals 패널 설치
-        //   BoardDecisionScreen을 만들어 BoardScreen에 연결하고, RoundScreen에 HandGoals 패널·라벨 연결
-        //   (HandGoals 안의 내용은 InstallHandOdds가 확률 요약 줄로 다시 채움)
-        //   예전 HeldCardTray와 기존 DecisionCanvas·HandGoals는 지우고 새로 만듦
+        // InstallHandLoop - 유닛 변경 확인창(DecisionCanvas)과 라운드 화면의 ExchangeOdds 패널 설치
+        //   BoardDecisionScreen을 만들어 BoardScreen에 연결하고, RoundScreen에 ExchangeOdds 패널·라벨 연결
+        //   (ExchangeOdds 안의 내용은 InstallHandOdds가 확률 요약 줄로 다시 채움)
+        //   기존 DecisionCanvas·ExchangeOdds는 지우고 새로 만듦
         static void InstallHandLoop()
         {
-            Transform tray = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include).FirstOrDefault(t => t.name == "HeldCardTray");
-            if (tray != null) UnityEngine.Object.DestroyImmediate(tray.gameObject);
             GameObject old = GameObject.Find("DecisionCanvas");
             if (old != null) UnityEngine.Object.DestroyImmediate(old);
             RectTransform root = Rect("DecisionCanvas", null, Vector2.zero, Vector2.zero);
@@ -202,30 +200,15 @@ namespace PokerDefense.Editor
             overlay.gameObject.SetActive(false);
             Set(UnityEngine.Object.FindAnyObjectByType<BoardScreen>(), "decision", decision);
             RoundScreen roundScreen = UnityEngine.Object.FindAnyObjectByType<RoundScreen>();
-            Transform previous = roundScreen.transform.Find("HandGoals");
+            Transform previous = roundScreen.transform.Find("ExchangeOdds");
             if (previous != null) UnityEngine.Object.DestroyImmediate(previous.gameObject);
-            RectTransform goalPanel = Rect("HandGoals", roundScreen.transform, new Vector2(0f, 340f), new Vector2(1000f, 104f));
+            RectTransform goalPanel = Rect("ExchangeOdds", roundScreen.transform, new Vector2(0f, 340f), new Vector2(1000f, 104f));
             goalPanel.anchorMin = goalPanel.anchorMax = new Vector2(.5f, 0f);
             goalPanel.gameObject.AddComponent<CanvasRenderer>();
             goalPanel.gameObject.AddComponent<ArenaPanelGraphic>().Configure(UiStyle.PanelBg, UiStyle.BorderMuted, false);
             TMP_Text goals = Label("Goals", goalPanel, "", Vector2.zero, new Vector2(970f, 100f), 30f);
             Set(roundScreen, "goalPanel", goalPanel.gameObject);
             Set(roundScreen, "goalLabel", goals);
-        }
-
-        // 기존 HUD 배치는 그대로 두고 배속 버튼만 설치·갱신
-        [MenuItem("Tools/Poker Defense/Install Speed Toggle")]
-        public static void InstallSpeedToggleMenu()
-        {
-            if (Application.isPlaying)
-            {
-                throw new InvalidOperationException("Stop Play Mode first.");
-            }
-            EditorSceneManager.SaveOpenScenes();
-            Scene game = EditorSceneManager.OpenScene(Scenes + "Game.unity");
-            font = UnityEngine.Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include).First(t => t.font != null).font;
-            InstallSpeedToggle();
-            EditorSceneManager.SaveScene(game);
         }
 
         // InstallSpeedToggle - 상단 HUD(HudBar)에 배속 버튼(SpeedButton) 설치, GameSpeedButton 연결

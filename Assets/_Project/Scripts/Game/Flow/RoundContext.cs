@@ -28,14 +28,6 @@ namespace PokerDefense.Game
 
         public bool AssistUsed { get; private set; }
 
-        public List<HandGoal> FindGoals(bool includeAssist = true)
-        {
-            var changeable = new bool[HandSize];
-            for (int i = 0; i < HandSize; i++)
-                changeable[i] = Phase == RoundPhase.Exchange && (locked[i] == false || (includeAssist && CanAssist(i)));
-            return HandGoals.Find(hand, BuildUnseen(), changeable);
-        }
-
         // 실제로 일반 교체할 자리들을 한꺼번에 채웠을 때 나올 수 있는 족보의 경우의 수
         // UI는 이제 CaptureOdds + HandOddsWorker(비동기)를 쓴다. 이 동기 메서드는 테스트의 기준값 계산에만 남겨둔다.
         public List<HandOddsEntry> FindExchangeOdds(IReadOnlyList<int> indices)
@@ -89,7 +81,6 @@ namespace PokerDefense.Game
 
         public bool IsChoosingCandidate => assistTarget >= 0;
         public IReadOnlyList<Card> Candidates => candidates;
-        public int AssistTarget => assistTarget;
 
         public bool CanAssist(int index) => Phase == RoundPhase.Exchange && AssistUsed == false
             && index >= 0 && index < HandSize && normallyExchanged[index] && deck.Remaining > 0;
