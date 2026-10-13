@@ -7,8 +7,7 @@ namespace PokerDefense.Poker
      * Deck
      *
      * 조커를 제외한 Card 52장 덱
-     * 라운드마다 seed를 받아 새로 생성
-     * excluded로 넘긴 카드는 덱에서 빠진다 (플레이어가 상점 카드를 들고 있는 동안)
+     * RoundContext가 라운드마다 seed를 받아 새로 생성
      */
     public sealed class Deck
     {
@@ -17,14 +16,15 @@ namespace PokerDefense.Poker
         readonly List<Card> cards = new List<Card>(FullSize);
         int nextIndex;
 
-        public Deck(int seed, IReadOnlyList<Card> excluded = null)
+        public Deck(int seed)
         {
-            cards.AddRange(BuildCards(excluded));
+            cards.AddRange(BuildCards());
             Shuffle(new Random(seed));
         }
 
-        // 52장 전체에서 excluded를 뺀 목록 (셔플 안 함)
-        // 상점 진열도 이 목록에서 뽑는다 (ShopOffer)
+        // 52장 카드 목록을 새로 만들어 돌려줌 (excluded로 넘긴 카드는 빼고, 셔플은 안 함)
+        // 기본적으로 덱 생성에 쓰고, 밖에서는 교체 확률 계산에 넘길 남은 카드 목록을 만들 때 사용
+        // (RoundContext·HandOddsBenchmark)
         public static List<Card> BuildCards(IReadOnlyList<Card> excluded = null)
         {
             List<Card> list = new List<Card>(FullSize);
@@ -60,6 +60,7 @@ namespace PokerDefense.Poker
 
         public int Remaining => cards.Count - nextIndex;
 
+        // 아직 뽑히지 않은 카드인지
         public bool ContainsRemaining(Card card) => cards.IndexOf(card, nextIndex) >= nextIndex;
 
         public Card Draw()
@@ -72,6 +73,7 @@ namespace PokerDefense.Poker
             return cards[nextIndex++];
         }
 
+        // count장까지 뽑음 (덱이 모자라면 남은 만큼만)
         public Card[] DrawUpTo(int count)
         {
             if (count < 0)

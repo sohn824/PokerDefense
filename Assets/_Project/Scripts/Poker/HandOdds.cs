@@ -5,7 +5,12 @@ using System.Threading.Tasks;
 
 namespace PokerDefense.Poker
 {
-    // 족보별 경우의 수 - 나오는 조합 수와 전체 조합 수로 확률을 계산
+    /**
+     * HandOddsEntry
+     *
+     * HandOdds 결과 한 줄 (족보 하나의 경우의 수)
+     * 이 족보가 나오는 조합 수(Count)를 전체 조합 수(Total)로 나눠 확률을 구함
+     */
     public readonly struct HandOddsEntry
     {
         public HandOddsEntry(HandCategory category, int count, int total)
@@ -26,7 +31,17 @@ namespace PokerDefense.Poker
         public float Probability => Total == 0 ? 0f : (float)Count / Total;
     }
 
-    // HandOdds - 손패 교체로 나올 수 있는 족보의 경우의 수를 세는 클래스
+    /**
+     * HandOdds
+     *
+     * 손패 교체 확률 계산 (Odds = 원하는 족보가 나올 확률)
+     * 고른 자리를 남은 카드로 바꾸는 조합을 전부 만들어 보고, 족보별로 몇 번 나오는지 셈
+     * 예) 4자리를 바꾸면 남은 47장에서 4장을 고르는 178,365가지를 전부 판정
+     *
+     * Find - 한 스레드에서 순서대로 셈 (바꿀 자리가 적어 조합이 적을 때)
+     * FindParallel - 조합을 첫 카드 기준으로 묶어 여러 스레드로 나눠 셈 (조합이 많을 때)
+     * 게임에서는 화면이 멈추지 않도록 HandOddsWorker가 백그라운드 스레드에서 둘 중 하나를 골라 호출
+     */
     public static class HandOdds
     {
         // 한 번에 선택할 수 있는 자리 수 상한

@@ -57,27 +57,24 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 제외한_카드는_덱에_없다()
+        public void BuildCards는_제외한_카드를_뺀다()
         {
             var excluded = new[]
             {
                 new Card(Rank.Ace, Suit.Spade),
                 new Card(Rank.King, Suit.Heart),
             };
-            var deck = new Deck(seed: 1, excluded);
+            var cards = Deck.BuildCards(excluded);
 
-            Assert.AreEqual(50, deck.Remaining);
-
-            var drawn = DrawAll(deck);
-            CollectionAssert.DoesNotContain(drawn, excluded[0]);
-            CollectionAssert.DoesNotContain(drawn, excluded[1]);
+            Assert.AreEqual(50, cards.Count);
+            CollectionAssert.DoesNotContain(cards, excluded[0]);
+            CollectionAssert.DoesNotContain(cards, excluded[1]);
         }
 
         [Test]
-        public void 빈_제외_목록이면_52장_그대로다()
+        public void BuildCards는_빈_제외_목록이면_52장_그대로다()
         {
-            var deck = new Deck(seed: 1, new Card[0]);
-            Assert.AreEqual(52, deck.Remaining);
+            Assert.AreEqual(52, Deck.BuildCards(new Card[0]).Count);
         }
 
         static List<Card> DrawAll(Deck deck)

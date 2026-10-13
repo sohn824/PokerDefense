@@ -5,7 +5,7 @@ using PokerDefense.Poker;
 namespace PokerDefense.Tests
 {
     /// <summary>
-    /// 테스트에서 핸드를 "As Ks Qs Js Ts" 표기로 쓰기 위한 헬퍼. 테스트 전용이다.
+    /// 테스트에서 핸드를 "As Ks Qs Js Ts" 표기로 쓰기 위한 헬퍼 (테스트 전용)
     /// </summary>
     static class Hand
     {

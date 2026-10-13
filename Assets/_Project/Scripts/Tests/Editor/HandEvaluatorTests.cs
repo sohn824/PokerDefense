@@ -7,7 +7,7 @@ namespace PokerDefense.Tests
 {
     public class HandEvaluatorTests
     {
-        // 13개 카테고리 각각의 대표 핸드.
+        // 13개 카테고리 각각의 대표 핸드
         [TestCase("As Ks Qs Js Ts", HandCategory.RoyalStraightFlush)]
         [TestCase("As 2s 3s 4s 5s", HandCategory.BackStraightFlush)]
         [TestCase("9s Ts Js Qs Ks", HandCategory.StraightFlush)]
@@ -29,7 +29,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 모든_카테고리에_대표_핸드_테스트가_존재한다()
         {
-            // HandCategory에 값을 추가하면 위 TestCase 목록도 함께 늘려야 한다는 것을 강제한다.
+            // HandCategory에 값을 추가하면 위 TestCase 목록도 함께 늘리도록 강제
             Assert.AreEqual(13, Enum.GetValues(typeof(HandCategory)).Length);
         }
 
@@ -49,7 +49,7 @@ namespace PokerDefense.Tests
             Assert.AreNotEqual(HandCategory.Straight, result.Category);
         }
 
-        // 플러시와 스트레이트가 겹칠 때 더 구체적인 특수 카테고리가 이기는지 확인한다.
+        // 플러시와 스트레이트가 겹칠 때 더 구체적인 특수 카테고리로 판정되는지 확인
         [TestCase("As Ks Qs Js Ts", HandCategory.RoyalStraightFlush)]
         [TestCase("As 2s 3s 4s 5s", HandCategory.BackStraightFlush)]
         public void 특수_스트레이트_플러시는_플러시나_스트레이트로_새지_않는다(

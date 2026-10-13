@@ -1,9 +1,14 @@
 namespace PokerDefense.Poker
 {
     /**
-     * 족보 리스트
-     * 
-     * 족보 -> 보상 유닛은 데이터 테이블 담당
+     * HandCategory
+     *
+     * 족보 리스트 (족보별 보상 유닛은 HandUnitTable 담당)
+     * enum 순서는 족보의 강함·희귀도가 아님 (족보 비교는 HandRarity 사용)
+     *
+     * 정수 값이 HandUnitTable.asset과 서버로 보내는 결과에 그대로 저장됨
+     * 그래서 순서를 바꾸거나 중간에 끼워 넣지 않고, 새 족보는 맨 뒤에 추가
+     * (족보를 추가하면 HandRarity 표와 서버 Protocol.cpp의 HandLoopLastHand도 함께 고쳐야 함)
      */
     public enum HandCategory
     {

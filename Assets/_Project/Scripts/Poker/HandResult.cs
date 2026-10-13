@@ -2,6 +2,11 @@ using System.Collections.Generic;
 
 namespace PokerDefense.Poker
 {
+    /**
+     * HandResult
+     *
+     * 족보 판정 결과 (족보 종류 + 그 족보를 만든 카드)
+     */
     public readonly struct HandResult
     {
         public readonly HandCategory Category;
