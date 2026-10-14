@@ -150,7 +150,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 교체_후에도_손패에_중복이_없다()
         {
-            // 교체도 같은 덱에서 뽑으므로 이미 손에 있던 카드가 다시 나오면 안 된다.
+            // 교체도 같은 덱에서 뽑으므로 이미 손에 있던 카드가 다시 나오면 안 됨
             var round = Drawn();
             round.Exchange(new[] { 0, 1, 2, 3, 4 });
 
@@ -160,7 +160,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 교체는_덱의_다음_카드를_쓴다()
         {
-            // 손패 5장 + 교체 5장 = 10장이 전부 서로 달라야 한다.
+            // 손패 5장 + 교체 5장 = 10장이 전부 서로 달라야 함
             var round = Drawn();
             var before = round.Hand.ToArray();
 

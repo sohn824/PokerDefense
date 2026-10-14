@@ -5,6 +5,13 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Game
 {
+    /**
+     * HandOddsSource
+     *
+     * 확률 계산을 요청한 쪽
+     * Exchange - 일반 교체 확률 (RoundScreen)
+     * Assist - 선택 교체 확률, 한 자리 기준 (AssistScreen)
+     */
     public enum HandOddsSource
     {
         Exchange,

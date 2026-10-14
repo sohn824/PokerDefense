@@ -188,7 +188,7 @@ namespace PokerDefense.UI
             oddsButton.gameObject.SetActive(choosing == false && target >= 0);
             oddsButton.interactable = round.OddsState == HandOddsState.Ready;
             oddsLabel.text = "남은 덱에서 한 장을 뽑을 때\n" + oddsText;
-            int count = round.Assistance == RoundController.AssistMode.RandomOne ? 1 : 3;
+            int count = RoundContext.CandidateCount;
             bool eligible = false;
             for (int i = 0; i < slots.Length; i++)
             {

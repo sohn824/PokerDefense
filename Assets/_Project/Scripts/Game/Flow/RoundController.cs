@@ -6,43 +6,76 @@ using UnityEngine;
 namespace PokerDefense.Game
 {
     /**
-     * RoundContext를 씬에서 구동하는 클래스
-     * UI는 이 컴포넌트의 이벤트를 구독하고 입력만 되돌려줌
-     * Game은 UI를 모른다
+     * RoundController
+     *
+     * RoundContext를 씬에서 구동하는 MonoBehaviour
+     * 라운드마다 새 시드로 RoundContext를 만들고, 손패·단계·확률이 바뀌면 이벤트로 알림
+     * 화면(RoundScreen·AssistScreen·HandOddsScreen)은 이 클래스의 이벤트를 받아 갱신되고,
+     * 버튼 입력은 이 클래스의 메서드를 불러 전달함
+     * 반대로 이 클래스는 UI 쪽을 참조하지 않음 (UI를 바꿔도 이 클래스는 고칠 필요 없음)
+     *
+     * 교체 확률 계산 시 HandOddsWorker 하나를 일반 교체와 선택 교체가 함께 씀
+     *   선택 교체 창이 열려 있으면 선택 교체 요청만, 닫혀 있으면 일반 교체 요청만 받음
+     *   손패나 덱이 바뀌면 InvalidateOdds가 진행 중인 계산과 이전 결과를 버림 (화면이 갱신되면서 새로 요청)
+     *   Worker 스레드 계산이 끝났는지는 Update에서 매 프레임 확인하고, 결과나 실패가 나오면 OddsChanged로 알림
      */
     public sealed class RoundController : MonoBehaviour
     {
+        // 라운드마다 덱 시드를 뽑는 난수
         readonly System.Random seedSource = new System.Random();
 
-        public enum AssistMode { Disabled, ChooseThree, RandomOne }
+        // 선택 교체 사용 여부
+        // Disabled - 선택 교체 없음 (선택 교체가 없는 규칙과 플레이·밸런스를 비교할 때 Inspector에서 바꿔 쓰는 개발용)
+        // ChooseThree - 후보 3장 중 1장 선택 (실제 게임에서 사용)
+        public enum AssistMode { Disabled, ChooseThree }
 
         [SerializeField] AssistMode assistMode = AssistMode.ChooseThree;
         RoundContext round;
-        HandOddsWorker odds;
-        int oddsVersion;
+        // 일반 교체·선택 교체가 같이 쓰는 확률 계산 Worker
+        HandOddsWorker oddsWorker;
+        // 손패 버전 (손패나 덱이 바뀔 때마다 InvalidateOdds에서 1 증가, 확률 요청이 어느 손패 기준인지 구분용)
+        int handVersion;
 
-        public bool IsAssistOddsActive { get; private set; }
-        public HandOddsState OddsState => odds?.State ?? HandOddsState.Idle;
-        public IReadOnlyList<HandOddsEntry> Odds => odds?.Result;
+        // 손패가 바뀌었을 때 발생하는 이벤트 (새 라운드·일반 교체·후보 선택·강제 손패)
+        public event Action<IReadOnlyList<Card>> HandChanged;
+        // 새 라운드(Exchange)·손패 확정(Place) 때 발생하는 이벤트
+        public event Action<RoundPhase> PhaseChanged;
+        // 족보 확정 때 발생하는 이벤트 (GameFlowController·PlacementController·RunJournal·RoundScreen이 구독)
+        public event Action<HandResult> Evaluated;
+        // 선택 교체 후보를 공개했거나 골랐을 때 발생하는 이벤트
+        public event Action AssistanceChanged;
+        // 확률 결과(또는 실패)가 나왔거나, 선택 교체 창이 열리고 닫혀 받을 확률 쪽이 바뀌었을 때 발생하는 이벤트
         public event Action OddsChanged;
 
+        // 선택 교체 창이 열려 있는지 (true면 선택 교체 확률만, false면 일반 교체 확률만 계산)
+        public bool IsAssistOddsActive { get; private set; }
+        // 지금 확률 계산 상태 (Worker가 아직 없으면 Idle)
+        public HandOddsState OddsState => oddsWorker?.State ?? HandOddsState.Idle;
+        // 확률 계산 결과 (OddsState가 Ready일 때만 값이 있음)
+        public IReadOnlyList<HandOddsEntry> Odds => oddsWorker?.Result;
+
+        // 이번 라운드 덱 셔플 시드 (RunJournal 기록용)
         public int LastSeed { get; private set; }
 
+        // 씬에 설정된 선택 교체 방식 (AssistScreen 버튼 표시·RunJournal 기록용)
         public AssistMode Assistance => assistMode;
         public bool IsChoosingCandidate => round != null && round.IsChoosingCandidate;
         public bool AssistUsed => round != null && round.AssistUsed;
         public IReadOnlyList<Card> Candidates => round.Candidates;
         public IReadOnlyList<Card> Hand => round.Hand;
-        public bool CanAssist(int index) => assistMode != AssistMode.Disabled && round != null && round.CanAssist(index);
-        public event Action AssistanceChanged;
+        // 이 자리를 선택 교체할 수 있는지 (Disabled 모드면 항상 false, 나머지 조건은 RoundContext.CanAssist)
+        public bool CanAssist(int index)
+            => assistMode != AssistMode.Disabled && round != null && round.CanAssist(index);
 
+        // 선택 교체 후보 3장 공개 (공개하면 true)
+        // 일시정지 중·Disabled 모드·선택 교체할 수 없는 자리면 아무것도 하지 않고 false
         public bool RevealCandidates(int index)
         {
             if (GameSession.IsPaused || assistMode == AssistMode.Disabled || round == null)
             {
                 return false;
             }
-            if (round.TryRevealCandidates(index, assistMode == AssistMode.RandomOne ? 1 : 3) == false)
+            if (round.TryRevealCandidates(index) == false)
             {
                 return false;
             }
@@ -51,11 +84,18 @@ namespace PokerDefense.Game
             return true;
         }
 
+        // index번 후보로 바꿨을 때의 족보 (손패는 그대로, AssistScreen 미리보기용)
         public HandResult PreviewCandidate(int index) => round.PreviewCandidate(index);
 
-        // UI는 이제 CaptureOdds + HandOddsWorker(비동기)를 쓴다. 이 동기 메서드는 테스트의 기준값 계산에만 남겨둔다.
-        public IReadOnlyList<HandOddsEntry> FindExchangeOdds(IReadOnlyList<int> indices) => round?.FindExchangeOdds(indices);
+        // 고른 자리들을 한꺼번에 일반 교체했을 때 족보별 경우의 수를 계산해 바로 돌려줌 (RoundContext.FindExchangeOdds를 그대로 호출)
+        // 호출한 스레드에서 끝날 때까지 계산하므로 화면이 멈출 수 있어 실제 게임에서는 쓰지 않음
+        // (실제 게임에서는 RequestOdds로 Worker 스레드에서 계산)
+        // HandOddsThreadingTests에서 Worker 스레드 계산 결과가 맞는지 비교하는 기준값으로만 사용
+        // 라운드 시작 전이거나 RoundContext가 null을 돌려주는 조건이면 null
+        public IReadOnlyList<HandOddsEntry> FindExchangeOdds(IReadOnlyList<int> indices)
+            => round?.FindExchangeOdds(indices);
 
+        // 공개한 후보 중 index번으로 교체 (일시정지 중이면 무시)
         public void ChooseCandidate(int index)
         {
             if (GameSession.IsPaused)
@@ -68,17 +108,14 @@ namespace PokerDefense.Game
             AssistanceChanged?.Invoke();
         }
 
-        public event Action<IReadOnlyList<Card>> HandChanged;
-        public event Action<RoundPhase> PhaseChanged;
-        public event Action<HandResult> Evaluated;
-
         public bool IsLocked(int index) => round.IsLocked(index);
 
         public int ExchangeableCount => round.ExchangeableCount;
 
+        // 이번 라운드에 교체한 총 장수 (일반 교체 + 선택 교체, RunJournal 기록용)
         public int UsedExchanges => round == null ? 0 : round.UsedExchanges;
 
-        // 라운드가 아직 안 열렸으면 Draw Phase로 본다
+        // 라운드가 아직 안 열렸으면 Draw Phase로 봄
         public RoundPhase Phase => round == null ? RoundPhase.Draw : round.Phase;
 
         // 지금 확정하면 어떤 족보가 되는지 표시용
@@ -86,35 +123,37 @@ namespace PokerDefense.Game
 
         void OnEnable()
         {
-            if (odds == null)
+            if (oddsWorker == null)
             {
-                odds = new HandOddsWorker();
+                oddsWorker = new HandOddsWorker();
             }
         }
 
-        // 재사용을 위해 Worker는 살려두고 진행 중인 계산만 취소한다
+        // 비활성화되면 진행 중인 계산과 결과를 버리고 선택 교체 창 상태를 초기화함 (Worker는 다시 켜질 때 재사용하도록 남겨 둠)
         void OnDisable()
         {
-            odds?.Cancel();
+            oddsWorker?.Cancel();
             IsAssistOddsActive = false;
         }
 
-        void OnDestroy() => odds?.Dispose();
+        void OnDestroy() => oddsWorker?.Dispose();
 
-        // 매 프레임 완료 여부만 확인 - 계산 자체는 Worker 스레드에서 돈다
+        // 매 프레임 Worker 스레드 계산이 끝났는지 확인하고, 결과나 실패가 나오면 OddsChanged 발생 (실패면 예외를 콘솔에 남김)
         void Update()
         {
-            if (odds != null && odds.Poll())
+            if (oddsWorker != null && oddsWorker.Poll())
             {
-                if (odds.Error != null)
+                if (oddsWorker.Error != null)
                 {
-                    Debug.LogException(odds.Error, this);
+                    Debug.LogException(oddsWorker.Error, this);
                 }
 
                 OddsChanged?.Invoke();
             }
         }
 
+        // 선택 교체 창이 열리고 닫힐 때 AssistScreen이 호출
+        // 받을 확률 쪽(IsAssistOddsActive)이 실제로 바뀔 때만 이전 쪽 계산과 결과를 버리고 OddsChanged로 다시 요청하게 함
         public void SetAssistOddsActive(bool active)
         {
             if (IsAssistOddsActive == active)
@@ -123,44 +162,47 @@ namespace PokerDefense.Game
             }
 
             IsAssistOddsActive = active;
-            odds?.Cancel();
+            oddsWorker?.Cancel();
             OddsChanged?.Invoke();
         }
 
-        // 일반 교체·선택 교체는 Worker 하나를 공유한다. 지금 활성 모드와 다른 출처의 요청은 무시
+        // 일반 교체·선택 교체는 Worker 하나를 공유하므로 지금 활성 쪽(IsAssistOddsActive)과 다른 source의 요청은 무시
+        // CaptureOdds가 null(지금 계산할 수 없는 조건)이면 Submit이 계산을 취소함
+        // Disabled 모드에서 선택 교체 요청이 오면 계산을 취소함
         public void RequestOdds(HandOddsSource source, IReadOnlyList<int> indices)
         {
-            if (odds == null || (source == HandOddsSource.Assist) != IsAssistOddsActive)
+            if (oddsWorker == null || (source == HandOddsSource.Assist) != IsAssistOddsActive)
             {
                 return;
             }
 
             if (source == HandOddsSource.Assist && assistMode == AssistMode.Disabled)
             {
-                odds.Cancel();
+                oddsWorker.Cancel();
                 return;
             }
 
-            odds.Submit(round?.CaptureOdds(oddsVersion, source, indices));
+            oddsWorker.Submit(round?.CaptureOdds(handVersion, source, indices));
         }
 
-        // Worker가 지금 그 출처의 요청을 들고 있을 때만 취소 - 다른 출처의 진행 중인 계산은 건드리지 않는다
+        // Worker가 지금 source의 요청을 들고 있을 때만 취소 - 다른 source의 진행 중인 계산은 건드리지 않음
         public void CancelOdds(HandOddsSource source)
         {
-            if (odds?.Source == source)
+            if (oddsWorker?.Source == source)
             {
-                odds.Cancel();
+                oddsWorker.Cancel();
             }
         }
 
+        // 손패나 덱이 바뀌었을 때 호출 - 손패 버전을 올리고 진행 중인 계산과 이전 결과를 버림
         void InvalidateOdds()
         {
-            oddsVersion++;
-            odds?.Cancel();
+            handVersion++;
+            oddsWorker?.Cancel();
         }
 
         // 새 라운드가 시작될 때 호출 (호출부는 GameFlowController)
-        // 덱을 새로 셔플하고 5장 뽑는다
+        // 새 시드로 덱을 셔플하고 5장 뽑아 바로 Exchange 단계로 넘김
         public void StartRound()
         {
             InvalidateOdds();
@@ -173,9 +215,7 @@ namespace PokerDefense.Game
             HandChanged?.Invoke(round.Hand);
         }
 
-        // 인벤토리에서 빼는 것은 호출부(StageController) 책임
-
-        // 고른 자리의 카드 교체
+        // 고른 자리 일반 교체 (교체한 자리는 잠김)
         public void ExchangeCards(IReadOnlyList<int> indices)
         {
             round.Exchange(indices);
@@ -184,7 +224,8 @@ namespace PokerDefense.Game
             HandChanged?.Invoke(round.Hand);
         }
 
-        // 교체를 끝내고 족보 확정
+        // 교체를 끝내고 족보 확정 (FinishExchange·Evaluate를 한 번에 실행 -> Place 단계)
+        // 일시정지 중이거나 선택 교체 후보를 고르는 중이면 무시
         public void ConfirmHand()
         {
             if (GameSession.IsPaused || IsChoosingCandidate)
@@ -200,10 +241,10 @@ namespace PokerDefense.Game
         }
 
 #if UNITY_EDITOR
+        // 지금 강제 손패를 쓸 수 있는지 (Exchange 단계에서만, HandCheatWindow 버튼 표시용)
         public bool CanForceHand => round != null && round.Phase == RoundPhase.Exchange;
 
-        // 개발 전용
-        // 원하는 족보의 5장으로 손패 강제 교체
+        // 개발 전용 - 손패를 넘겨받은 5장으로 강제로 바꿈 (HandCheatWindow가 족보별 예시 손패를 넘김)
         public void DevForceHand(IReadOnlyList<Card> cards)
         {
             round.ForceHand(cards);
@@ -211,6 +252,6 @@ namespace PokerDefense.Game
 
             HandChanged?.Invoke(round.Hand);
         }
-#endif //UNITY_EDITOR
+#endif // UNITY_EDITOR
     }
 }

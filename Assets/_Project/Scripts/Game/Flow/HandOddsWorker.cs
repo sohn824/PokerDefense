@@ -6,6 +6,15 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Game
 {
+    /**
+     * HandOddsState
+     *
+     * 교체 확률 계산 상태
+     * Idle - 요청 없음 (취소·무효화 직후 포함)
+     * Computing - 계산 중
+     * Ready - Result에 결과 있음
+     * Failed - 계산 중 예외가 발생함 (발생한 예외는 Error에 담김)
+     */
     public enum HandOddsState
     {
         Idle,
@@ -27,10 +36,10 @@ namespace PokerDefense.Game
      */
     public sealed class HandOddsWorker : IDisposable
     {
-        // 슬롯 몇 개부터 경우의 수 계산을 병렬로 돌릴지 정하는 상수
+        // 바꿀 자리가 이 수 이상이면 병렬로 계산 (2자리 이하는 47장 기준 최대 1,081가지라 순차로 충분)
         const int ParallelSlotThreshold = 3;
 
-        // 병렬 처리할 때 스레드를 동시에 몇 개까지 쓸지 정하는 상수
+        // 병렬 계산에 동시에 쓰는 스레드 수 상한 (모바일 환경에서 모든 코어를 차지하지 않도록 2로 제한)
         const int MaxParallelism = 2;
 
         // 작업 결과 데이터 클래스

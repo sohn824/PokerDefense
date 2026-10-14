@@ -20,22 +20,21 @@ namespace PokerDefense.Tests
             Assert.IsTrue(round.TryRevealCandidates(1));
         }
 
-        [TestCase(1)]
-        [TestCase(3)]
-        public void 손패당_한번만_공개하고_한장만_바꾼다(int count)
+        [Test]
+        public void 손패당_한번만_공개하고_한장만_바꾼다()
         {
             var round = new RoundContext(17);
             round.Draw();
             round.Exchange(new[] { 2 });
             Card[] before = round.Hand.ToArray();
-            Assert.IsTrue(round.TryRevealCandidates(2, count));
+            Assert.IsTrue(round.TryRevealCandidates(2));
             Assert.IsTrue(round.AssistUsed);
             Card chosen = round.Candidates[0];
-            Assert.AreEqual(count, round.Candidates.Count);
-            Assert.IsFalse(round.TryRevealCandidates(2, count));
+            Assert.AreEqual(RoundContext.CandidateCount, round.Candidates.Count);
+            Assert.IsFalse(round.TryRevealCandidates(2));
             Assert.Throws<InvalidOperationException>(() => round.FinishExchange());
             Assert.Throws<InvalidOperationException>(() => round.Exchange(new[] { 3 }));
-            Assert.Throws<ArgumentOutOfRangeException>(() => round.ChooseCandidate(count));
+            Assert.Throws<ArgumentOutOfRangeException>(() => round.ChooseCandidate(RoundContext.CandidateCount));
             HandResult preview = round.PreviewCandidate(0);
             CollectionAssert.AreEqual(before, round.Hand);
             round.ChooseCandidate(0);
