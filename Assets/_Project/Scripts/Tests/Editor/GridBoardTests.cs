@@ -10,9 +10,7 @@ namespace PokerDefense.Tests
         UnitDefinition archer;
         UnitDefinition knight;
 
-        /// <summary>
-        /// UnitDefinition은 ScriptableObject라 new로 못 만든다. 에셋을 읽지 않고 메모리에만 띄운다.
-        /// </summary>
+        // UnitDefinition은 ScriptableObject라 new로 못 만듦 -> 에셋 없이 메모리에만 만들고 SerializedObject로 private 필드를 채움
         static UnitDefinition MakeDefinition(string id, float attackPower)
         {
             var definition = ScriptableObject.CreateInstance<UnitDefinition>();
@@ -60,7 +58,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 보드_중앙_슬롯은_원점이다()
         {
-            // 5x3이라 정가운데(1행 2열 = 7번)가 보드 중심이다
+            // 5 × 3이라 정가운데(0부터 세어 1행 2열 = 7번)가 보드 중심
             Assert.AreEqual(Vector2.zero, GridBoard.SlotToLocalPosition(7));
         }
 
@@ -171,7 +169,7 @@ namespace PokerDefense.Tests
             Assert.AreEqual(20f, star2);
         }
 
-        /// <summary>0번과 1번을 각각 ★2로 만든다.</summary>
+        // 0번과 1번을 각각 ★2로 만듦
         static void TwoStarPair(GridBoard board, System.Func<UnitInstance> make)
         {
             board.TryPlace(0, make());
@@ -183,7 +181,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 별2_둘을_슬롯간_머지하면_별3이_된다()
         {
-            // 소환 유닛을 놓을 때만 머지되면 ★2 두 기를 합칠 방법이 없어 ★3에 도달하지 못한다.
+            // 소환 유닛을 놓을 때만 머지되면 ★2 두 기를 합칠 방법이 없어 ★3에 도달하지 못함
             var board = new GridBoard();
             TwoStarPair(board, Archer);
 
@@ -254,7 +252,7 @@ namespace PokerDefense.Tests
             Assert.AreEqual(3, board[0].Star);
         }
 
-        /// <summary>2번 슬롯을 ★3으로 만든다 (3·4번을 재료로 쓴다).</summary>
+        // 2번 슬롯을 ★3으로 만듦 (3번을 재료로 씀)
         void TwoStarPair2(GridBoard board)
         {
             board.TryPlace(2, Archer());
@@ -409,7 +407,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 유닛이_있는_칸으로는_옮길_수_없다()
         {
-            // 옮기기와 머지를 섞지 않는다. 머지는 TryMergeSlots가 맡는다
+            // 옮기기와 머지를 섞지 않음 (머지는 TryMergeSlots가 맡음)
             var board = new GridBoard();
             board.TryPlace(0, Archer());
             board.TryPlace(1, Archer());
@@ -488,16 +486,17 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void TakeAt은_슬롯을_비우고_유닛을_돌려준다()
+        public void ClearAt은_슬롯을_비운다()
         {
             var board = new GridBoard();
-            var unit = Archer();
-            board.TryPlace(4, unit);
+            board.TryPlace(4, Archer());
 
-            Assert.AreSame(unit, board.TakeAt(4));
+            board.ClearAt(4);
             Assert.IsNull(board[4]);
             Assert.AreEqual(0, board.OccupiedCount);
-            Assert.IsNull(board.TakeAt(4), "빈 칸에서 꺼내면 null");
+
+            Assert.DoesNotThrow(() => board.ClearAt(4), "빈 칸을 비워도 예외가 나면 안 됨");
+            Assert.IsNull(board[4]);
         }
 
         [Test]
@@ -515,7 +514,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 머지는_원본_인스턴스를_바꾸지_않는다()
         {
-            // UnitInstance는 불변이다. 승급은 새 인스턴스를 만든다.
+            // UnitInstance는 불변이라 승급은 새 객체를 만듦
             var board = new GridBoard();
             var original = Archer();
             board.TryPlace(0, original);

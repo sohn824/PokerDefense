@@ -6,6 +6,7 @@ namespace PokerDefense.Tests
 {
     public class HandLoopTests
     {
+        // TryReplace는 확인한 유닛(expected)이 그대로 있고 합칠 수 없는 유닛일 때만 바꿈
         [Test]
         public void 가득_찬_보드도_확인한_유닛만_교체하고_실패시_유지한다()
         {

@@ -3,15 +3,20 @@ using UnityEngine;
 
 namespace PokerDefense.Game
 {
+    /**
+     * PlacementResult
+     *
+     * 유닛을 슬롯에 놓거나 합친 결과 (PlacementController.Placed로 UI·RunJournal에 전달)
+     */
     public enum PlacementResult
     {
-        // 빈 칸에 새로 놓기
+        // 빈 칸에 새로 놓음
         Placed,
 
-        // 같은 유닛 + 같은 성급과 합치기
+        // 같은 종류 + 같은 성급 유닛과 합침 (슬롯끼리 머지, 승급권 사용도 이 값)
         Merged,
 
-        // 그리드에 다른 유닛이 있거나 최대 성급이라 놓을 수 없음
+        // 놓거나 합칠 수 없음 (그 칸에 다른 종류·다른 성급·★3 유닛이 있음)
         Rejected,
 
         // 기존 유닛을 퇴장시키고 새 유닛 배치
@@ -20,9 +25,18 @@ namespace PokerDefense.Game
 
     /**
      * GridBoard
-     * 
-     * 5열 × 3행 = 15슬롯 보드
-     * 유닛 배치, 유닛 머지 규칙, 슬롯의 배치 좌표를 소유
+     *
+     * 15칸(5열 × 3행) 보드에 놓인 유닛을 갖고, 보드 규칙을 검사·실행하는 객체
+     * 보드 규칙 - 배치, 머지, 이동, 자리 교환, 교체, 퇴장, 승급
+     *
+     * 쓰는 곳
+     * PlacementController - 하나 만들어 Run 동안 들고 있으며 보드를 바꿈
+     * CombatContext - 전투 중 슬롯의 유닛을 읽어 공격시킴
+     *
+     * 좌표·트랙 값도 여기서 제공
+     * SlotToLocalPosition - 슬롯 번호 -> 슬롯 좌표
+     * Track으로 시작하는 멤버 - 적이 걷는 트랙의 위치·방향·길이 (계산은 TrackPath.Arena가 함)
+     * 단위 - 보드 중심이 원점, 한 칸 = 1 (유닛 사거리도 같은 단위)
      */
     public sealed class GridBoard
     {
@@ -30,13 +44,13 @@ namespace PokerDefense.Game
         public const int Rows = 3;
         public const int SlotCount = Columns * Rows;
 
-        // 슬롯 한 칸의 월드 크기. 유닛 사거리도 같은 단위로 잰다.
+        // 슬롯 한 칸의 월드 크기 (유닛 사거리도 같은 단위)
         public const float CellSize = 1f;
 
         readonly UnitInstance[] slots = new UnitInstance[SlotCount];
 
-        // 슬롯 인덱스 -> 보드 중심을 원점으로 하는 로컬 좌표
-        // 0번이 좌상단, 14번이 우하단
+        // 슬롯 번호 -> 보드 중심을 원점으로 하는 로컬 좌표
+        // 번호 = 행 × 5 + 열 (ex: 0번 좌상단, 7번 정중앙 = 원점, 14번 우하단)
         public static Vector2 SlotToLocalPosition(int index)
         {
             if (index < 0 || index >= SlotCount)
@@ -53,25 +67,32 @@ namespace PokerDefense.Game
             return new Vector2(x, y);
         }
 
-        // 배경 아트에 맞춘 공통 경로. 전투 판정과 화면이 같은 좌표를 읽는다.
+        // 배경 아트에 맞춘 트랙(TrackPath.Arena) 값을 그대로 돌려줌
+        // 전투 판정과 화면이 모두 여기서 읽으므로 적이 걷는 경로가 어긋나지 않음
+        // progress - 0 = 시작점, 1 = 한 바퀴
+        // TrackHalfWidth·TrackHalfHeight는 테스트에서만 씀 (CombatTests - 트랙이 보드를 감싸는지, 트랙 위 점이 경계선에 있는지)
         public static float TrackHalfWidth => TrackPath.Arena.HalfWidth;
         public static float TrackHalfHeight => TrackPath.Arena.HalfHeight;
         public static float TrackLength => TrackPath.Arena.Length;
 
         public static Vector2 TrackPosition(float progress) => TrackPath.Arena.Position(progress);
 
+        // progress 지점에서 적이 바라볼 방향을 상하좌우 중 하나로 고름 (CombatScreen의 적 아트 선택용)
+        // progress - 한 바퀴 중 얼마나 왔는지 (0 = 시작점, 0.5 = 반 바퀴)
+        // TrackPath.MoveDirection - 그 지점에서 움직이는 쪽을 정규화된 방향 벡터로 돌려줌
+        // 예) (1, 0)이면 오른쪽으로, (0, -1)이면 아래로 걷는 중
+        // x 크기가 y보다 크거나 같으면 Left·Right, 작으면 Up·Down
         public static AimDirection TrackDirection(float progress)
         {
-            Vector2 tangent = TrackPath.Arena.Tangent(progress);
-            if (Mathf.Abs(tangent.x) >= Mathf.Abs(tangent.y))
+            Vector2 moveDirection = TrackPath.Arena.MoveDirection(progress);
+            if (Mathf.Abs(moveDirection.x) >= Mathf.Abs(moveDirection.y))
             {
-                return tangent.x >= 0f ? AimDirection.Right : AimDirection.Left;
+                return moveDirection.x >= 0f ? AimDirection.Right : AimDirection.Left;
             }
-            return tangent.y >= 0f ? AimDirection.Up : AimDirection.Down;
+            return moveDirection.y >= 0f ? AimDirection.Up : AimDirection.Down;
         }
 
-        // UnitInstance의 indexer
-        // UnitInstance 객체를 배열 인덱스 접근 시 get 내부를 실행
+        // index 슬롯의 유닛 (빈 칸이면 null, 읽기 전용)
         public UnitInstance this[int index]
         {
             get
@@ -85,7 +106,7 @@ namespace PokerDefense.Game
             }
         }
 
-        // 사용 중인 슬롯 개수 getter
+        // 유닛이 있는 슬롯 수 (테스트에서만 씀)
         public int OccupiedCount
         {
             get
@@ -104,7 +125,7 @@ namespace PokerDefense.Game
             }
         }
 
-        // 그리드 슬롯에 유닛을 놓을 수 있는지 검사
+        // index 슬롯에 unit을 놓을 수 있는지 (빈 칸이거나 머지할 수 있으면 true, TryPlace와 같은 판정)
         public bool CanPlaceAt(int index, UnitInstance unit)
         {
             if (index < 0 || index >= SlotCount)
@@ -120,7 +141,7 @@ namespace PokerDefense.Game
             return slots[index] == null || slots[index].CanMergeWith(unit);
         }
 
-        // 그리드 전체에 유닛을 놓을 자리가 있는지 검사 (빈 칸 혹은 머지 가능한 대상이 있는지)
+        // 보드 어딘가에 unit을 놓을 수 있는지 (빈 칸이나 머지 상대가 하나라도 있으면 true, 테스트에서만 씀)
         public bool CanAccept(UnitInstance unit)
         {
             if (unit == null)
@@ -139,7 +160,9 @@ namespace PokerDefense.Game
             return false;
         }
 
-        // 확인 창을 연 뒤 보드가 바뀌었다면 다른 유닛을 지우지 않는다.
+        // index 슬롯의 expected를 replacement로 바꿈 (기존 유닛은 사라짐)
+        // 확인 창에서 교체를 누른 뒤 호출되므로, 그사이 슬롯 유닛이 바뀌었으면 바꾸지 않음
+        // 범위 밖이거나, null이 들어왔거나, 슬롯 유닛이 expected가 아니거나, 두 유닛을 합칠 수 있으면 실패
         public bool TryReplace(int index, UnitInstance expected, UnitInstance replacement)
         {
             if (index < 0 || index >= SlotCount || expected == null || replacement == null
@@ -151,8 +174,8 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // 그리드 슬롯이 빈칸이면 유닛 배치, 같은 유닛/성급이면 머지
-        // 그 외에는 거부 (Reject)
+        // 빈 칸이면 배치(Placed), 합칠 수 있는 유닛(같은 종류·같은 성급)이 있으면 머지(Merged)
+        // 그 밖의 유닛이 있으면 Rejected (보드는 그대로)
         public PlacementResult TryPlace(int index, UnitInstance unit)
         {
             if (index < 0 || index >= SlotCount)
@@ -180,7 +203,8 @@ namespace PokerDefense.Game
             return PlacementResult.Rejected;
         }
 
-        // 두 슬롯에 있는 유닛끼리 합칠 수 있는지 검사
+        // from 유닛을 to 유닛에 합칠 수 있는지
+        // 같은 슬롯이거나, 빈 칸이 섞였거나, 종류·성급이 다르거나 ★3이면 false
         public bool CanMergeSlots(int from, int to)
         {
             if (from < 0 || from >= SlotCount)
@@ -203,8 +227,8 @@ namespace PokerDefense.Game
             return source != null && target != null && target.CanMergeWith(source);
         }
 
-        // 그리드에 있는 두 유닛을 합침
-        // from 슬롯이 비워지고 to 슬롯의 유닛이 업그레이드 됨
+        // from 유닛을 to 유닛에 합침 -> from은 빈 칸, to는 성급 + 1
+        // 합칠 수 없으면 Rejected
         public PlacementResult TryMergeSlots(int from, int to)
         {
             if (!CanMergeSlots(from, to))
@@ -217,7 +241,8 @@ namespace PokerDefense.Game
             return PlacementResult.Merged;
         }
 
-        // 유닛을 빈 칸으로 옮김. 배치 위치가 전투 결과에 영향을 주므로 필요하다
+        // from 유닛을 빈 칸 to로 옮김
+        // 같은 슬롯이거나, from이 빈 칸이거나, to에 유닛이 있으면 실패
         public bool TryMoveSlot(int from, int to)
         {
             if (from < 0 || from >= SlotCount)
@@ -239,7 +264,9 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // 그리드에 있는 서로 다른(머지 불가능한) 두 유닛의 자리를 맞바꿈
+        // 유닛이 있는 두 슬롯의 자리를 맞바꿈
+        // 머지 가능한지는 따로 검사하지 않음 (머지할지는 BoardScreen이 이 메서드를 부르기 전에 판단)
+        // 같은 슬롯이거나 둘 중 하나가 빈 칸이면 실패
         public bool TrySwapSlots(int from, int to)
         {
             if (from < 0 || from >= SlotCount)
@@ -262,7 +289,8 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // 짝 없이 성급만 한 단계 올림. Joker 전용이며 최대 성급이면 거부
+        // 승급권(Joker)을 쓸 때 index 유닛의 성급을 짝 없이 1 올림
+        // 빈 칸이거나 ★3이면 실패
         public bool TryPromoteAt(int index)
         {
             if (index < 0 || index >= SlotCount)
@@ -279,20 +307,18 @@ namespace PokerDefense.Game
             return true;
         }
 
-        // 슬롯을 비우고 있던 유닛을 돌려줌. 판매용이며 빈 칸이면 null
-        public UnitInstance TakeAt(int index)
+        // index 슬롯을 비움 (유닛 퇴장용)
+        public void ClearAt(int index)
         {
             if (index < 0 || index >= SlotCount)
             {
                 throw new ArgumentOutOfRangeException(nameof(index), $"슬롯 범위를 벗어남: {index}");
             }
 
-            UnitInstance unit = slots[index];
             slots[index] = null;
-            return unit;
         }
 
-        // 그리드 슬롯에 있는 유닛과 합칠 유닛이 그리드 내에 있는지 검사
+        // index 유닛과 합칠 수 있는 유닛이 다른 슬롯에 있는지 여부 반환(빈 칸이면 false)
         public bool HasMergePartner(int index)
         {
             if (index < 0 || index >= SlotCount)
@@ -316,6 +342,7 @@ namespace PokerDefense.Game
             return false;
         }
 
+        // 모든 슬롯을 비움 (테스트에서만 씀)
         public void Clear()
         {
             Array.Clear(slots, 0, SlotCount);
