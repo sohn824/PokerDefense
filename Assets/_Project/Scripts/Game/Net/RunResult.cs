@@ -41,7 +41,7 @@ namespace PokerDefense.Game
         public int TotalWaves { get; }    // 전체 웨이브 수 (hand-loop-v1은 50)
         public bool Cleared { get; }      // 모든 웨이브를 치렀는지 (마지막 웨이브에서 라이프가 0이 돼도 true)
         public int Life { get; }          // 남은 라이프 (게임 오버면 0)
-        public int Summons { get; }       // 총 소환 수 (라운드당 최대 1, 소환 포기·퇴장한 유닛도 포함)
+        public int Summons { get; }       // 총 소환 수 (라운드당 최대 1, 보드에 놓은 유닛만 셈, 놓은 뒤 퇴장해도 포함)
         public HandCategory? BestHand { get; }  // 확정한 족보 중 가장 희귀한 것 (HandRarity 기준, 한 번도 확정 안 했으면 null)
         public int ElapsedMs { get; }     // 게임 시간 기준 (ms). 일시정지는 빠지고, 배속 중에는 실제 시간보다 빨리 흐름
     }

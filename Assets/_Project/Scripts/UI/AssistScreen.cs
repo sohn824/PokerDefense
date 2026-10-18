@@ -79,8 +79,7 @@ namespace PokerDefense.UI
 
         void Update()
         {
-            bool available = round.Phase == RoundPhase.Exchange && flow.IsFinished == false
-                && round.Assistance != RoundController.AssistMode.Disabled;
+            bool available = round.Phase == RoundPhase.Exchange && flow.IsFinished == false;
             openButton.gameObject.SetActive(available);
             bool eligible = HasTarget();
             string reason = round.AssistUsed ? "이번 손패 사용 완료"

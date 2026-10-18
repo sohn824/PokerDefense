@@ -5,18 +5,40 @@ using UnityEngine;
 namespace PokerDefense.Game
 {
     /**
+     * BoardAction
+     *
+     * 플레이어가 한 보드 조작의 종류 (PlacementController.BoardActed의 인자)
+     * Placed·BoardChanged·PendingChanged는 보드가 어떻게 바뀌었는지만 알려서, 어떤 조작이었는지는 이 값으로 구분함
+     * RunJournal이 행동 기록에 씀
+     */
+    public enum BoardAction
+    {
+        // 승급권(Joker)으로 성급을 올림
+        JokerUsed,
+
+        // 유닛을 빈 칸으로 옮김
+        Moved,
+
+        // 두 유닛의 자리를 맞바꿈
+        Swapped,
+
+        // 보드의 유닛을 퇴장시킴
+        Retired,
+
+        // Pending을 놓지 않고 버림 (소환 포기)
+        Discarded,
+    }
+
+    /**
      * PlacementController
      *
-     * 족보에 맞는 유닛을 소환해 Pending(배치 대기)으로 두고, 플레이어의 보드 조작을 실행한 뒤 결과를 이벤트로 알리는 객체
-     * Place 단계의 보드 조작은 전부 여기를 거침 (전투 중에도 RoundPhase는 Place 상태임)
+     * 족보에 맞는 유닛을 Pending(배치 대기)으로 소환하고, 보드 조작을 실행해 결과를 이벤트로 알리는 객체
+     * 보드 조작은 모두 여기를 거침 (전투 중에도 RoundPhase는 Place라 조작할 수 있음)
      *
-     * 1. 족보 확정(RoundController.Evaluated) -> HandUnitTable에서 그 족보의 유닛을 찾아 ★1로 만들어 Pending에 둠
-     * 2. Pending 처리 - 배치·머지(TryPlace), 교체(TryReplacePending), 소환 포기(TryDiscardPending) 중 하나
+     * 1. 족보 확정 -> 그 족보의 ★1 유닛을 Pending에 둠
+     * 2. Pending 처리 - 배치·머지(TryPlace), 교체(TryReplacePending), 포기(TryDiscardPending)
      * Pending이 비어야 전투를 시작할 수 있음
-     * 3. 배치 후 조정 - 유닛끼리 머지(TryMergeSlots), 이동(TryMoveSlot), 자리 교환(TrySwapSlots),
-     * 승급권 사용(TryUseJoker), 퇴장(TryRetireSlot)
-     *
-     * Joker = 자유 승급권 (보스 보상으로 받음)
+     * 3. 배치 후 조정 - 머지(TryMergeSlots), 이동(TryMoveSlot), 교환(TrySwapSlots), 승급권(TryUseJoker), 퇴장(TryRetireSlot)
      */
     public sealed class PlacementController : MonoBehaviour
     {
@@ -39,6 +61,12 @@ namespace PokerDefense.Game
         // 구독 - BoardScreen, ActionBarController
         public event Action BoardChanged;
 
+        // 승급권 사용·이동·자리 교환·퇴장·소환 포기가 성공했을 때 발생 (인자: 조작 종류)
+        // 승급권을 쓰면 이 이벤트 뒤에 Placed도 발생함
+        // 이때 Placed는 결과 값이 Merged라 일반 머지와 구분되지 않음
+        // 구독 - RunJournal
+        public event Action<BoardAction> BoardActed;
+
         public GridBoard Board => board;
 
         // 배치를 기다리는 소환 유닛 (없으면 null)
@@ -49,11 +77,11 @@ namespace PokerDefense.Game
             round.Evaluated += OnEvaluated;
         }
 
-        // 족보 확정 시 호출 - ★1 유닛을 Pending에 두고, 소환을 기록한 뒤 PendingChanged로 알림
+        // 족보 확정 시 호출 - ★1 유닛을 Pending에 두고 PendingChanged로 알림
+        // 소환 수(RunStats)는 여기가 아니라 Pending을 실제로 놓을 때 셈, 소환을 포기한 유닛은 세지 않기 위함
         void OnEvaluated(HandResult result)
         {
             Pending = new UnitInstance(unitTable.GetDefinition(result.Category));
-            stage.Stats.RecordSummon(Pending);
             PendingChanged?.Invoke(Pending);
         }
 
@@ -78,7 +106,7 @@ namespace PokerDefense.Game
             }
 
             Pending = null;
-            stage.Stats.RecordUnit(board[index]);
+            stage.Stats.RecordSummon(board[index]);
             Placed?.Invoke(index, result);
             PendingChanged?.Invoke(null);
             return true;
@@ -100,7 +128,7 @@ namespace PokerDefense.Game
 
         // 승급권(Joker) 1장을 써서 index 유닛의 성급을 짝 없이 1 올림
         // 승급권이 없거나, 빈 칸이거나, ★3이면 실패
-        // Placed 이벤트에는 Merged로 알림 (승급권 전용 PlacementResult 값은 없으므로 머지와 공유)
+        // BoardActed에 JokerUsed로 알린 뒤 Placed에도 Merged로 알림 (UI는 머지와 같은 연출을 씀)
         public bool TryUseJoker(int index)
         {
             if (CanUseJokerOn(index) == false)
@@ -115,6 +143,7 @@ namespace PokerDefense.Game
 
             board.TryPromoteAt(index);
             stage.Stats.RecordUnit(board[index]);
+            BoardActed?.Invoke(BoardAction.JokerUsed);
             Placed?.Invoke(index, PlacementResult.Merged);
             return true;
         }
@@ -129,6 +158,7 @@ namespace PokerDefense.Game
             }
 
             BoardChanged?.Invoke();
+            BoardActed?.Invoke(BoardAction.Moved);
             return true;
         }
 
@@ -142,6 +172,7 @@ namespace PokerDefense.Game
             }
 
             BoardChanged?.Invoke();
+            BoardActed?.Invoke(BoardAction.Swapped);
             return true;
         }
 
@@ -155,6 +186,7 @@ namespace PokerDefense.Game
             }
             board.ClearAt(index);
             BoardChanged?.Invoke();
+            BoardActed?.Invoke(BoardAction.Retired);
             return true;
         }
 
@@ -168,6 +200,7 @@ namespace PokerDefense.Game
             }
             Pending = null;
             PendingChanged?.Invoke(null);
+            BoardActed?.Invoke(BoardAction.Discarded);
             return true;
         }
 
@@ -181,7 +214,7 @@ namespace PokerDefense.Game
                 return false;
             }
             Pending = null;
-            stage.Stats.RecordUnit(board[index]);
+            stage.Stats.RecordSummon(board[index]);
             Placed?.Invoke(index, PlacementResult.Replaced);
             PendingChanged?.Invoke(null);
             return true;

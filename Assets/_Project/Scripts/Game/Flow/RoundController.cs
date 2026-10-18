@@ -13,23 +13,13 @@ namespace PokerDefense.Game
      * 화면(RoundScreen·AssistScreen·HandOddsScreen)은 이 클래스의 이벤트를 받아 갱신되고,
      * 버튼 입력은 이 클래스의 메서드를 불러 전달함
      * 반대로 이 클래스는 UI 쪽을 참조하지 않음 (UI를 바꿔도 이 클래스는 고칠 필요 없음)
-     *
-     * 교체 확률 계산 시 HandOddsWorker 하나를 일반 교체와 선택 교체가 함께 씀
-     *   선택 교체 창이 열려 있으면 선택 교체 요청만, 닫혀 있으면 일반 교체 요청만 받음
-     *   손패나 덱이 바뀌면 InvalidateOdds가 진행 중인 계산과 이전 결과를 버림 (화면이 갱신되면서 새로 요청)
-     *   Worker 스레드 계산이 끝났는지는 Update에서 매 프레임 확인하고, 결과나 실패가 나오면 OddsChanged로 알림
      */
     public sealed class RoundController : MonoBehaviour
     {
         // 라운드마다 덱 시드를 뽑는 난수
         readonly System.Random seedSource = new System.Random();
 
-        // 선택 교체 사용 여부
-        // Disabled - 선택 교체 없음 (선택 교체가 없는 규칙과 플레이·밸런스를 비교할 때 Inspector에서 바꿔 쓰는 개발용)
-        // ChooseThree - 후보 3장 중 1장 선택 (실제 게임에서 사용)
-        public enum AssistMode { Disabled, ChooseThree }
-
-        [SerializeField] AssistMode assistMode = AssistMode.ChooseThree;
+        // 이번 라운드의 손패·교체 상태 (첫 StartRound 전에는 null)
         RoundContext round;
         // 일반 교체·선택 교체가 같이 쓰는 확률 계산 Worker
         HandOddsWorker oddsWorker;
@@ -57,21 +47,22 @@ namespace PokerDefense.Game
         // 이번 라운드 덱 셔플 시드 (RunJournal 기록용)
         public int LastSeed { get; private set; }
 
-        // 씬에 설정된 선택 교체 방식 (AssistScreen 버튼 표시·RunJournal 기록용)
-        public AssistMode Assistance => assistMode;
+        // 후보를 공개하고 아직 고르지 않은 상태인지
         public bool IsChoosingCandidate => round != null && round.IsChoosingCandidate;
+        // 이번 손패의 선택 교체 기회를 썼는지 (후보를 공개하는 순간 쓴 것으로 취급)
         public bool AssistUsed => round != null && round.AssistUsed;
         public IReadOnlyList<Card> Candidates => round.Candidates;
         public IReadOnlyList<Card> Hand => round.Hand;
-        // 이 자리를 선택 교체할 수 있는지 (Disabled 모드면 항상 false, 나머지 조건은 RoundContext.CanAssist)
+
+        // 이 자리를 선택 교체할 수 있는지 (조건은 RoundContext.CanAssist)
         public bool CanAssist(int index)
-            => assistMode != AssistMode.Disabled && round != null && round.CanAssist(index);
+            => round != null && round.CanAssist(index);
 
         // 선택 교체 후보 3장 공개 (공개하면 true)
-        // 일시정지 중·Disabled 모드·선택 교체할 수 없는 자리면 아무것도 하지 않고 false
+        // 일시정지 중·선택 교체할 수 없는 자리면 아무것도 하지 않고 false
         public bool RevealCandidates(int index)
         {
-            if (GameSession.IsPaused || assistMode == AssistMode.Disabled || round == null)
+            if (GameSession.IsPaused || round == null)
             {
                 return false;
             }
@@ -87,11 +78,8 @@ namespace PokerDefense.Game
         // index번 후보로 바꿨을 때의 족보 (손패는 그대로, AssistScreen 미리보기용)
         public HandResult PreviewCandidate(int index) => round.PreviewCandidate(index);
 
-        // 고른 자리들을 한꺼번에 일반 교체했을 때 족보별 경우의 수를 계산해 바로 돌려줌 (RoundContext.FindExchangeOdds를 그대로 호출)
-        // 호출한 스레드에서 끝날 때까지 계산하므로 화면이 멈출 수 있어 실제 게임에서는 쓰지 않음
-        // (실제 게임에서는 RequestOdds로 Worker 스레드에서 계산)
-        // HandOddsThreadingTests에서 Worker 스레드 계산 결과가 맞는지 비교하는 기준값으로만 사용
-        // 라운드 시작 전이거나 RoundContext가 null을 돌려주는 조건이면 null
+        // 고른 자리들을 일반 교체했을 때 족보별 경우의 수를 지금 스레드에서 바로 계산함 (라운드 시작 전 등 계산할 수 없으면 null)
+        // 화면이 멈출 수 있어 게임에서는 RequestOdds(Worker 스레드)를 쓰고, 이 메서드는 HandOddsThreadingTests의 기준값으로만 씀
         public IReadOnlyList<HandOddsEntry> FindExchangeOdds(IReadOnlyList<int> indices)
             => round?.FindExchangeOdds(indices);
 
@@ -108,8 +96,10 @@ namespace PokerDefense.Game
             AssistanceChanged?.Invoke();
         }
 
+        // index 자리가 일반 교체로 이미 바뀌어 잠겼는지
         public bool IsLocked(int index) => round.IsLocked(index);
 
+        // 아직 일반 교체할 수 있는(잠기지 않은) 자리 수
         public int ExchangeableCount => round.ExchangeableCount;
 
         // 이번 라운드에 교체한 총 장수 (일반 교체 + 선택 교체, RunJournal 기록용)
@@ -168,17 +158,10 @@ namespace PokerDefense.Game
 
         // 일반 교체·선택 교체는 Worker 하나를 공유하므로 지금 활성 쪽(IsAssistOddsActive)과 다른 source의 요청은 무시
         // CaptureOdds가 null(지금 계산할 수 없는 조건)이면 Submit이 계산을 취소함
-        // Disabled 모드에서 선택 교체 요청이 오면 계산을 취소함
         public void RequestOdds(HandOddsSource source, IReadOnlyList<int> indices)
         {
             if (oddsWorker == null || (source == HandOddsSource.Assist) != IsAssistOddsActive)
             {
-                return;
-            }
-
-            if (source == HandOddsSource.Assist && assistMode == AssistMode.Disabled)
-            {
-                oddsWorker.Cancel();
                 return;
             }
 
