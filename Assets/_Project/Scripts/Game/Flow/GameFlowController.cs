@@ -23,7 +23,7 @@ namespace PokerDefense.Game
         public readonly struct RoundSummary
         {
             public RoundSummary(int wave, bool cleared, int enemiesLeft, int lifeLost, int jokerGained, int nextAct,
-                int bossLeft, IReadOnlyList<CombatContext.Remnant> remnants)
+                int bossLeft, IReadOnlyList<CombatContext.UnresolvedCount> unresolved)
             {
                 Wave = wave;
                 Cleared = cleared;
@@ -32,7 +32,7 @@ namespace PokerDefense.Game
                 JokerGained = jokerGained;
                 NextAct = nextAct;
                 BossLeft = bossLeft;
-                Remnants = remnants;
+                Unresolved = unresolved;
             }
 
             public int Wave { get; }
@@ -50,7 +50,7 @@ namespace PokerDefense.Game
 
             // 처리하지 못한 적을 종류별로 센 스냅샷 (필드에 남은 적 + 아직 나오지 않은 적)
             // 전투가 끝난 순간에 만든 값이라 이후에 바뀌지 않음
-            public IReadOnlyList<CombatContext.Remnant> Remnants { get; }
+            public IReadOnlyList<CombatContext.UnresolvedCount> Unresolved { get; }
         }
 
         [SerializeField] RoundController round;
@@ -130,15 +130,15 @@ namespace PokerDefense.Game
         RoundSummary BuildSummary(CombatOutcome outcome, int unresolved)
         {
             bool cleared = outcome == CombatOutcome.Cleared;
-            int lifeLost = cleared ? 0 : stage.Stage.LifeDamageFor(unresolved, combat.Combat.UnresolvedBosses);
-            int jokerGained = cleared ? combat.Combat.Wave.JokerReward : 0;
+            int lifeLost = cleared ? 0 : stage.Stage.LifeDamageFor(unresolved, combat.LatestCombatContext.UnresolvedBosses);
+            int jokerGained = cleared ? combat.LatestCombatContext.Wave.JokerReward : 0;
 
             // 11·21·31·41라운드가 각각 Act 2~5의 시작
             int next = RoundNumber + 1;
             int nextAct = next == 11 || next == 21 || next == 31 || next == 41 ? next / 10 + 1 : 0;
 
             return new RoundSummary(RoundNumber, cleared, unresolved, lifeLost, jokerGained, nextAct,
-                combat.Combat.UnresolvedBosses, combat.Combat.CollectUnresolved());
+                combat.LatestCombatContext.UnresolvedBosses, combat.LatestCombatContext.CollectUnresolved());
         }
 
         // DismissBreak - 라운드 결과 화면이 닫혔다는 신호, 대기를 풀고 다음 라운드로 넘김

@@ -64,7 +64,7 @@ namespace PokerDefense.UI
             {
                 line = $"라이프 -{s.LifeLost}";
 
-                string left = EnemyTypeNames.Remnants(s.Remnants);
+                string left = EnemyTypeNames.Unresolved(s.Unresolved);
 
                 if (string.IsNullOrEmpty(left) == false)
                 {

@@ -9,9 +9,9 @@ namespace PokerDefense.Tests
     /**
      * AttackPatternTests
      *
-     * M8 - 공격 패턴 5종과 적 타입
-     *
-     * 검증 조건인 "같은 총 DPS라도 보드 구성에 따라 클리어 여부가 갈림"을 마지막 절에서 고정한다
+     * 공격 패턴 5종이 때릴 적을 제대로 고르는지 검증함
+     * 다루는 것 - 패턴별 대상 선택, 적 타입 값, 에셋 값 누락, 같은 DPS에서의 결과 차이
+     * 마지막 섹션은 총 DPS가 같아도 적 구성에 따라 클리어 여부가 갈리는지 확인함
      */
     public class AttackPatternTests
     {
@@ -80,7 +80,7 @@ namespace PokerDefense.Tests
             return enemy;
         }
 
-        /// interval 0이면 전부 같은 시각에 같은 지점으로 나온다 - 뭉친 무리를 만들 때 쓴다
+        // interval이 0이면 전부 같은 시각에 같은 지점으로 나옴 (뭉친 무리를 만들 때 씀)
         WaveDefinition MakeWave(EnemyDefinition enemy, int count, float interval, float timeLimit)
         {
             var wave = Make<WaveDefinition>();
@@ -100,9 +100,11 @@ namespace PokerDefense.Tests
             return wave;
         }
 
+        // step 간격으로 Tick을 반복함, 전투가 끝나면 멈춤
         static void Run(CombatContext combat, float seconds, float step = 0.05f)
         {
-            // 0.05를 누적하면 seconds에 아주 살짝 못 미친다. 한 스텝 더 돌려 제한시간 판정을 확실히 지나게 한다
+            // 0.05를 여러 번 더하면 float 오차로 합이 seconds에 살짝 못 미칠 수 있음
+            // 그래서 한 step 더 돌려 제한시간 판정을 확실히 지나게 함
             int steps = Mathf.CeilToInt(seconds / step) + 1;
 
             for (int i = 0; i < steps && combat.Outcome == CombatOutcome.InProgress; i++)
@@ -111,7 +113,7 @@ namespace PokerDefense.Tests
             }
         }
 
-        /// 슬롯 7(보드 중앙)에 유닛 하나만 세운 보드
+        // 슬롯 7(보드 중앙)에 유닛 하나만 세운 보드
         static GridBoard BoardWith(UnitDefinition unit)
         {
             var board = new GridBoard();
@@ -119,7 +121,8 @@ namespace PokerDefense.Tests
             return board;
         }
 
-        /// 맞은 적 수. 적을 죽지 않게 만들어 두고 한 발의 대상 수를 센다
+        // HP가 줄어든 적 수 (지금까지 한 번이라도 맞은 적)
+        // 적 HP를 넉넉히 두고 첫 발 직후에 부르면 그 한 발이 때린 적 수가 됨
         static int HitCount(CombatContext combat)
         {
             int hit = 0;
@@ -140,7 +143,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 단일_패턴은_한_기만_때린다()
         {
-            // Rapid와 Heavy는 대상 선정이 같다. 갈리는 것은 스탯 프로필뿐이다
+            // Rapid와 Heavy는 때릴 적을 고르는 방식이 같음 (스탯으로만 구분)
             foreach (AttackPattern pattern in new[] { AttackPattern.Rapid, AttackPattern.Heavy })
             {
                 var board = BoardWith(MakeUnit(pattern, 10f, 1f, range: 100f));
@@ -180,7 +183,7 @@ namespace PokerDefense.Tests
         [Test]
         public void Multi는_사거리_밖은_때리지_않는다()
         {
-            // 사거리를 0에 가깝게 두면 대상이 없어 아무도 맞지 않는다
+            // 사거리를 0에 가깝게 두면 대상이 없어 아무도 맞지 않음
             var board = BoardWith(MakeUnit(AttackPattern.Multi, 10f, 1f, range: 0.1f, multiTargets: 5));
             var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 0f), 5, 0f, 100f));
 
@@ -194,7 +197,7 @@ namespace PokerDefense.Tests
         {
             var board = BoardWith(MakeUnit(AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 2));
 
-            // 1초 간격으로 3기. 먼저 나온 쪽이 앞서 있다
+            // 1초 간격으로 3기 (먼저 나온 쪽이 앞서 있음)
             var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 1f), 3, 1f, 100f));
 
             Run(combat, 2.05f);
@@ -208,8 +211,8 @@ namespace PokerDefense.Tests
         [Test]
         public void Multi는_사거리_안이라도_첫_타겟에서_MultiSpread보다_먼_적은_제외한다()
         {
-            // 트랙 절반(TrackLength/2)을 1초에 주파하는 속도. 1초 간격으로 스폰하면
-            // 두 번째 발사 시점에 두 적이 트랙 반대편에 있어 사거리 안이라도 서로 아주 멀다
+            // 트랙 절반(TrackLength/2)을 1초에 가는 속도라 1초 간격으로 스폰하면
+            // 두 번째 발사 때 두 적이 트랙 반대편에 있어, 사거리 안이라도 서로 아주 멂
             var board = BoardWith(MakeUnit(
                 AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 2, multiSpread: 1f));
             var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, GridBoard.TrackLength / 2f), 2, 1f, 100f));
@@ -222,7 +225,7 @@ namespace PokerDefense.Tests
         [Test]
         public void Multi는_MultiSpread_안이면_사거리_안의_적을_함께_때린다()
         {
-            // 위 테스트와 같은 배치인데 MultiSpread만 넉넉하면 둘 다 맞아야 한다
+            // 위 테스트와 같은 배치인데 MultiSpread만 넉넉하면 둘 다 맞아야 함
             var board = BoardWith(MakeUnit(
                 AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 2, multiSpread: 100f));
             var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, GridBoard.TrackLength / 2f), 2, 1f, 100f));
@@ -239,7 +242,7 @@ namespace PokerDefense.Tests
         {
             var board = BoardWith(MakeUnit(AttackPattern.Splash, 10f, 1f, range: 100f, splashRadius: 1f));
 
-            // 정지한 적 4기가 같은 지점에 겹쳐 있다
+            // 정지한 적 4기가 같은 지점에 겹쳐 있음
             var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 0f), 4, 0f, 100f));
 
             combat.Tick(0.05f);
@@ -252,7 +255,7 @@ namespace PokerDefense.Tests
         {
             var board = BoardWith(MakeUnit(AttackPattern.Splash, 10f, 1f, range: 100f, splashRadius: 0.5f));
 
-            // 속도 1이면 1초에 1월드유닛 벌어진다. 1초 간격 스폰이라 서로 1만큼 떨어져 있다
+            // 속도 1, 1초 간격 스폰이라 적끼리 트랙 거리로 1만큼 떨어져 있음
             var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 1f), 3, 1f, 100f));
 
             Run(combat, 2.05f);
@@ -263,8 +266,8 @@ namespace PokerDefense.Tests
         [Test]
         public void Splash는_유닛_사거리_밖의_적도_휘말리게_한다()
         {
-            // 착탄 지점이 기준이라 사거리는 "누구를 겨냥하는가"만 정한다
-            // 사거리 3이면 보드 중앙에서 닿는 구간은 트랙 진행거리 1.6~5.2뿐이다
+            // 착탄 지점이 기준이라 사거리는 누구를 겨냥할지만 정함
+            // 사거리 3이면 보드 중앙에서 닿는 구간은 트랙 거리 1.6~5.2뿐임
             var enemy = MakeEnemy(1000000f, 1f);
             var wave = MakeWave(enemy, 4, 1.5f, 100f);
 
@@ -273,7 +276,7 @@ namespace PokerDefense.Tests
             var single = new CombatContext(
                 BoardWith(MakeUnit(AttackPattern.Rapid, 10f, 1f, range: 3f)), wave);
 
-            // 6초면 선두(진행거리 6.0)는 이미 사거리를 벗어났고 뒤따르는 두 기가 사거리 안이다
+            // 6초면 선두(트랙 거리 6.0)는 이미 사거리를 벗어났고, 뒤따르는 두 기가 사거리 안임
             Run(splash, 6f);
             Run(single, 6f);
 
@@ -294,7 +297,7 @@ namespace PokerDefense.Tests
         {
             var board = BoardWith(MakeUnit(AttackPattern.Pierce, 10f, 1f, range: 100f, pierceLength: 2.5f));
 
-            // 속도 1 + 1초 간격이라 트랙 위에서 서로 1만큼 뒤진다. 2.5면 뒤의 두 기까지 닿는다
+            // 속도 1, 1초 간격이라 트랙 위에서 서로 1만큼 뒤짐 (관통 길이 2.5면 뒤의 두 기까지 닿음)
             var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 1f), 4, 1f, 100f));
 
             Run(combat, 3.05f);
@@ -307,8 +310,8 @@ namespace PokerDefense.Tests
         [Test]
         public void Pierce는_타겟보다_앞선_적은_때리지_않는다()
         {
-            // 앞선 두 기는 사거리 밖, 마지막 기만 사거리 안인 구간에서 비교한다.
-            // 트랙 형태와 별개로 이 전제가 맞는지도 매 스텝 검증한다.
+            // 앞선 두 기는 사거리 밖, 마지막 기만 사거리 안인 구간에서 비교함
+            // 트랙 모양이 바뀌어도 이 전제가 맞는지 매 스텝 확인함
             var board = new GridBoard();
             board.TryPlace(0, new UnitInstance(MakeUnit(AttackPattern.Pierce, 10f, 1f, range: 1.6f, pierceLength: 100f)));
             var combat = new CombatContext(board, MakeWave(MakeEnemy(1000000f, 1f), 3, 3f, 100f));
@@ -334,7 +337,8 @@ namespace PokerDefense.Tests
         [Test]
         public void 적_타입에_Runner와_Tank가_있다()
         {
-            // 기존 에셋이 정수로 들고 있어 새 값은 뒤에 붙여야 한다
+            // 에셋이 EnemyType을 정수로 저장하므로 값 순서가 바뀌면 기존 적 에셋의 분류가 바뀜
+            // 새 값은 맨 뒤에 붙여야 함
             Assert.AreEqual(0, (int)EnemyType.Normal);
             Assert.AreEqual(1, (int)EnemyType.Swarm);
             Assert.AreEqual(2, (int)EnemyType.Boss);
@@ -363,7 +367,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 유닛_에셋에_패턴_수치가_비어_있지_않다()
         {
-            // 기존 에셋에 [SerializeField]를 새로 넣으면 C# 초기값이 아니라 0이 들어간다
+            // 기존 에셋에 [SerializeField] 필드를 새로 넣으면 C# 초기값이 아니라 0이 들어감
             string[] guids = AssetDatabase.FindAssets("t:UnitDefinition");
 
             Assert.AreEqual(13, guids.Length, "족보 13종에 유닛이 1:1로 붙는다");
@@ -395,12 +399,12 @@ namespace PokerDefense.Tests
             Assert.AreEqual(5, used.Count, "쓰이지 않는 패턴이 있다");
         }
 
-        // ---------- M8 검증 조건 ----------
+        // ---------- 같은 DPS, 다른 결과 ----------
 
         [Test]
         public void 같은_DPS라도_뭉친_적_앞에서는_Splash가_이긴다()
         {
-            // 단일 DPS는 Rapid 20 > Splash 12인데도 결과가 뒤집힌다
+            // 단일 DPS는 Rapid 20 > Splash 12인데도 결과가 뒤집힘
             var rapid = MakeUnit(AttackPattern.Rapid, 10f, 2f, range: 100f);
             var splash = MakeUnit(AttackPattern.Splash, 12f, 1f, range: 100f, splashRadius: 1.5f);
             var swarm = MakeEnemy(25f, 0f);
@@ -418,7 +422,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 같은_보드라도_보스_앞에서는_결과가_뒤집힌다()
         {
-            // 위 테스트와 같은 두 유닛인데 적이 한 기뿐이면 단일 DPS가 그대로 승패가 된다
+            // 위 테스트와 같은 두 유닛인데 적이 한 기뿐이면 단일 DPS가 그대로 승패가 됨
             var rapid = MakeUnit(AttackPattern.Rapid, 10f, 2f, range: 100f);
             var splash = MakeUnit(AttackPattern.Splash, 12f, 1f, range: 100f, splashRadius: 1.5f);
             var boss = MakeEnemy(300f, 0f);
@@ -436,7 +440,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 총_DPS가_같아도_Heavy는_잔챙이_떼에_비효율이다()
         {
-            // 둘 다 20 DPS다. Heavy는 25HP 적에게 100을 꽂아 75를 버린다
+            // 둘 다 20 DPS (Heavy는 HP 25인 적에게 100을 꽂아 75를 버림)
             var rapid = MakeUnit(AttackPattern.Rapid, 5f, 4f, range: 100f);
             var heavy = MakeUnit(AttackPattern.Heavy, 100f, 0.2f, range: 100f);
             var swarm = MakeEnemy(25f, 0f);
@@ -454,7 +458,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 총_DPS가_같아도_Heavy는_단일_고HP에는_손해가_없다()
         {
-            // 잔챙이에서 진 만큼 보스에서는 동률이다 - 오버킬이 없기 때문
+            // 잔챙이 떼에서는 졌지만 보스에서는 동률 (오버킬이 없기 때문)
             var rapid = MakeUnit(AttackPattern.Rapid, 5f, 4f, range: 100f);
             var heavy = MakeUnit(AttackPattern.Heavy, 100f, 0.2f, range: 100f);
             var boss = MakeEnemy(1000f, 0f);
@@ -468,7 +472,7 @@ namespace PokerDefense.Tests
             Assert.AreEqual(CombatOutcome.Cleared, rapidRun.Outcome);
             Assert.AreEqual(CombatOutcome.Cleared, heavyRun.Outcome);
 
-            // 오히려 한 사이클 앞선다 - 첫 발에 100을 꽂는 쪽이 같은 DPS를 먼저 몰아 넣는다
+            // 오히려 한 사이클 앞섬 (첫 발에 100을 꽂는 쪽이 같은 DPS를 먼저 몰아 넣음)
             Assert.LessOrEqual(heavyRun.ElapsedTime, rapidRun.ElapsedTime);
         }
     }

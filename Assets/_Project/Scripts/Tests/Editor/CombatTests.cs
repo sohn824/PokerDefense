@@ -9,8 +9,8 @@ namespace PokerDefense.Tests
     /**
      * CombatTests
      *
-     * CombatContext.Tick(deltaTime)이 deltaTime을 인자로 받기 때문에
-     * 전투 한 판을 씬 없이 통째로 돌릴 수 있다. M4 검증 조건을 여기서 고정한다
+     * CombatContext.Tick이 시간을 인자로 받으므로 씬 없이 웨이브 전투 한 번을 통째로 돌려 볼 수 있음
+     * 다루는 것 - 트랙, 이동, 스폰, 공격, 결과 판정, 스테이지 진행
      */
     public class CombatTests
     {
@@ -102,7 +102,8 @@ namespace PokerDefense.Tests
             return stage;
         }
 
-        /// 전투가 끝나거나 한계 시간에 닿을 때까지 돌린다
+        // step 간격으로 Tick을 반복함, 전투가 끝나면 멈춤
+        // 횟수는 seconds / step을 올림하므로 seconds보다 최대 한 step 더 돌 수 있음
         static void Run(CombatContext combat, float seconds, float step = 0.1f)
         {
             int steps = Mathf.CeilToInt(seconds / step);
@@ -154,7 +155,7 @@ namespace PokerDefense.Tests
         {
             var enemy = new EnemyInstance(MakeEnemy(100f, GridBoard.TrackLength));
 
-            enemy.Advance(0.5f);
+            enemy.Move(0.5f);
 
             Assert.AreEqual(0.5f, enemy.Progress, 0.0001f, "트랙 길이만큼의 속도면 1초에 한 바퀴다");
         }
@@ -164,7 +165,7 @@ namespace PokerDefense.Tests
         {
             var enemy = new EnemyInstance(MakeEnemy(100f, GridBoard.TrackLength));
 
-            enemy.Advance(2.5f);
+            enemy.Move(2.5f);
 
             Assert.AreEqual(2.5f, enemy.Progress, 0.0001f, "진행도는 바퀴 수를 포함해 누적된다");
         }
@@ -223,10 +224,31 @@ namespace PokerDefense.Tests
         }
 
         [Test]
+        public void 공격_간격이_Tick으로_나누어떨어지지_않아도_공격속도가_유지된다()
+        {
+            // 초당 3.9회(약 0.256초 간격)를 0.05초 Tick으로 9.5초 돌림
+            // 0초·0.256초·…·9.487초에 쏴서 38발이어야 함
+            // 늦게 쏜 만큼을 다음 쿨타임에서 빼지 않으면 6 Tick(0.3초)마다 쏘게 되어 32발에 그침
+            var unit = new UnitInstance(MakeUnit(1f, attacksPerSecond: 3.9f, range: 100f));
+            var board = new GridBoard();
+            board.TryPlace(7, unit);
+
+            var wave = MakeWave(MakeEnemy(1000000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
+            var combat = new CombatContext(board, wave);
+
+            for (int i = 0; i < 190; i++)
+            {
+                combat.Tick(0.05f);
+            }
+
+            Assert.AreEqual(38, combat.ShotCountOf(unit));
+        }
+
+        [Test]
         public void 발사_횟수는_쏜_만큼_쌓인다()
         {
-            // 쌍무기가 좌우 총구를 번갈아 쏘려면 홀짝을 알아야 한다.
-            // 뷰가 프레임으로 세면 어긋나므로 CombatContext가 센다
+            // 총구가 여럿인 유닛은 쏜 횟수로 어느 총구를 쏠지 고름
+            // 화면이 프레임 단위로 세면 발사와 어긋나므로 CombatContext가 셈
             var unit = new UnitInstance(MakeUnit(10f, attacksPerSecond: 1f, range: 100f));
             var board = new GridBoard();
             board.TryPlace(7, unit);
@@ -244,7 +266,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 피격_기록은_때린_유닛을_함께_남긴다()
         {
-            // 유닛마다 타격 이펙트가 다를 수 있어 누가 때렸는지가 필요하다
+            // 유닛마다 타격 이펙트가 다를 수 있어 누가 때렸는지가 필요함
             UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
             var board = new GridBoard();
             board.TryPlace(7, new UnitInstance(definition));
@@ -266,7 +288,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 관통은_찌른_선을_남긴다()
         {
-            // 맞은 지점만으로는 궤적을 못 그린다. 어디서 뻗어 나갔는지가 따로 필요하다
+            // 맞은 지점만으로는 궤적을 못 그리므로 시작점(유닛 칸)과 겨눈 지점을 함께 남겨야 함
             UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
             var so = new UnityEditor.SerializedObject(definition);
             so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Pierce;
@@ -293,7 +315,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 찌른_선의_방향은_유닛에서_적을_본_방향이다()
         {
-            // 창끝이 방향마다 다른 자리에 붙어 있어 뷰가 이 방향으로 시작점을 고른다
+            // 총구 위치가 방향마다 달라 화면이 이 방향으로 궤적 시작점을 고름
             UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
             var so = new UnityEditor.SerializedObject(definition);
             so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Pierce;
@@ -336,7 +358,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 폭발_기록은_착탄_지점과_반경을_남긴다()
         {
-            // 화면에 그리는 폭발이 실제 피해 범위와 같은 크기여야 하므로 반경을 함께 남긴다
+            // 화면에 그리는 폭발이 실제 피해 범위와 같은 크기여야 하므로 반경을 함께 남김
             UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
             var so = new UnityEditor.SerializedObject(definition);
             so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Splash;
@@ -363,11 +385,11 @@ namespace PokerDefense.Tests
         [Test]
         public void 폭발은_맞은_적_수와_무관하게_한_발에_한_번만_남는다()
         {
-            // Splash 한 발이 여럿을 때려도 폭발 연출은 착탄 지점 하나다
+            // Splash 한 발이 여럿을 때려도 폭발 연출은 착탄 지점 하나임
             UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
             var so = new UnityEditor.SerializedObject(definition);
             so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Splash;
-            so.FindProperty("splashRadius").floatValue = 100f; // 스폰된 적이 전부 반경 안에 들도록
+            so.FindProperty("splashRadius").floatValue = 100f; // 스폰된 적이 모두 반경 안에 들게 함
             so.ApplyModifiedPropertiesWithoutUndo();
 
             var board = new GridBoard();
@@ -430,7 +452,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 성급이_오르면_전투가_빨리_끝난다()
         {
-            // ★2는 공격력·공격속도가 2배씩이라 같은 적을 훨씬 빨리 녹인다
+            // MakeUnit의 ★2 배수가 2라 공격력·공격속도가 모두 2배가 되어 같은 적을 더 빨리 잡음
             var unitDefinition = MakeUnit(10f, 1f, range: 100f);
             var enemyDefinition = MakeEnemy(200f, 0f);
 
@@ -456,8 +478,8 @@ namespace PokerDefense.Tests
         [Test]
         public void 전투_중에_유닛을_옮겨도_연사가_되지_않는다()
         {
-            // 전투 중 배치 변경은 허용된 전략이다
-            // 쿨다운을 슬롯으로 들고 있으면 빈 칸으로 옮길 때마다 쿨다운 0을 물려받아 이동만으로 연사가 된다
+            // 전투 중 배치 변경은 허용된 전략임
+            // 쿨타임을 슬롯으로 들고 있으면 빈 칸으로 옮길 때마다 쿨타임 0을 물려받아 이동만으로 연사가 됨
             var unit = MakeUnit(10f, 1f, range: 100f);
             var enemy = MakeEnemy(1000000f, 0f);
             var wave = MakeWave(enemy, count: 1, interval: 0f, timeLimit: 1000f);
@@ -491,7 +513,7 @@ namespace PokerDefense.Tests
             Assert.AreEqual(stillDamage, movingDamage, 0.001f, "이동한 쪽이 더 때렸다면 쿨다운이 초기화된 것이다");
         }
 
-        // ---------- M4 검증 조건 ----------
+        // ---------- 결과 판정 ----------
 
         [Test]
         public void 제한시간_안에_전멸시키면_클리어다()
@@ -515,7 +537,7 @@ namespace PokerDefense.Tests
             var board = new GridBoard();
             board.TryPlace(7, new UnitInstance(MakeUnit(1000f, 5f, range: 100f)));
 
-            // 0초에 1기, 10초에 1기. 첫 적을 잡아도 웨이브는 안 끝난다
+            // 0초에 1기, 10초에 1기라 첫 적을 잡아도 웨이브는 안 끝남
             var wave = MakeWave(MakeEnemy(100f, 0f), count: 2, interval: 10f, timeLimit: 30f);
             var combat = new CombatContext(board, wave);
 
@@ -536,7 +558,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 제한시간을_넘기면_시간_초과다()
         {
-            // 유닛이 하나도 없으니 적이 죽지 않는다
+            // 유닛이 하나도 없으니 적이 죽지 않음
             var wave = MakeWave(MakeEnemy(100f, 0f), count: 3, interval: 0.5f, timeLimit: 5f);
             var combat = new CombatContext(new GridBoard(), wave);
 
@@ -593,7 +615,7 @@ namespace PokerDefense.Tests
         [Test]
         public void 아직_나오지_않은_적도_잔여로_친다()
         {
-            // 제한시간이 스폰보다 먼저 끝나면 안 나온 적도 라이프를 깎는다
+            // 제한시간이 스폰보다 먼저 끝나면 안 나온 적도 라이프를 깎음
             var wave = MakeWave(MakeEnemy(100f, 0f), count: 5, interval: 10f, timeLimit: 1f);
             var combat = new CombatContext(new GridBoard(), wave);
 

@@ -32,9 +32,9 @@ namespace PokerDefense.UI
         };
 
         // 미해결 적 목록을 "러너 3, 탱커 1 (미등장 2)" 한 줄로. 없으면 빈 문자열
-        public static string Remnants(IReadOnlyList<CombatContext.Remnant> remnants)
+        public static string Unresolved(IReadOnlyList<CombatContext.UnresolvedCount> unresolved)
         {
-            if (remnants == null || remnants.Count == 0)
+            if (unresolved == null || unresolved.Count == 0)
             {
                 return string.Empty;
             }
@@ -42,9 +42,9 @@ namespace PokerDefense.UI
             StringBuilder sb = new StringBuilder();
             int pending = 0;
 
-            for (int i = 0; i < remnants.Count; i++)
+            for (int i = 0; i < unresolved.Count; i++)
             {
-                CombatContext.Remnant r = remnants[i];
+                CombatContext.UnresolvedCount r = unresolved[i];
                 pending += r.Pending;
 
                 if (r.Total <= 0)

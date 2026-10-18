@@ -79,7 +79,7 @@ namespace PokerDefense.UI
             {
                 if (s.Cleared == false)
                 {
-                    string left = EnemyTypeNames.Remnants(s.Remnants);
+                    string left = EnemyTypeNames.Unresolved(s.Unresolved);
 
                     if (string.IsNullOrEmpty(left) == false)
                     {

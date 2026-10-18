@@ -65,7 +65,7 @@ namespace PokerDefense.UI
             }
             else if (flow.LastRound.HasValue)
             {
-                string left = EnemyTypeNames.Remnants(flow.LastRound.Value.Remnants);
+                string left = EnemyTypeNames.Unresolved(flow.LastRound.Value.Unresolved);
 
                 if (string.IsNullOrEmpty(left) == false)
                 {

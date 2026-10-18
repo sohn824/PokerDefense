@@ -182,7 +182,7 @@ namespace PokerDefense.UI
         void UpdateSlotArt()
         {
             GridBoard board = placement.Board;
-            CombatContext combatContext = combat.IsFighting ? combat.Combat : null;
+            CombatContext combatContext = combat.IsFighting ? combat.LatestCombatContext : null;
 
             for (int i = 0; i < slots.Length; i++)
             {

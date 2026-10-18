@@ -215,13 +215,13 @@ namespace PokerDefense.UI
         {
             if (outcome == CombatOutcome.Cleared)
             {
-                lastOutcome = controller.Combat.Wave.JokerReward > 0
+                lastOutcome = controller.LatestCombatContext.Wave.JokerReward > 0
                     ? "웨이브 클리어 - 승급권 획득"
                     : "웨이브 클리어";
             }
             else
             {
-                int damage = controller.Stage.LifeDamageFor(unresolved, controller.Combat.UnresolvedBosses);
+                int damage = controller.Stage.LifeDamageFor(unresolved, controller.LatestCombatContext.UnresolvedBosses);
                 lastOutcome = $"시간 초과 - {unresolved}마리 남음, 라이프 -{damage}";
 
                 if (damage > 0)
@@ -288,7 +288,7 @@ namespace PokerDefense.UI
 
         void SyncHitEffects()
         {
-            CombatContext combat = controller.Combat;
+            CombatContext combat = controller.LatestCombatContext;
 
             if (combat != null)
             {
@@ -361,7 +361,7 @@ namespace PokerDefense.UI
 
         void SyncPierceTrails()
         {
-            CombatContext combat = controller.Combat;
+            CombatContext combat = controller.LatestCombatContext;
 
             if (combat != null)
             {
@@ -446,7 +446,7 @@ namespace PokerDefense.UI
 
         void SyncSplashEffects()
         {
-            CombatContext combat = controller.Combat;
+            CombatContext combat = controller.LatestCombatContext;
 
             if (combat != null)
             {
@@ -556,7 +556,7 @@ namespace PokerDefense.UI
 
         void SyncEnemies()
         {
-            CombatContext combat = controller.Combat;
+            CombatContext combat = controller.LatestCombatContext;
 
             if (combat == null || controller.IsFighting == false)
             {
@@ -724,7 +724,7 @@ namespace PokerDefense.UI
 
             if (controller.IsFighting)
             {
-                CombatContext combat = controller.Combat;
+                CombatContext combat = controller.LatestCombatContext;
                 float left = Mathf.Max(0f, combat.Wave.TimeLimit - combat.ElapsedTime);
                 combatLabel.text = $"{left:0.0}초  |  {DescribeEnemies(combat)}";
                 return;
