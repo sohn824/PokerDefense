@@ -198,9 +198,13 @@ namespace PokerDefense.Game
             HandChanged?.Invoke(round.Hand);
         }
 
-        // 고른 자리 일반 교체 (교체한 자리는 잠김)
+        // 고른 자리 일반 교체 (교체한 자리는 잠김, 일시정지 중이면 무시)
         public void ExchangeCards(IReadOnlyList<int> indices)
         {
+            if (GameSession.IsPaused)
+            {
+                return;
+            }
             round.Exchange(indices);
             InvalidateOdds();
 

@@ -14,7 +14,7 @@ namespace PokerDefense.EditorTools
      *
      * 개발/밸런스 검증 전용. 정상적인 포커 드로우(치트 없음)로 스테이지를 끝까지 자동 플레이해
      * 라이프·성급 추이를 CSV로 남긴다. GUI 없이 StartRun 호출(주로 MCP execute_code)로만 제어한다.
-     * Time.timeScale로 CombatController.Update를 가속하는 기존 검증 방식을 그대로 따른다 —
+     * 배속(GameSession.SetSpeed → Time.timeScale)으로 CombatController.Update를 가속하는 기존 검증 방식을 그대로 따른다 —
      * combat.Tick을 직접 호출하지 않는다(CombatController와의 순서 어긋남으로 결과 유실 버그가 났던 적이 있음).
      */
     [InitializeOnLoad]
@@ -46,6 +46,9 @@ namespace PokerDefense.EditorTools
 
         public static void StartRun(string strategyId, string runIdentifier, string outputCsvPath, float timeScale = 10f)
         {
+            // 폴더가 없으면 헤더 쓰기가 매 프레임 실패하므로 시작 전에 만들어 둠
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputCsvPath)));
+
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetString(StrategyKey, strategyId);
             SessionState.SetString(RunIdKey, runIdentifier);
@@ -111,7 +114,9 @@ namespace PokerDefense.EditorTools
 
             Application.targetFrameRate = 250;
             QualitySettings.vSyncCount = 0;
-            Time.timeScale = SessionState.GetFloat(TimeScaleKey, 10f);
+            // Time.timeScale을 직접 바꾸면 안내창을 닫을 때 GameSession이 기존 배속으로 되돌림
+            GameSession.SetSpeed(SessionState.GetFloat(TimeScaleKey, 10f));
+            flow.MarkSimulated();
 
             cachedHand = null;
             round.HandChanged += h => cachedHand = h;
@@ -375,7 +380,7 @@ namespace PokerDefense.EditorTools
             File.AppendAllText(logPath + ".summary.txt",
                 $"{runId},{strategy},{reason},wave={stage.WaveIndex}/{stage.TotalWaves},life={stage.Life},summons={stageCtrl.Stats.Summons},bestHand={stageCtrl.Stats.BestHand},bestUnit={best}\n");
 
-            Time.timeScale = 1f;
+            GameSession.SetSpeed(1f);
             SessionState.SetBool(ActiveKey, false);
             setupDone = false;
             flow = null;

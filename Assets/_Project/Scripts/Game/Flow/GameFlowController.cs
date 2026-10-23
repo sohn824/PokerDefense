@@ -188,6 +188,12 @@ namespace PokerDefense.Game
         // 이번 Run에 웨이브 스킵을 한 번이라도 썼는지 (결과 전송에서 제외하는 데 사용)
         public bool UsedDevSkip { get; private set; }
 
+        // 자동 플레이 시뮬레이션이 돌리는 Run인지 (결과 전송·플레이 기록에서 제외하는 데 사용)
+        public bool IsSimulated { get; private set; }
+
+        // 이번 Run을 시뮬레이션 Run으로 표시 (개발 전용)
+        public void MarkSimulated() => IsSimulated = true;
+
         // 전투 없이 지금 웨이브를 클리어한 것으로 치고 다음 라운드로 넘김 (개발 전용)
         public void DevSkipWave()
         {

@@ -4,6 +4,11 @@ using PokerDefense.UI;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * HandOddsTextTests
+     *
+     * HandOddsText의 퍼센트 표시와 요약 문구를 검증함
+     */
     public sealed class HandOddsTextTests
     {
         [TestCase(0, 16215, "0%")]

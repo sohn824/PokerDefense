@@ -10,8 +10,8 @@ namespace PokerDefense.UI
     /**
      * CardView
      *
-     * 손패 / 트레이 카드 한 장의 클래스
-     * 무늬는 CardVisualSet 스프라이트 묶음으로 사용, rank는 텍스트로 씀
+     * 손패 카드 한 장을 그리고, 눌리면 RoundScreen에 알리는 클래스
+     * 무늬는 CardVisualSet의 스프라이트로, 숫자(rank)는 텍스트로 그림
      *
      * 상태(CardState)는 색이 아니라 크기·테두리·아래쪽 배지 문구로 구분
      */
@@ -19,9 +19,14 @@ namespace PokerDefense.UI
     {
         public enum CardState
         {
-            Normal,      // 평소
-            Pick,        // 교체하려고 고른 손패 카드
-            Locked       // 이번 라운드에 이미 교체한 자리
+            // 평소
+            Normal,
+
+            // 교체하려고 고른 손패 카드
+            Pick,
+
+            // 이번 라운드에 이미 교체한 자리
+            Locked
         }
 
         static readonly Color RedSuit = new Color(0.80f, 0.15f, 0.15f);
@@ -38,7 +43,7 @@ namespace PokerDefense.UI
 
         public event Action<CardView> Clicked;
 
-        // OnExchange가 교체 대상만 모을 때 참조
+        // 교체 대상으로 골라져 있는지 (RoundScreen이 고른 자리를 모을 때 씀)
         public bool Selected => state == CardState.Pick;
 
         CardVisualSet visuals;
@@ -62,7 +67,7 @@ namespace PokerDefense.UI
             BuildBadge();
         }
 
-        // 카드 아래쪽에 상태 문구를 띄우는 작은 배지를 코드로 붙인다
+        // 카드 아래쪽에 상태 문구를 띄우는 작은 배지를 코드로 붙임
         void BuildBadge()
         {
             GameObject bg = new GameObject("Badge", typeof(RectTransform));
@@ -96,7 +101,7 @@ namespace PokerDefense.UI
             bg.SetActive(false);
         }
 
-        // RoundScreen의 Awake에서 호출 (CardVisualSet 연결)
+        // 무늬 스프라이트를 꺼낼 CardVisualSet을 연결함 (RoundScreen.Awake가 부름)
         public void Bind(CardVisualSet set)
         {
             visuals = set;
@@ -106,12 +111,12 @@ namespace PokerDefense.UI
         {
             rankLabel.text = CardText.RankOf(card.Rank);
 
-            // 무늬 색은 이미지지만 rank는 텍스트이므로 무늬에 맞게 color 변경 처리
+            // 무늬는 이미지에 색이 들어 있지만 숫자는 텍스트라 무늬 색(빨강·검정)에 맞춰 글자색을 바꿈
             rankLabel.color = CardText.IsRed(card.Suit) ? RedSuit : BlackSuit;
             suitIcon.sprite = visuals.SuitOf(card.Suit);
         }
 
-        // 상태를 크기·투명도·테두리·배지 문구로 반영한다
+        // 상태를 크기·투명도·테두리·배지 문구로 반영함
         public void SetState(CardState next)
         {
             state = next;

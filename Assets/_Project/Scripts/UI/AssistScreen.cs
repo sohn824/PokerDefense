@@ -6,9 +6,16 @@ using UnityEngine.UI;
 
 namespace PokerDefense.UI
 {
-    // 선택 교체의 자리 선택·후보 공개·선택 프리뷰. 덱이나 재화는 컨트롤러만 변경한다.
+    /**
+     * AssistScreen
+     *
+     * 선택 교체 창 - 다시 바꿀 카드 고르기 -> 후보 3장 공개 -> 한 장 골라 교체
+     * 화면 표시와 입력 전달만 하고, 손패·덱은 RoundController만 바꿈
+     * 창이 열린 동안 게임 입력을 막고, 후보를 공개한 뒤에는 한 장을 고를 때까지 닫을 수 없음
+     */
     public sealed class AssistScreen : MonoBehaviour
     {
+        // 창이 열린 동안 막는 게임 입력과, 열기 전 상태(닫을 때 되돌림)
         [SerializeField] CanvasGroup gameInput;
         bool previousInput;
 
@@ -30,7 +37,10 @@ namespace PokerDefense.UI
         [SerializeField] Button oddsButton;
         [SerializeField] HandOddsScreen oddsScreen;
 
+        // 다시 바꿀 손패 자리 (-1 = 아직 안 고름)
         int target = -1;
+
+        // 고른 후보 번호 (-1 = 아직 안 고름)
         int selected = -1;
 
         void Awake()
@@ -77,6 +87,7 @@ namespace PokerDefense.UI
 
         void OnDestroy() => round.OddsChanged -= OnOddsChanged;
 
+        // 매 프레임 열기 버튼의 표시·문구·눌림 여부를 맞추고, 교체 단계가 끝나면 창을 닫음
         void Update()
         {
             bool available = round.Phase == RoundPhase.Exchange && flow.IsFinished == false;
@@ -93,6 +104,7 @@ namespace PokerDefense.UI
             }
         }
 
+        // 선택 교체 창을 엶 (일시정지·교체 단계 아님·이미 사용·바꿀 카드 없음이면 무시)
         public void Open()
         {
             if (GameSession.IsPaused || panel.activeSelf || round.Phase != RoundPhase.Exchange
@@ -101,7 +113,7 @@ namespace PokerDefense.UI
                 return;
             }
             target = -1;
-            // 대상이 하나뿐이면 같은 카드를 다시 고르게 하지 않는다.
+            // 다시 바꿀 수 있는 카드가 하나뿐이면 미리 골라 둠
             int targets = 0;
             for (int i = 0; i < slots.Length; i++)
             {
@@ -123,6 +135,7 @@ namespace PokerDefense.UI
             Refresh();
         }
 
+        // 다시 바꿀 수 있는 손패 자리가 하나라도 있는지
         bool HasTarget()
         {
             for (int i = 0; i < RoundContext.HandSize; i++)
@@ -135,6 +148,7 @@ namespace PokerDefense.UI
             return false;
         }
 
+        // 창을 닫고 막아 둔 입력을 되돌림 (후보를 공개하고 아직 안 골랐으면 닫지 않음)
         void Close()
         {
             if (round.IsChoosingCandidate)
@@ -169,10 +183,11 @@ namespace PokerDefense.UI
             AudioManager.Instance?.Play(AudioManager.Sfx.CardFlip);
         }
 
+        // 창의 버튼·문구를 지금 상태에 맞춤
         void Refresh()
         {
             bool choosing = round.IsChoosingCandidate;
-            // 대상을 고른 뒤에만 확률을 요청 - 같은 대상이면 Worker가 재계산 없이 기존 결과를 유지한다
+            // 대상을 고른 뒤에만 확률을 요청함, 같은 대상이면 Worker가 다시 계산하지 않고 기존 결과를 유지함
             if (choosing == false && target >= 0)
             {
                 round.RequestOdds(HandOddsSource.Assist, new[] { target });
@@ -188,11 +203,7 @@ namespace PokerDefense.UI
             oddsButton.interactable = round.OddsState == HandOddsState.Ready;
             oddsLabel.text = "남은 덱에서 한 장을 뽑을 때\n" + oddsText;
             int count = RoundContext.CandidateCount;
-            bool eligible = false;
-            for (int i = 0; i < slots.Length; i++)
-            {
-                eligible |= round.CanAssist(i);
-            }
+            bool eligible = HasTarget();
             instruction.text = choosing
                 ? $"② 후보 {count}장 확인 → ③ 한 장으로 교체\n후보를 누르면 바뀔 족보를 미리 볼 수 있어요."
                 : $"교체했던 카드 한 장을 다시 바꿀 수 있어요.\n① 카드 선택 → ② 후보 {count}장 확인 → ③ 교체";
@@ -227,7 +238,6 @@ namespace PokerDefense.UI
             preview.text = eligible
                 ? (target >= 0 ? "선택한 " + CardText.Of(round.Hand[target]) + " 카드 대신 들어올 후보를 확인하세요." : "위에서 다시 바꿀 카드 한 장을 선택하세요.")
                     + $"\n매 라운드 1회 · 후보 공개 전에는 취소 가능\n공개한 뒤에는 후보 한 장을 반드시 골라야 합니다."
-
                 : "먼저 손패에서 카드를 한 번 교체하세요.\n그때 바뀐 카드만 여기에서 다시 바꿀 수 있어요.";
             if (choosing && selected < 0)
             {
@@ -248,7 +258,9 @@ namespace PokerDefense.UI
                 }
                 string hand = "";
                 for (int i = 0; i < RoundContext.HandSize; i++)
+                {
                     hand += CardText.Of(i == target ? round.Candidates[selected] : round.Hand[i]) + "  ";
+                }
                 preview.text = hand + "\n" + HandCategoryNames.Of(result.Category) + " · " + definition.DisplayName
                     + (merge ? "\n현재 보드에 머지 가능한 유닛 있음" : "\n새 유닛 소환");
             }

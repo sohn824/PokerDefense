@@ -11,7 +11,7 @@ namespace PokerDefense.Game
     {
         None,      // 아직 게임이 끝나지 않음
         Disabled,  // 전송 꺼 둠 (기록은 파일로 남음)
-        Skipped,   // 웨이브 스킵을 쓴 판 - 파일로도 남기지 않고 보내지 않음
+        Skipped,   // 웨이브 스킵을 쓴 판이나 시뮬레이션 판 - 파일로도 남기지 않고 보내지 않음
         Sending,   // 전송 중
         Sent,      // 서버가 받음 (Rank / Total 사용 가능)
         Offline,   // 못 보냄 - 다음 판이 끝날 때나 다음 실행 때 다시 보냄
@@ -96,8 +96,8 @@ namespace PokerDefense.Game
             reported = true;
 
 #if UNITY_EDITOR
-            // 웨이브 스킵을 쓴 판은 실제 기록이 아니므로 제외
-            if (flow.UsedDevSkip)
+            // 웨이브 스킵을 쓴 판과 시뮬레이션 판은 실제 기록이 아니므로 제외
+            if (flow.UsedDevSkip || flow.IsSimulated)
             {
                 SetStatus(RunReportStatus.Skipped);
                 return;

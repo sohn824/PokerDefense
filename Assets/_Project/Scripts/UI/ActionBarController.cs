@@ -7,12 +7,12 @@ namespace PokerDefense.UI
     /**
      * ActionBarController
      *
-     * 행동 버튼들과 안내 라벨들을 단계별로 바꿔 끼우는 클래스
-     * 같은 오브젝트의 RoundScreen / BoardScreen / CombatScreen 과 이벤트로만 엮인다
+     * 지금 단계에 맞춰 행동 버튼과 안내 라벨을 켜고 끄는 클래스
+     * 단계 판정은 컨트롤러(Round·Placement·Combat·GameFlow) 이벤트를 받아 하고, 보드 유닛 선택 여부만 BoardScreen에서 매 프레임 읽음
      */
     public sealed class ActionBarController : MonoBehaviour
     {
-        // 화면에 실제로 보이는 단계
+        // 화면 기준 단계 (RoundPhase와 달리 배치를 Pending 있음·없음으로 나누고 전투·결과를 따로 둠)
         enum Stage { Exchange, PlacePending, PlaceReady, Combat, Result }
 
         [SerializeField] RoundController round;
@@ -25,6 +25,8 @@ namespace PokerDefense.UI
         [SerializeField] GameObject confirmButton;
         [SerializeField] GameObject exchangeButton;
         [SerializeField] GameObject startCombatButton;
+
+        // 소환 포기·퇴장 버튼 (이름은 예전 판매 기능에서 남음)
         [SerializeField] GameObject sellButton;
         [SerializeField] GameObject jokerButton;
 
@@ -36,6 +38,7 @@ namespace PokerDefense.UI
         [SerializeField] GameObject statusLabel;
         [SerializeField] GameObject pendingLabel;
 
+        // 직전 Apply 때의 보드 선택 여부 (바뀌었을 때만 Apply)
         bool lastSelection;
 
         void Awake()
@@ -65,7 +68,7 @@ namespace PokerDefense.UI
             flow.FlowChanged -= Apply;
         }
 
-        // 보드 유닛 선택은 PlacementController 이벤트를 거치지 않으므로 매 프레임 확인한다
+        // 보드 유닛 선택은 PlacementController 이벤트를 거치지 않으므로 매 프레임 확인함
         void Update()
         {
             if (board.HasSelection != lastSelection)
@@ -80,17 +83,18 @@ namespace PokerDefense.UI
         void OnCombatStarted(CombatContext context) => Apply();
         void OnCombatFinished(CombatOutcome outcome, int unresolved) => Apply();
 
-        // 지금 단계를 판정하고 버튼/라벨 노출을 거기에 맞춘다
+        // 지금 단계를 판정하고 버튼·라벨 노출을 거기에 맞춤
         void Apply()
         {
             lastSelection = board.HasSelection;
             Stage stage = Resolve();
+            // 유닛을 골랐으면 배치 완료 단계와 전투 중에도 퇴장·승급권 버튼을 보여 줌
             bool combatEdit = (stage == Stage.PlaceReady || stage == Stage.Combat) && lastSelection;
 
             SetActive(confirmButton, stage == Stage.Exchange);
             SetActive(exchangeButton, stage == Stage.Exchange);
             SetActive(startCombatButton, stage == Stage.PlaceReady);
-            // 소환 포기와 퇴장 버튼은 대기/선택 상태에 맞춰 노출한다
+            // 소환 포기·퇴장 버튼은 Pending이 있거나 유닛을 골랐을 때 보여 줌
             SetActive(sellButton, placement.Pending != null || combatEdit);
             SetActive(jokerButton, combatEdit);
 
@@ -102,6 +106,7 @@ namespace PokerDefense.UI
             SetActive(combatLabel, stage == Stage.Combat || stage == Stage.PlaceReady);
         }
 
+        // 지금 화면 단계를 판정함 (Run 종료 > 전투 > 교체 > 배치 순)
         Stage Resolve()
         {
             if (flow.IsFinished)

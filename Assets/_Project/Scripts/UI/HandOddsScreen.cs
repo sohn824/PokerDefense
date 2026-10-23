@@ -8,7 +8,13 @@ using UnityEngine.UI;
 
 namespace PokerDefense.UI
 {
-    /** 확률 상세 창. 계산 결과를 표시하며 교체 입력이나 덱을 변경하지 않는다. */
+    /**
+     * HandOddsScreen
+     *
+     * 족보별 교체 확률을 희귀도 순으로 보여 주는 상세 창
+     * 결과를 보여 주기만 하고 손패·덱은 바꾸지 않음
+     * 열린 동안 게임을 일시정지하고 입력을 막음, 닫으면 열기 전 상태로 되돌림
+     */
     public sealed class HandOddsScreen : MonoBehaviour
     {
         [SerializeField] RoundController round;
@@ -19,9 +25,9 @@ namespace PokerDefense.UI
         [SerializeField] RectTransform[] bars;
         [SerializeField] ScrollRect scroll;
         [SerializeField] Button closeButton;
+        // 창이 열린 동안 막는 입력 묶음과, 열기 전 상태(닫을 때 되돌림)
         [SerializeField] CanvasGroup[] inputGroups;
         bool[] previousInput;
-        bool previousPaused;
 
         void Awake()
         {
@@ -29,7 +35,8 @@ namespace PokerDefense.UI
             closeButton.onClick.AddListener(Close);
         }
 
-        // 계산이 끝나 있을 때만 연다. 진행 중·실패 상태에서는 자세히 볼 결과가 없다
+        // 확률 계산이 끝났을 때만 엶 (계산 중이거나 실패했으면 보여 줄 결과가 없음)
+        // context - 제목 문구, assist - 선택 교체 창에서 열었는지 (설명 문구가 달라짐)
         public void Open(string context, bool assist)
         {
             if (panel.activeSelf || GameSession.IsPaused || GameSession.IsLoading
@@ -45,7 +52,7 @@ namespace PokerDefense.UI
                 + HandOddsText.Summary(entries, current) + "\n"
                 + (assist ? "후보 중 고를 확률이 아닌, 한 장을 뽑을 때의 분포입니다."
                     : "높은 족보는 희귀도 기준이며, 전투 성능과는 다릅니다.");
-            // 희귀도 순으로 한 줄씩 채우고, 남는 행은 숨긴다
+            // 희귀도 순으로 한 줄씩 채우고, 남는 행은 숨김
             for (int i = 0; i < rows.Length; i++)
             {
                 bool visible = i < entries.Count;
@@ -66,8 +73,7 @@ namespace PokerDefense.UI
             scroll.content.sizeDelta = new Vector2(0f, entries.Count * 112f);
             scroll.StopMovement();
             scroll.verticalNormalizedPosition = 1f;
-            // 닫을 때 그대로 되돌릴 수 있게 입력·정지 상태를 먼저 기록해둔다
-            previousPaused = GameSession.IsPaused;
+            // 닫을 때 그대로 되돌릴 수 있게 입력 상태를 먼저 기록해 둠
             previousInput = new bool[inputGroups.Length];
             for (int i = 0; i < inputGroups.Length; i++)
             {
@@ -78,6 +84,8 @@ namespace PokerDefense.UI
             GameSession.SetPaused(true);
         }
 
+        // 창을 닫고 입력을 열기 전 상태로 되돌린 뒤 일시정지를 풂 (씬 로딩 중이면 일시정지는 건드리지 않음)
+        // 이미 일시정지 중이면 Open이 열리지 않으므로, 열기 전은 항상 일시정지가 아닌 상태임
         public void Close()
         {
             if (panel == null || panel.activeSelf == false || previousInput == null)
@@ -94,7 +102,7 @@ namespace PokerDefense.UI
             }
             if (GameSession.IsLoading == false)
             {
-                GameSession.SetPaused(previousPaused);
+                GameSession.SetPaused(false);
             }
         }
 

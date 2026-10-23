@@ -11,16 +11,20 @@ namespace PokerDefense.UI
     /**
      * RoundScreen
      *
-     * 드로우 -> 교체 -> 족보 표시 화면. RoundController를 구독만 하고 입력은 메서드로 넘김
+     * 손패 교체 단계 화면 - 손패 5장, 족보·유닛 미리보기, 일반 교체·확정 버튼, 상위 족보 축포
+     * RoundController 이벤트를 받아 갱신하고, 입력은 RoundController 메서드로만 넘김
      * 손패 크기가 상수 5라 카드 칸을 씬에 고정해 두고 생성하지 않음
-     *
      */
     public sealed class RoundScreen : MonoBehaviour
     {
         [SerializeField] RoundController controller;
+
+        // 고른 카드를 교체할 때의 확률 요약 (이름은 예전 목표 족보 표시 기능에서 남음)
         [SerializeField] TMP_Text goalLabel;
         [SerializeField] Button oddsButton;
         [SerializeField] HandOddsScreen oddsScreen;
+
+        // goalLabel을 담은 패널 (이름은 예전 목표 족보 표시 기능에서 남음)
         [SerializeField] GameObject goalPanel;
         [SerializeField] HandUnitTable unitTable;
         [SerializeField] CardVisualSet cardVisuals;
@@ -47,16 +51,13 @@ namespace PokerDefense.UI
         const float CelebrateFadeSeconds = 0.35f;
         const float CelebrateFlashPeakAlpha = 0.4f;
 
-        // PlayCelebration 코루틴이 돌고 있으면
-        // 중간에 멈추고 새로 시작해야 하므로
-        // 코루틴 참조 핸들을 들고 있음
+        // 실행 중인 PlayCelebration (새 축포를 시작하거나 다음 라운드로 넘어갈 때 멈추려고 들고 있음)
         Coroutine celebrateRoutine;
 
         RoundPhase phase;
 
         void Awake()
         {
-
             for (int i = 0; i < cardViews.Length; i++)
             {
                 cardViews[i].Bind(cardVisuals);
@@ -122,7 +123,7 @@ namespace PokerDefense.UI
             Refresh();
         }
 
-        // 손패 5장 뷰 갱신 - 상태는 곧바로 부르는 Refresh가 다시 계산한다
+        // 손패 5장을 새로 표시하고 고른 카드를 모두 풂 (카드 상태는 이어서 부르는 Refresh가 다시 맞춤)
         void ShowHand(IReadOnlyList<Card> hand)
         {
             for (int i = 0; i < cardViews.Length; i++)
@@ -178,8 +179,7 @@ namespace PokerDefense.UI
             }
         }
 
-        // 상위 족보 확정 축포 코루틴
-        // (화면 플래시 + 배너 팝인 -> 유지 -> 페이드아웃)
+        // 상위 족보 확정 축포 - 화면 플래시와 배너 팝인 -> 유지 -> 페이드아웃
         IEnumerator PlayCelebration(string banner)
         {
             // 배너 텍스트를 켜고 알파를 1로 초기화
@@ -212,9 +212,7 @@ namespace PokerDefense.UI
                 yield return null;
             }
 
-            // 위에서 t가 CelebrateSettleSeconds에 도달하지 않고 끝나므로
-            // 마지막 프레임에서 Lerp 목표값 직전에서 끝남
-            // 따라서 정확한 목표값으로 보정
+            // 위 반복은 t가 목표 시간에 닿기 전에 끝나 값이 목표 직전에 머무르므로 정확한 목표값으로 맞춤
             celebrateStamp.transform.localScale = Vector3.one;
             flashColor.a = 0f;
             celebrateFlash.color = flashColor;
@@ -230,15 +228,14 @@ namespace PokerDefense.UI
                 yield return null;
             }
 
-            // 재생 종료
-            // (배너를 끄고 celebrateRoutine을 null로 되돌려 다음 코루틴 트리거를 받을 수 있게 함)
+            // 재생이 끝나면 배너를 끄고 celebrateRoutine을 비워 다음 축포를 받을 수 있게 함
             celebrateStamp.gameObject.SetActive(false);
             celebrateRoutine = null;
         }
 
         void OnCardClicked(CardView card)
         {
-            // 아니면 교체 대상 선택/해제 토글
+            // 누른 카드를 교체 대상으로 고르거나 고른 것을 풂
             AudioManager.Instance?.Play(AudioManager.Sfx.CardSelect);
             card.SetState(card.Selected ? CardView.CardState.Normal : CardView.CardState.Pick);
             Refresh();
@@ -256,7 +253,7 @@ namespace PokerDefense.UI
             }
         }
 
-        // 카드 상태, 조작 가능 여부, 버튼 상태, 안내 문구를 현재 상태에 맞추기
+        // 카드 상태, 조작 가능 여부, 버튼 상태, 안내 문구를 현재 상태에 맞춤
         void Refresh()
         {
             if (isActiveAndEnabled == false)
@@ -272,7 +269,7 @@ namespace PokerDefense.UI
                 CardView card = cardViews[i];
                 bool locked = controller.IsLocked(i);
 
-                // 배치 모드에서는 잠긴 자리도 눌러 안내를 받게 열어 둔다
+                // 교체 단계에서 아직 잠기지 않은 카드만 누를 수 있음
                 card.SetInteractable(exchanging && locked == false);
 
                 if (locked)
@@ -297,7 +294,7 @@ namespace PokerDefense.UI
                 : controller.ExchangeableCount == 0 ? "일반 교체\n<size=30>교체할 카드 없음</size>"
                 : "일반 교체\n<size=30>손패에서 카드 선택</size>";
 
-            if (!exchanging)
+            if (exchanging == false)
             {
                 controller.CancelOdds(HandOddsSource.Exchange);
                 confirmLabel.text = "손패 확정";
@@ -307,7 +304,7 @@ namespace PokerDefense.UI
             ShowPreview(picked);
         }
 
-        // 프리뷰: 지금 확정하면 나올 족보·유닛, 그리고 현재 보너스와 '교체하면 바뀔' 예상 보너스를 나눠 보여줌
+        // 교체 단계 미리보기 - 지금 확정하면 나올 족보와 유닛, 카드를 골랐으면 그 교체의 확률 요약을 보여줌
         void ShowPreview(int picked)
         {
             HandResult preview = controller.PreviewHand();
@@ -317,7 +314,7 @@ namespace PokerDefense.UI
             statusLabel.text = picked > 0 ? $"선택한 {picked}장을 새 카드로 바꿉니다"
                 : $"확정하면 {unit.DisplayName} 소환 · 일반 교체 가능 {controller.ExchangeableCount}장";
 
-            // 카드를 선택했을 때만 그 교체의 확률을 보여준다. 선택 전 족보 추천은 하지 않는다
+            // 카드를 골랐을 때만 그 교체의 확률을 보여줌 (고르기 전에 족보를 추천하지는 않음)
             bool showOdds = picked > 0 && picked <= HandOdds.MaxSlots
                 && controller.IsAssistOddsActive == false && controller.IsChoosingCandidate == false;
             goalPanel.SetActive(showOdds);

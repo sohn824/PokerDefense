@@ -192,6 +192,13 @@ namespace PokerDefense.Game
             {
                 return;
             }
+#if UNITY_EDITOR
+            // 시뮬레이션 판은 사람 플레이 기록과 섞이지 않게 저장하지 않음
+            if (flow.IsSimulated)
+            {
+                return;
+            }
+#endif // UNITY_EDITOR
             try
             {
                 string directory = Path.Combine(Application.persistentDataPath, "RunJournals");
