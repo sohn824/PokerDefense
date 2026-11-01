@@ -11,9 +11,15 @@ namespace PokerDefense.UI
     /**
      * BoardScreen
      *
-     * 15슬롯 그리드 슬롯 표현, 입력 처리
-     * PlacementController를 구독만 하고 입력은 메서드로 넘김
-     * 그리드 슬롯은 월드 스페이스 / 안내 문구, 버튼 등의 요소는 UI 레이어
+     * 보드 Grid의 입력을 받아 PlacementController에 넘기고, 보드 상태를 보여주는 화면
+     * 슬롯은 월드 스페이스라 UI 버튼이 아니고 Update에서 포인터 위치를 Physics2D로 직접 검사
+     *
+     * 슬롯 눌렀을 때 처리
+     * Pending(배치 대기)이 있을 때 - 배치·합치기, 다른 유닛이 있는 칸이면 교체 확인 창
+     * 고른 유닛이 없을 때 - 그 유닛 선택
+     * 고른 유닛이 있을 때 - 빈 칸이면 이동, 같은 유닛·성급이면 머지, 그 외엔 자리 교환
+     *
+     * 구독 - PlacementController(PendingChanged·Placed·BoardChanged), StageController.Changed, RoundController.PhaseChanged
      */
     public sealed class BoardScreen : MonoBehaviour
     {
@@ -25,36 +31,34 @@ namespace PokerDefense.UI
         [SerializeField] Camera boardCamera;
         [SerializeField] UnitSlotView[] slots;
         [SerializeField] TMP_Text pendingLabel;
-
         [SerializeField] Button sellButton;
         [SerializeField] TMP_Text sellLabel;
         [SerializeField] BoardDecisionScreen decision;
         [SerializeField] Button jokerButton;
         [SerializeField] TMP_Text jokerLabel;
 
-        [Tooltip("상황 카드를 탭하면 수치 상세를 펼치고 접는다")]
+        [Tooltip("상황 카드를 탭하면 수치 상세를 펼치고 접음")]
         [SerializeField] Button detailToggle;
 
-        [Tooltip("유닛 아트의 조준 방향·반동을 얻는 컨트롤러")]
+        [Tooltip("유닛의 조준 방향·반동을 얻는 CombatController")]
         [SerializeField] CombatController combat;
 
-        // 사거리 링 (에셋 없이 LineRenderer로 원을 그린다)
+        // 사거리 링 (에셋 없이 LineRenderer로 원을 그림)
         const int RingSegments = 48;
         const float RingWidth = 0.05f;
         static readonly Color RingColor = new Color(1f, 0.95f, 0.6f, 0.5f);
 
         int selected = NoSelection;
 
-        // 상황 카드 수치 상세를 펼친 상태인지 (탭으로 토글, 세션 동안 유지)
+        // 상황 카드 수치 상세를 펼친 상태인지
         bool detailExpanded;
 
         LineRenderer rangeRing;
 
-        // 승급권로 성급을 올리는 중인지
-        // (OnPlaced에서 승급권 승급음과 일반 머지음을 구분하는 데 사용)
+        // 승급권(Joker)으로 성급을 올리는 중인지
         bool usingJoker;
 
-        // ActionBarController가 퇴장·승급권 버튼 노출을 정할 때 참조한다
+        // ActionBarController가 퇴장·승급권 버튼 노출을 정할 때 참조
         public bool HasSelection => selected != NoSelection;
 
         void Awake()
@@ -84,17 +88,15 @@ namespace PokerDefense.UI
             Refresh();
         }
 
-        
-        // 전투 중에도 보드를 조작할 수 있으므로 유닛을 고른 채로 웨이브가 끝날 수 있기 때문에
-        // 웨이브가 끝나면 강제로 유닛 선택을 해제하고 Refresh 호출    
+        // 전투 중에도 보드를 조작할 수 있어 유닛을 고른 채로 전투가 끝날 수 있음
+        // 새 라운드 시작(StartRound)과 손패 확정(ConfirmHand) 때 선택 해제
         void OnPhaseChanged(RoundPhase phase)
         {
             selected = NoSelection;
             Refresh();
         }
 
-        // 그리드 슬롯은 UI 버튼이 아니고 월드 스페이스이므로
-        // 마우스 클릭을 직접 검사해줘야 함
+        // 그리드 슬롯은 UI 버튼이 아니라 월드 스페이스라 마우스·터치를 직접 검사
         void Update()
         {
             UpdateSlotArt();
@@ -104,7 +106,7 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 카드 UI 위를 누른 것은 보드 클릭이 아니다
+            // 카드 UI 위를 누른 것은 보드 클릭이 아님
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             {
                 return;
@@ -116,7 +118,7 @@ namespace PokerDefense.UI
             Collider2D hit = Physics2D.OverlapPoint(worldPoint);
             if (hit == null)
             {
-                // 빈 배경을 누르면 유닛 선택을 해제한다
+                // 빈 배경을 누르면 유닛 선택 해제
                 if (selected != NoSelection)
                 {
                     selected = NoSelection;
@@ -134,8 +136,8 @@ namespace PokerDefense.UI
             }
         }
 
-        // 선택한 유닛이 바뀌었을 때 호출
-        // selected 상태를 초기화하고 Refresh를 호출해 UI 상태 갱신
+        // Pending이 생기거나(족보 확정) 없어질 때(배치·교체·소환 포기) 호출
+        // 생기면 소환 효과음을 내고, 선택을 해제한 뒤 Refresh
         void OnPendingChanged(UnitInstance pending)
         {
             if (pending != null)
@@ -147,8 +149,8 @@ namespace PokerDefense.UI
             Refresh();
         }
 
-        // 그리드 슬롯에 유닛을 배치했을 때 호출
-        // selected 상태를 초기화하고 Refresh를 호출해 UI 상태 갱신
+        // 슬롯 내용이 배치·교체·칸끼리 머지·승급권으로 바뀌었을 때 호출
+        // 결과에 맞는 효과음을 내고, 선택을 해제한 뒤 Refresh
         void OnPlaced(int index, PlacementResult result)
         {
             if (result == PlacementResult.Placed || result == PlacementResult.Replaced)
@@ -157,7 +159,7 @@ namespace PokerDefense.UI
             }
             else if (result == PlacementResult.Merged)
             {
-                // 승급권 승급도 Merged로 들어오므로 먼저 갈라내고, 나머지는 합쳐진 성급에 맞는 효과음 선택
+                // 승급권 승급도 Merged로 들어오므로 먼저 구분해 승급 효과음을 내고, 일반 머지는 합쳐진 성급에 맞는 효과음 선택
                 int star = placement.Board[index] != null ? placement.Board[index].Star : 2;
 
                 if (usingJoker)
@@ -200,7 +202,7 @@ namespace PokerDefense.UI
                     continue;
                 }
 
-                // 각 슬롯(UnitSlotView)의 업데이트 메소드에
+                // 각 슬롯(UnitSlotView)의 SetAim에
                 // CombatContext에서 얻은 조준 방향과 발사 반동 정보를 넘겨줌
                 slots[i].SetAim(combatContext.AimOf(unit), combatContext.SecondsSinceShot(unit),
                     unit.AttacksPerSecond, combatContext.ShotCountOf(unit));
@@ -215,7 +217,7 @@ namespace PokerDefense.UI
             {
                 if (placement.TryPlace(slot.Index) == false)
                 {
-                    // 못 놓는 칸을 누르면 안내 문구만 띄우고 return
+                    // 다른 유닛이 있는 칸이면 교체 확인 창을 엶
                     UnitInstance old = placement.Board[slot.Index];
                     UnitInstance next = placement.Pending;
                     int index = slot.Index;
@@ -247,34 +249,27 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 선택한 그리드 슬롯이 빈 칸이면 이동, 머지 가능하면 머지, 그 외엔 자리 교환
-            bool moved;
-
+            // 누른 칸이 빈 칸이면 이동, 머지 가능하면 머지, 그 외엔 자리 교환
+            // 고른 칸에는 유닛이 있으므로 세 경우 모두 성공함
             if (placement.Board[slot.Index] == null)
             {
-                moved = placement.TryMoveSlot(selected, slot.Index);
+                placement.TryMoveSlot(selected, slot.Index);
             }
             else if (placement.Board.CanMergeSlots(selected, slot.Index))
             {
-                moved = placement.TryMergeSlots(selected, slot.Index);
+                placement.TryMergeSlots(selected, slot.Index);
             }
             else
             {
-                moved = placement.TrySwapSlots(selected, slot.Index);
+                placement.TrySwapSlots(selected, slot.Index);
             }
 
-            if (moved)
-            {
-                selected = NoSelection;
-            }
-            else
-            {
-                // 슬롯을 클릭했는데 이동, 머지, 교환 모두 실패하면 안내 문구만 띄우고 선택 상태 유지
-                pendingLabel.text = "그 자리에는 할 수 없습니다";
-                Refresh();
-            }
+            // 자리 교환은 BoardChanged로 Refresh가 선택이 남은 채 먼저 돌았으므로 해제한 뒤 다시 그림
+            selected = NoSelection;
+            Refresh();
         }
 
+        // 소환 포기·퇴장 버튼
         void OnSell()
         {
             UnitInstance pending = placement.Pending;
@@ -296,6 +291,7 @@ namespace PokerDefense.UI
             }
         }
 
+        // 고른 유닛에 승급권 사용 (usingJoker로 효과음 구분)
         void OnUseJoker()
         {
             if (selected != NoSelection)
@@ -306,6 +302,7 @@ namespace PokerDefense.UI
             }
         }
 
+        // 슬롯·버튼 라벨·안내 문구·사거리 링을 지금 보드 상태로 다시 그림
         void Refresh()
         {
             UnitInstance pending = placement.Pending;
@@ -350,14 +347,13 @@ namespace PokerDefense.UI
             UpdateRangeRing();
         }
 
-        // 상황 카드 탭 - 수치 상세를 펼치거나 접는다
         void ToggleDetail()
         {
             detailExpanded = !detailExpanded;
             Refresh();
         }
 
-        // 반지름 1짜리 원을 한 번 만들어 두고, 표시할 때 위치·크기만 갱신한다
+        // 사거리 링용 LineRenderer를 한 번 만들어 두고, 표시할 때 점 위치만 갱신
         void BuildRangeRing()
         {
             GameObject go = new GameObject("RangeRing");
@@ -391,7 +387,7 @@ namespace PokerDefense.UI
             rangeRing.enabled = false;
         }
 
-        // 고른 유닛의 사거리를 그 칸 위에 원으로 표시한다 (다른 칸 탭은 막지 않는다)
+        // 고른 유닛의 사거리를 그 칸 위에 원으로 표시
         void UpdateRangeRing()
         {
             if (selected == NoSelection || placement.Board[selected] == null)
@@ -430,14 +426,13 @@ namespace PokerDefense.UI
 
             if (board.CanMergeSlots(selected, i))
             {
-                return $"머지 ★{board[selected].Star + 1}";
+                return $"합치기 ★{board[selected].Star + 1}";
             }
 
             return "교환";
         }
 
-        // 버튼 interactable·라벨 문구·안내 문구를 갱신한다
-        // 버튼을 아예 보일지 말지는 ActionBarController가 단계별로 정한다
+        // 버튼 interactable·라벨 문구·안내 문구 갱신
         void UpdateLabels(UnitInstance pending)
         {
             // 승급권은 고른 유닛에만 쓸 수 있음
@@ -471,7 +466,7 @@ namespace PokerDefense.UI
             ShowDetail(null, "확정하면 유닛이 소환됩니다", null);
         }
 
-        // 고른 유닛이 지금 머지할 수 있는지 한 줄로 안내한다
+        // 고른 유닛이 지금 머지할 수 있는지 한 줄로 안내
         string MergeHintFor(int index)
         {
             UnitInstance unit = placement.Board[index];
@@ -483,7 +478,7 @@ namespace PokerDefense.UI
 
             if (placement.Board.HasMergePartner(index))
             {
-                return $"★{unit.Star + 1}로 머지할 상대가 있습니다";
+                return $"★{unit.Star + 1}로 합칠 상대가 있습니다";
             }
 
             return $"같은 유닛 ★{unit.Star} 둘이면 ★{unit.Star + 1}";
@@ -499,14 +494,13 @@ namespace PokerDefense.UI
 
             if (stage.Stage.Jokers <= 0)
             {
-                return "Joker 없음";
+                return "승급권 없음";
             }
 
             return "사용 불가";
         }
 
         // 유닛 상세 정보 표시
-        // 슬롯에는 Sprite와 성급만 표시하고 이름·역할은 여기 앞줄에, 수치는 탭으로 펼치는 상세에 둔다
         void ShowDetail(UnitInstance unit, string hint, string mergeHint)
         {
             if (unit == null)

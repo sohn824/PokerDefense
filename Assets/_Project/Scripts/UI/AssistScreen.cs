@@ -197,7 +197,7 @@ namespace PokerDefense.UI
                 round.CancelOdds(HandOddsSource.Assist);
             }
             string oddsText = round.OddsState == HandOddsState.Ready ? HandOddsText.Summary(round.Odds, round.PreviewHand().Category)
-                : round.OddsState == HandOddsState.Failed ? "확률을 계산하지 못했습니다. 후보 공개는 가능합니다."
+                : round.OddsState == HandOddsState.Failed ? "확률을 계산하지 못했습니다."
                 : "교체 확률 계산 중...";
             oddsButton.gameObject.SetActive(choosing == false && target >= 0);
             oddsButton.interactable = round.OddsState == HandOddsState.Ready;
@@ -262,7 +262,7 @@ namespace PokerDefense.UI
                     hand += CardText.Of(i == target ? round.Candidates[selected] : round.Hand[i]) + "  ";
                 }
                 preview.text = hand + "\n" + HandCategoryNames.Of(result.Category) + " · " + definition.DisplayName
-                    + (merge ? "\n현재 보드에 머지 가능한 유닛 있음" : "\n새 유닛 소환");
+                    + (merge ? "\n현재 보드에 합칠 수 있는 유닛 있음" : "\n새 유닛 소환");
             }
         }
     }
