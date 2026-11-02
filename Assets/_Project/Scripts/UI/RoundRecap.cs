@@ -8,9 +8,9 @@ namespace PokerDefense.UI
     /**
      * RoundRecap
      *
-     * 다음 준비 단계의 상황 카드에 "직전 전투" 접이 한 줄을 띄운다
-     * 탭하면 남은 적 상세를 펼치고, 새 전투가 시작되면 접어 다음 결과로 교체한다
-     * 표시만 하고 정산·보상은 다시 계산하지 않는다 (GameFlowController.LastRound 스냅샷을 읽을 뿐)
+     * 교체·배치 단계에서 직전 전투 결과를 접이식 한 줄로 보여주는 클래스
+     * 탭하면 남은 적·승급권 상세를 펼치고, 전투 중에는 숨기면서 접힌 상태로 되돌림
+     * GameFlowController.LastRound를 읽어 표시함
      */
     public sealed class RoundRecap : MonoBehaviour
     {
@@ -21,7 +21,7 @@ namespace PokerDefense.UI
         [SerializeField] GameObject root;
         [SerializeField] TMP_Text label;
 
-        [Tooltip("줄을 탭하면 상세를 펼치고 접는다")]
+        [Tooltip("줄을 탭하면 상세를 펼치고 접음")]
         [SerializeField] Button toggle;
 
         bool expanded;
@@ -43,7 +43,7 @@ namespace PokerDefense.UI
                         && combat.IsFighting == false
                         && flow.IsFinished == false;
 
-            // 전투가 다시 시작되면 접힌 상태로 되돌린다
+            // 숨길 때는 접힌 상태로 되돌림
             if (show == false)
             {
                 expanded = false;

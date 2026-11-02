@@ -10,9 +10,7 @@ namespace PokerDefense.UI
     /**
      * ThreatPreview
      *
-     * 전투 전(교체 · 준비) 단계에서 이번 웨이브의 적 구성을 한 줄로 보여준다
-     * "어떤 족보를 원하는가"를 정할 근거를 주는 것이 목적
-     * 바를 탭하면 종류별 특성 한 줄을 펼치고, 전투가 시작되면 숨긴다
+     * 교체·배치 단계에서 이번 웨이브의 적 구성을 종류별 수로 한 줄에 보여주는 클래스
      */
     public sealed class ThreatPreview : MonoBehaviour
     {
@@ -32,10 +30,10 @@ namespace PokerDefense.UI
         [SerializeField] GameObject root;
         [SerializeField] TMP_Text label;
 
-        [Tooltip("바를 탭하면 특성 상세를 펼치고 접는다")]
+        [Tooltip("바를 탭하면 특성 상세를 펼치고 접음")]
         [SerializeField] Button toggle;
 
-        // 특성 상세를 펼친 상태인지 (탭으로 토글, 세션 동안 유지)
+        // 특성 상세를 펼친 상태인지
         bool expanded;
 
         void Awake()
@@ -69,7 +67,7 @@ namespace PokerDefense.UI
             }
         }
 
-        // 적 종류별로 수를 묶고, 펼친 상태면 종류별 특성 한 줄을 덧붙인다
+        // 적 종류별로 수를 묶고, 펼친 상태면 종류별 특성 한 줄을 덧붙임
         static string Describe(WaveDefinition wave, bool expanded)
         {
             int[] count = new int[TypeCount];
@@ -88,7 +86,7 @@ namespace PokerDefense.UI
 
             StringBuilder sb = new StringBuilder("이번 적");
 
-            // 특성을 펼칠 만한 특수 종류(일반 제외)가 있는지
+            // 특성을 펼칠 만한 특수 적이 웨이브에 있는지
             bool hasDetail = false;
 
             for (int i = 0; i < Order.Length; i++)

@@ -10,8 +10,15 @@ namespace PokerDefense.UI
     /**
      * CombatScreen
      *
-     * 전투 표현
-     * 적 스프라이트를 CombatContext의 적 목록에 맞춰 만들고 지운다
+     * 전투 상황을 화면과 소리로 나타내는 클래스
+     * CombatController.LatestCombatContext를 매 프레임 읽어 보여주는 역할
+     *
+     * 보여주는 것
+     * 적 - 적 목록에 맞춰 몸통·체력 바를 만들고 지움
+     * 이펙트 - 타격·관통 궤적·Splash 폭발을 Pool에서 꺼내 그림
+     * 효과음 - 발사·착탄·처치음
+     * 라벨 - 라이프·승급권·라운드·남은 시간·적 수·전투 결과
+     * 연출 - 라이프 깎이는 연출
      */
     public sealed class CombatScreen : MonoBehaviour
     {
@@ -28,26 +35,25 @@ namespace PokerDefense.UI
 
         const float BodyScale = 0.5f;
 
-        // 타격 이펙트를 돌릴 풀 사이즈
+        // 타격 이펙트 풀 크기 (다 차면 가장 오래된 것부터 다시 씀)
         const int HitPoolSize = 24;
 
         const float HitSeconds = 0.12f;
         const float HitScale = 0.55f;
 
-        // Pierce 유닛 전용 찌르기 궤적 풀 사이즈
+        // Pierce 관통 궤적 풀 크기
         const int TrailPoolSize = 8;
         const float TrailSeconds = 0.18f;
         const float TrailThickness = 0.84f;
 
-        // Pierce 트레일 최소 길이 (실제 길이는 UnitDefinition의 PierceLength 참조)
+        // 궤적이 겨눈 적 너머로 더 뻗는 최소 길이
         const float MinTrailOvershoot = 0.3f;
 
-        // Splash 폭발 풀 사이즈
+        // Splash 폭발 풀 크기
         const int SplashPoolSize = 12;
         const float SplashSeconds = 0.20f;
 
-        // Splash 이펙트는처음 25%에서 다 자란 크기까지 커지고
-        // 그 뒤로는 크기를 유지한 채 옅어지도록 연출
+        // Splash 이펙트 연출 상수
         const float SplashGrowRatio = 0.25f;
         const float SplashStartScale = 0.6f;
 
@@ -59,13 +65,13 @@ namespace PokerDefense.UI
         static readonly Color BarBackColor = new Color(0.06f, 0.06f, 0.08f, 0.9f);
         static readonly Color BarFillColor = new Color(0.40f, 0.85f, 0.35f);
 
-        // 웨이브 실패 연출용 상수
+        // 시간 초과로 라이프가 깎일 때 연출
         const float FailFlashSeconds = 0.45f;
         const float FailFlashPeakAlpha = 0.4f;
         const float LifePopSeconds = 0.35f;
         const float LifePopScale = 1.4f;
 
-        // 같은 전투음이 한 프레임에 몰려도 한 번만 울리도록 두는 최소 간격
+        // 같은 전투음의 재생 최소 간격
         const float CombatSfxMinGap = 0.05f;
 
         [SerializeField] CombatController controller;
@@ -78,7 +84,7 @@ namespace PokerDefense.UI
         [Tooltip("Splash 공용 폭발 이펙트")]
         [SerializeField] Sprite splashSprite;
 
-        [Tooltip("웨이브 실패 시 붉게 번쩍이는 전체 화면 이펙트")]
+        [Tooltip("시간 초과로 라이프가 깎일 때 붉게 번쩍이는 전체 화면 이미지")]
         [SerializeField] Image failFlash;
         [SerializeField] TMP_Text lifeLabel;
         [SerializeField] TMP_Text jokerLabel;
@@ -101,7 +107,7 @@ namespace PokerDefense.UI
         SpriteRenderer[] splashPool;
         float[] splashBornAt;
 
-        // Splash 이펙트의 최대 scale (점점 커지도록 연출)
+        // Splash 이펙트의 최대 scale
         float[] splashFullScale;
         int splashCursor;
 
@@ -190,7 +196,7 @@ namespace PokerDefense.UI
         {
             lastOutcome = string.Empty;
 
-            // 웨이브가 바뀌면 ElapsedTime이 0부터 다시 흐른다
+            // 새 전투는 ElapsedTime이 0부터 다시 흐르므로 마지막으로 본 기록 시각을 되돌림
             lastHitSeen = -1f;
             lastPierceSeen = -1f;
             lastSplashSeen = -1f;
@@ -244,7 +250,7 @@ namespace PokerDefense.UI
             routine = StartCoroutine(body);
         }
 
-        // 시간 초과 실패를 붉은 화면 번쩍임으로 표현하는 코루틴
+        // 시간 초과 실패 빨간색 화면 연출용 코루틴
         IEnumerator PlayFailFlash()
         {
             Color color = failFlash.color;
@@ -260,8 +266,7 @@ namespace PokerDefense.UI
             failFlash.color = color;
         }
 
-        // 라이프 감소를 라이프 라벨이 순간적으로 커졌다가
-        // 원래 크기로 돌아오는 연출로 강조하는 코루틴
+        // 라이프 감소 연출용 코루틴
         IEnumerator PlayLifePop()
         {
             Transform label = lifeLabel.transform;
@@ -305,7 +310,7 @@ namespace PokerDefense.UI
                     Spawn(recent[i].Position, recent[i].Source);
                     anyNewHit = true;
 
-                    // 발사음은 유닛마다, 착탄음은 Splash·Pierce만 즉시. 일반 착탄음은 아래에서 한 번으로 묶는다
+                    // 발사음과 Splash·Pierce 착탄음은 피격마다 요청 (최소 간격은 AudioManager가 cooldown으로 확인)
                     if (recent[i].Source != null)
                     {
                         AudioManager.Instance?.Play(AudioManager.FireCue(recent[i].Source));
@@ -332,7 +337,7 @@ namespace PokerDefense.UI
                 lastHitSeen = combat.ElapsedTime;
             }
 
-            // 풀에서 수명이 지난 히트 이펙트는 끄고
+            // 풀에서 수명이 지난 타격 이펙트는 끄고
             // 살아 있는 것은 시간에 따라 크기가 커지며 사라지게 함
             for (int i = 0; i < hitPool.Length; i++)
             {
@@ -403,7 +408,8 @@ namespace PokerDefense.UI
             }
         }
 
-        // 발사 위치에서 목표 지점까지 한 줄로 trail을 그림
+        // 총구에서 겨눈 적을 지나 관통 길이만큼 궤적을 그림
+        // 유닛에 궤적 스프라이트가 없으면 그리지 않음
         void SpawnTrail(CombatContext.PierceEvent pierce)
         {
             Sprite sprite = pierce.Source == null ? null : pierce.Source.PierceTrailEffect;
@@ -421,7 +427,6 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 관통 길이만큼 뻗어야 그 안에서 맞은 뒤쪽 적도 이 빔에 맞은 것처럼 보임
             float overshoot = Mathf.Max(MinTrailOvershoot, pierce.Source.PierceLength);
             float length = delta.magnitude + overshoot;
             Vector2 middle = from + delta.normalized * (length * 0.5f);
@@ -525,6 +530,7 @@ namespace PokerDefense.UI
             splashBornAt[index] = Time.time;
         }
 
+        // 궤적 시작점으로 쓸 첫 번째 총구 위치
         static Vector2 MuzzleOffsetOf(UnitDefinition definition, AimDirection direction)
         {
             Vector2[] muzzles = definition.MuzzlesFor(direction);
@@ -538,6 +544,7 @@ namespace PokerDefense.UI
             return direction == AimDirection.Left ? new Vector2(-muzzle.x, muzzle.y) : muzzle;
         }
 
+        // 타격 이펙트 하나를 풀에서 꺼내 맞은 위치에 띄움
         void Spawn(Vector2 position, UnitDefinition source)
         {
             int index = hitCursor;
@@ -587,7 +594,7 @@ namespace PokerDefense.UI
                 SetBar(view, ratio);
             }
 
-            // 죽어서 목록에서 빠진 적의 스프라이트를 지운다
+            // 죽어서 목록에서 빠진 적의 표시를 지움
             gone.Clear();
 
             foreach (KeyValuePair<EnemyInstance, EnemyView> pair in views)
@@ -609,7 +616,7 @@ namespace PokerDefense.UI
                 views.Remove(gone[i]);
             }
 
-            // 이번 프레임에 죽은 적이 있으면 일반 처치음을 한 번만 낸다
+            // 이번 프레임에 죽은 적이 있으면 일반 처치음을 한 번만 냄
             if (gone.Count > 0 && Time.time - lastDeathSfxAt >= CombatSfxMinGap)
             {
                 AudioManager.Instance?.Play(AudioManager.Sfx.EnemyDeath);
@@ -629,8 +636,8 @@ namespace PokerDefense.UI
 
             return false;
         }
-        
-        // 적 체력 바 컨트롤
+
+        // 체력 바 갱신 (체력이 100%면 숨김)
         static void SetBar(EnemyView view, float ratio)
         {
             bool damaged = ratio < 1f;
@@ -648,7 +655,7 @@ namespace PokerDefense.UI
             view.BarFill.transform.localPosition = new Vector3(-BarWidth * (1f - ratio) * 0.5f, BarOffsetY, 0f);
         }
 
-        // Bar도 같은 Square 스프라이트를 늘려서 쓴다
+        // 적 하나의 몸통·체력 바 생성
         EnemyView CreateView(EnemyInstance enemy)
         {
             GameObject root = new GameObject("Enemy_" + enemy.Definition.Id);
@@ -733,7 +740,7 @@ namespace PokerDefense.UI
             combatLabel.text = lastOutcome;
         }
 
-        // 남은 적 표기
+        // 전투 중 적 수 표기 (트랙 위 적, 아직 나오지 않은 적)
         static string DescribeEnemies(CombatContext combat)
         {
             int alive = combat.RemainingEnemies;

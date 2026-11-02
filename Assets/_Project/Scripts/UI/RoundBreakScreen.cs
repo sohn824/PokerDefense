@@ -9,10 +9,11 @@ namespace PokerDefense.UI
     /**
      * RoundBreakScreen
      *
-     * 전투 한 판이 끝나면 결과 요약을 잠깐 보여주고 다음 손패로 넘긴다
+     * 전투가 끝나면 라운드 결과 화면을 띄우고, 닫힐 때 다음 라운드로 넘기는 클래스
      */
     public sealed class RoundBreakScreen : MonoBehaviour
     {
+        // 탭하지 않아도 닫히는 시간
         const float AutoAdvanceSeconds = 1.8f;
 
         [SerializeField] GameFlowController flow;
@@ -52,6 +53,7 @@ namespace PokerDefense.UI
             autoAdvance = StartCoroutine(AutoAdvance());
         }
 
+        // 라운드 결과 화면의 본문 문구를 만듦 (전투 결과 요약, 다음 Act 예고)
         static string BodyText(GameFlowController.RoundSummary s)
         {
             string line;
@@ -80,7 +82,7 @@ namespace PokerDefense.UI
             return line;
         }
 
-        // 그 구간에 들어오는 위협을 한마디로
+        // 새 Act의 적 예고 문구 (Act 2~5, 그 외는 빈 문자열)
         static string ActSubtitle(int act)
         {
             switch (act)
@@ -104,6 +106,7 @@ namespace PokerDefense.UI
             Proceed();
         }
 
+        // 패널을 닫고 DismissBreak로 다음 라운드 시작 (자동 타이머와 탭 중 먼저 온 쪽만 처리)
         void Proceed()
         {
             if (panel.activeSelf == false)
