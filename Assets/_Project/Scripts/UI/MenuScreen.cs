@@ -82,6 +82,12 @@ namespace PokerDefense.UI
 
         void Update()
         {
+            // 결과 화면에는 타이틀로 가는 버튼이 따로 있어서 메뉴 버튼을 숨김
+            if (menuButton != null && flow != null)
+            {
+                menuButton.gameObject.SetActive(flow.IsFinished == false);
+            }
+
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 if (overlay.activeSelf)

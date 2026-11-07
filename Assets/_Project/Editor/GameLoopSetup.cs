@@ -349,10 +349,35 @@ namespace PokerDefense.Editor
             overlay.gameObject.SetActive(false);
         }
 
+        // InstallMenuButtonCanvas - 메뉴 버튼 전용 캔버스 설치, 버튼을 넣을 SafeArea를 반환함
+        //   팝업(표시 순서 100 이상)이 버튼을 덮도록 그보다 낮은 순서를 씀
+        //   기존 MenuButtonCanvas는 지우고 새로 만듦
+        static RectTransform InstallMenuButtonCanvas()
+        {
+            GameObject old = GameObject.Find("MenuButtonCanvas");
+            if (old != null)
+            {
+                UnityEngine.Object.DestroyImmediate(old);
+            }
+            RectTransform canvas = Rect("MenuButtonCanvas", null, Vector2.zero, Vector2.zero);
+            Canvas c = canvas.gameObject.AddComponent<Canvas>();
+            c.renderMode = RenderMode.ScreenSpaceOverlay;
+            c.sortingOrder = 50;
+            CanvasScaler scaler = canvas.gameObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1080f, 1920f);
+            scaler.matchWidthOrHeight = 0f;
+            canvas.gameObject.AddComponent<GraphicRaycaster>();
+            RectTransform safe = Rect("SafeArea", canvas, Vector2.zero, Vector2.zero);
+            Stretch(safe);
+            safe.gameObject.AddComponent<SafeAreaFitter>();
+            return safe;
+        }
+
         // InstallMenu - 메뉴 UI(MenuCanvas) 설치 (title이 true면 타이틀 씬용, false면 게임 씬용)
         //   공통 - 일시정지·오디오 옵션·도움말·포기 확인 페이지
         //   타이틀 - 배경 그림과 시작 화면(게임 시작·옵션·도움말·게임 종료)
-        //   게임 - 오른쪽 위 메뉴 버튼, 메뉴가 열린 동안 막을 입력(inputGroups 5개), 결과 화면의 "타이틀로" 버튼
+        //   게임 - 오른쪽 위 메뉴 버튼(MenuButtonCanvas), 메뉴가 열린 동안 막을 입력(inputGroups 5개), 결과 화면의 "타이틀로" 버튼
         //   기존 MenuCanvas는 지우고 새로 만듦
         static void InstallMenu(bool title)
         {
@@ -410,7 +435,7 @@ namespace PokerDefense.Editor
             else
             {
                 home.gameObject.SetActive(false);
-                Button open = Button("MenuButton", safe, "메뉴", 0f, UiStyle.ButtonSecondary);
+                Button open = Button("MenuButton", InstallMenuButtonCanvas(), "메뉴", 0f, UiStyle.ButtonSecondary);
                 RectTransform rt = (RectTransform)open.transform;
                 rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
                 rt.anchoredPosition = new Vector2(-95f, -270f);
