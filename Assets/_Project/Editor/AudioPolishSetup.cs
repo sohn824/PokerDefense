@@ -18,9 +18,9 @@ namespace PokerDefense.Editor
 
         // AudioManager.Sfx enum 순서와 1:1로 맞춘 파일 이름 (sfx_ 접두사와 .wav 확장자는 뺀 것)
         public static readonly string[] CueFiles = {
-            "ui_button", "ui_card_deal", "ui_chip_gain", "unit_place", "merge_star2", "merge_star3",
+            "ui_button", "ui_card_deal", "unit_place", "merge_star2", "merge_star3",
             "fire_rapid", "impact_hit", "enemy_death", "hand_high", "state_life_loss", "state_wave_clear",
-            "ui_card_flip", "ui_card_select", "ui_exchange", "ui_holdbonus", "ui_shop_open", "unit_summon",
+            "ui_card_flip", "ui_card_select", "ui_exchange", "unit_summon",
             "joker_promote", "fire_heavy", "fire_multi", "fire_splash", "fire_pierce",
             "impact_splash", "impact_pierce", "enemy_death_big", "boss_appear", "hand_low", "hand_mid",
             "state_game_over", "state_stage_clear", "fire_royal_rifle", "fire_pistol"
@@ -74,8 +74,11 @@ namespace PokerDefense.Editor
                 bool fire = CueFiles[i].StartsWith("fire_", StringComparison.Ordinal);
                 bool paper = CueFiles[i].StartsWith("ui_card_", StringComparison.Ordinal) || CueFiles[i] == "ui_exchange";
                 bool battle = AudioManager.IsCombatCue((AudioManager.Sfx)i);
-                bool musical = i == 4 || i == 5 || i == 9 || i == 10 || i == 11 || i >= 25
-                    || i == 15 || i == 16 || i == 17 || i == 18;
+                AudioManager.Sfx id = (AudioManager.Sfx)i;
+                bool musical = id == AudioManager.Sfx.MergeStar2 || id == AudioManager.Sfx.MergeStar3
+                    || id == AudioManager.Sfx.HandHigh || id == AudioManager.Sfx.LifeLoss || id == AudioManager.Sfx.WaveClear
+                    || id == AudioManager.Sfx.UnitSummon || id == AudioManager.Sfx.JokerPromote
+                    || id >= AudioManager.Sfx.EnemyDeathBig;
 
                 // 발사음과 종이 넘기는 계열만 변형 클립 3개, 나머지는 1개
                 SerializedProperty variants = cue.FindPropertyRelative("variants");
@@ -97,7 +100,6 @@ namespace PokerDefense.Editor
                     case AudioManager.Sfx.CardSelect: cue.FindPropertyRelative("gain").floatValue = 0.25f; break;
                     case AudioManager.Sfx.CardFlip:
                     case AudioManager.Sfx.Exchange: cue.FindPropertyRelative("gain").floatValue = 0.22f; break;
-                    case AudioManager.Sfx.HoldBonus:
                     case AudioManager.Sfx.UnitSummon: cue.FindPropertyRelative("gain").floatValue = 0.12f; break;
                     case AudioManager.Sfx.HandLow: cue.FindPropertyRelative("gain").floatValue = 0.14f; break;
                     case AudioManager.Sfx.WaveClear: cue.FindPropertyRelative("gain").floatValue = 0.16f; break;
@@ -135,7 +137,7 @@ namespace PokerDefense.Editor
             EditorSceneManager.MarkSceneDirty(manager.gameObject.scene);
             EditorSceneManager.SaveScene(manager.gameObject.scene);
             AssetDatabase.SaveAssets();
-            Debug.Log("Audio polish V2 configured: 31 cues / 49 SFX clips, 4 streaming music arrangements.");
+            Debug.Log("Audio polish V2 configured: 30 cues / 52 SFX clips, 4 streaming music arrangements.");
         }
 
         static AudioClip Required(string name)

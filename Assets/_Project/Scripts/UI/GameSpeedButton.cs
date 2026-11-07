@@ -5,7 +5,12 @@ using UnityEngine.UI;
 
 namespace PokerDefense.UI
 {
-    // 배속 토글. 누를 때마다 1x/2x/3x를 순환하고, 실제 timeScale 반영은 GameSession이 맡는다
+    /**
+     * GameSpeedButton
+     *
+     * 누를 때마다 배속을 1x -> 2x -> 3x 순서로 바꾸는 배속 버튼
+     * 일시정지 중에는 눌러도 바뀌지 않음
+     */
     public sealed class GameSpeedButton : MonoBehaviour
     {
         static readonly float[] Steps = { 1f, 2f, 3f };

@@ -15145,7 +15145,6 @@ MonoBehaviour:
   round: {fileID: 1529800638}
   placement: {fileID: 1860071211}
   flow: {fileID: 1911605824}
-  stage: {fileID: 2017484794}
   inputGroups:
   - {fileID: 1320182881}
   - {fileID: 490106468}
@@ -23308,29 +23307,23 @@ MonoBehaviour:
     pitchVariation: 0
   - id: 2
     variants:
-    - {fileID: 8300000, guid: 4d12663d62f2bd84fb8267e1f68b08a6, type: 3}
+    - {fileID: 8300000, guid: 4f53377e6a2a26641b8dddbf5cf205db, type: 3}
     gain: 0.2
     cooldown: 0.035
     pitchVariation: 0.025
   - id: 3
     variants:
-    - {fileID: 8300000, guid: 4f53377e6a2a26641b8dddbf5cf205db, type: 3}
-    gain: 0.2
-    cooldown: 0.035
-    pitchVariation: 0.025
-  - id: 4
-    variants:
     - {fileID: 8300000, guid: 0b8c49157b1c1e140971d1adc17bbc8a, type: 3}
     gain: 0.24
     cooldown: 0.3
     pitchVariation: 0
-  - id: 5
+  - id: 4
     variants:
     - {fileID: 8300000, guid: f0e405a3df09c304994eefeb269d41c0, type: 3}
     gain: 0.28
     cooldown: 0.3
     pitchVariation: 0
-  - id: 6
+  - id: 5
     variants:
     - {fileID: 8300000, guid: fe944272df2bf5943aab8fb6e2c977a3, type: 3}
     - {fileID: 8300000, guid: d7f1ae0228573594a99f8e316641d448, type: 3}
@@ -23338,37 +23331,37 @@ MonoBehaviour:
     gain: 0.22
     cooldown: 0.075
     pitchVariation: 0.035
-  - id: 7
+  - id: 6
     variants:
     - {fileID: 8300000, guid: 8a2fcfbbabca1dc4081314b160518b67, type: 3}
     gain: 0.11
     cooldown: 0.085
     pitchVariation: 0.025
-  - id: 8
+  - id: 7
     variants:
     - {fileID: 8300000, guid: 937668cc52cc03245bfcb7e9ad79c8de, type: 3}
     gain: 0.11
     cooldown: 0.085
     pitchVariation: 0.025
-  - id: 9
+  - id: 8
     variants:
     - {fileID: 8300000, guid: 7ed7789acaa628e40869cb084ddb9101, type: 3}
     gain: 0.28
     cooldown: 0.3
     pitchVariation: 0
-  - id: 10
+  - id: 9
     variants:
     - {fileID: 8300000, guid: c1c73b006ce770741969c5972a0d254a, type: 3}
     gain: 0.33
     cooldown: 0.3
     pitchVariation: 0
-  - id: 11
+  - id: 10
     variants:
     - {fileID: 8300000, guid: 3210eddfd14e7c449bb8e35792abc938, type: 3}
     gain: 0.16
     cooldown: 0.3
     pitchVariation: 0
-  - id: 12
+  - id: 11
     variants:
     - {fileID: 8300000, guid: cbdcdd08526f1eb47829e44f0e22c51b, type: 3}
     - {fileID: 8300000, guid: 0f8141d9d478dbe4a99753242907b897, type: 3}
@@ -23376,7 +23369,7 @@ MonoBehaviour:
     gain: 0.22
     cooldown: 0.035
     pitchVariation: 0
-  - id: 13
+  - id: 12
     variants:
     - {fileID: 8300000, guid: 3e87f6ceeb309e1478b5450239df03fe, type: 3}
     - {fileID: 8300000, guid: 69e3c2521860d734087879660bb42083, type: 3}
@@ -23384,7 +23377,7 @@ MonoBehaviour:
     gain: 0.25
     cooldown: 0.035
     pitchVariation: 0
-  - id: 14
+  - id: 13
     variants:
     - {fileID: 8300000, guid: 7a8fd4e4318f2f840b088e7b06efc9af, type: 3}
     - {fileID: 8300000, guid: a770a8570c976784e8528fb840181f26, type: 3}
@@ -23392,31 +23385,19 @@ MonoBehaviour:
     gain: 0.22
     cooldown: 0.035
     pitchVariation: 0
-  - id: 15
-    variants:
-    - {fileID: 8300000, guid: 17bad42183bd68f48b84221e6b033071, type: 3}
-    gain: 0.12
-    cooldown: 0.3
-    pitchVariation: 0
-  - id: 16
-    variants:
-    - {fileID: 8300000, guid: f62cb56b02ca07e4797fba686f79fea6, type: 3}
-    gain: 0.33
-    cooldown: 0.3
-    pitchVariation: 0
-  - id: 17
+  - id: 14
     variants:
     - {fileID: 8300000, guid: 2ce9bfbf672002e4bb0b7056cbecc4aa, type: 3}
     gain: 0.12
     cooldown: 0.3
     pitchVariation: 0
-  - id: 18
+  - id: 15
     variants:
     - {fileID: 8300000, guid: a73b9fa79300a7e46a0bae761757cf3b, type: 3}
     gain: 0.33
     cooldown: 0.3
     pitchVariation: 0
-  - id: 19
+  - id: 16
     variants:
     - {fileID: 8300000, guid: d3f60335b3bf61642a3f878d25420c60, type: 3}
     - {fileID: 8300000, guid: d77ad1637c4bb02428abfe0e94091d16, type: 3}
@@ -23424,7 +23405,7 @@ MonoBehaviour:
     gain: 0.22
     cooldown: 0.075
     pitchVariation: 0.035
-  - id: 20
+  - id: 17
     variants:
     - {fileID: 8300000, guid: 2e430326c905c9d48a2cd96d8ca5e461, type: 3}
     - {fileID: 8300000, guid: 0c8ea2d4341c7b0459f2b28ed44351a9, type: 3}
@@ -23432,7 +23413,7 @@ MonoBehaviour:
     gain: 0.22
     cooldown: 0.075
     pitchVariation: 0.035
-  - id: 21
+  - id: 18
     variants:
     - {fileID: 8300000, guid: fcb2ed1051546714fae7b22dcbf2131e, type: 3}
     - {fileID: 8300000, guid: 453772a8f17030e45b3c189bbc25b1b0, type: 3}
@@ -23440,7 +23421,7 @@ MonoBehaviour:
     gain: 0.22
     cooldown: 0.075
     pitchVariation: 0.035
-  - id: 22
+  - id: 19
     variants:
     - {fileID: 8300000, guid: 4f048e70a53d0ac418600e1e6db2a547, type: 3}
     - {fileID: 8300000, guid: 2f0d84b4060f0cf449039ce748e672f9, type: 3}
@@ -23448,55 +23429,55 @@ MonoBehaviour:
     gain: 0.22
     cooldown: 0.075
     pitchVariation: 0.035
-  - id: 23
+  - id: 20
     variants:
     - {fileID: 8300000, guid: 66d5727262c25f44d921bf74f799b202, type: 3}
     gain: 0.11
     cooldown: 0.085
     pitchVariation: 0.025
-  - id: 24
+  - id: 21
     variants:
     - {fileID: 8300000, guid: 22dd3f577026d87469340afeb59fc43b, type: 3}
     gain: 0.11
     cooldown: 0.085
     pitchVariation: 0.025
-  - id: 25
+  - id: 22
     variants:
     - {fileID: 8300000, guid: 9d15849852d32b14a8e54186e661145e, type: 3}
     gain: 0.33
     cooldown: 0.3
     pitchVariation: 0
-  - id: 26
+  - id: 23
     variants:
     - {fileID: 8300000, guid: 21712d5e32e0f7b429a6eece4e352508, type: 3}
     gain: 0.33
     cooldown: 0.3
     pitchVariation: 0
-  - id: 27
+  - id: 24
     variants:
     - {fileID: 8300000, guid: 0675341e35565e54094e7e2727a6c412, type: 3}
     gain: 0.14
     cooldown: 0.3
     pitchVariation: 0
-  - id: 28
+  - id: 25
     variants:
     - {fileID: 8300000, guid: 4f810fbdc5def7a46b4200e332cfebbc, type: 3}
     gain: 0.2
     cooldown: 0.3
     pitchVariation: 0
-  - id: 29
+  - id: 26
     variants:
     - {fileID: 8300000, guid: bebddfbc219f3c64bb1246bdf7de0b00, type: 3}
     gain: 0.33
     cooldown: 0.3
     pitchVariation: 0
-  - id: 30
+  - id: 27
     variants:
     - {fileID: 8300000, guid: 1681db598dc84174c800513663efb577, type: 3}
     gain: 0.33
     cooldown: 0.3
     pitchVariation: 0
-  - id: 31
+  - id: 28
     variants:
     - {fileID: 8300000, guid: d307f6775b162a8459aa11e62f73f2e3, type: 3}
     - {fileID: 8300000, guid: 220cf55e2df76bf418b8d881e05ded14, type: 3}
@@ -23504,7 +23485,7 @@ MonoBehaviour:
     gain: 0.24
     cooldown: 0.04
     pitchVariation: 0
-  - id: 32
+  - id: 29
     variants:
     - {fileID: 8300000, guid: e3eb9ef0c8819334691e4e042effc631, type: 3}
     - {fileID: 8300000, guid: acc4b8ae351587b4086725a7ca58a307, type: 3}
@@ -28774,7 +28755,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1418caaf39c6ef74d8b143e531ff663d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.RoundController
-  assistMode: 1
 --- !u!4 &1529800639
 Transform:
   m_ObjectHideFlags: 0
@@ -34435,7 +34415,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC9C1\uC804 \uC804\uD22C \xB7 \u2014  \u25BC"
+  m_text: "\uC9C1\uC804 \uC804\uD22C \xB7 -  \u25BC"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 83a5933ac25183b4db20e1d945cb029c, type: 2}
   m_sharedMaterial: {fileID: 5683713740943921046, guid: 83a5933ac25183b4db20e1d945cb029c, type: 2}

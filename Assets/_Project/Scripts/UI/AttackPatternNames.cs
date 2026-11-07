@@ -5,8 +5,7 @@ namespace PokerDefense.UI
     /**
      * AttackPatternNames
      *
-     * 화면 표기용 공격 패턴명
-     * 슬롯이 좁아 두 글자로 맞춘다
+     * 유닛의 공격 패턴명 (화면 표기용)
      */
     public static class AttackPatternNames
     {

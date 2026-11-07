@@ -7,8 +7,8 @@ namespace PokerDefense.UI
     /**
      * ButtonSkin
      *
-     * 버튼 역할(주 행동 / 보조 / 위험)에 맞는 공통 배경색을 입힌다
-     * 비활성일 때는 배경만 어둡게 죽이고 라벨은 그대로 둬서 실행 불가 사유 문구가 계속 읽히게 한다
+     * 버튼 역할에 맞는 공통 배경색을 입히는 클래스
+     * 비활성일 때는 배경만 어둡게 하고 라벨은 그대로 둠
      */
     [RequireComponent(typeof(Image))]
     public sealed class ButtonSkin : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
@@ -16,6 +16,9 @@ namespace PokerDefense.UI
         public enum Role { Primary, Secondary, Danger }
 
         [SerializeField] Role role = Role.Secondary;
+
+        // ArenaPanelGraphic (버튼 배경 프레임 클래스)
+        // 있으면 Image는 투명한 클릭 영역으로 두고 이 프레임에 색을 입힘
         [SerializeField] ArenaPanelGraphic plate;
 
         Image image;
@@ -68,6 +71,7 @@ namespace PokerDefense.UI
             Apply();
         }
 
+        // interactable이 바뀔 때만 색을 다시 적용함
         void Update()
         {
             bool on = selectable == null || selectable.IsInteractable();
@@ -99,6 +103,7 @@ namespace PokerDefense.UI
 
             Color fill = lastOn ? RoleColor() : UiStyle.ButtonDisabled;
 
+            // 누르는 동안 살짝 밝게
             if (pressed && lastOn)
             {
                 fill = Color.Lerp(fill, UiStyle.TextPrimary, 0.12f);
@@ -122,9 +127,12 @@ namespace PokerDefense.UI
         {
             switch (role)
             {
-                case Role.Primary: return UiStyle.ButtonPrimary;
-                case Role.Danger: return UiStyle.ButtonDanger;
-                default: return UiStyle.ButtonSecondary;
+                case Role.Primary:
+                    return UiStyle.ButtonPrimary;
+                case Role.Danger:
+                    return UiStyle.ButtonDanger;
+                default:
+                    return UiStyle.ButtonSecondary;
             }
         }
     }

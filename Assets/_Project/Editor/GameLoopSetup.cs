@@ -449,7 +449,7 @@ namespace PokerDefense.Editor
             Image box = Rect("Box", mute, new Vector2(-270f, 0f), new Vector2(65f, 65f)).gameObject.AddComponent<Image>();
             box.color = UiStyle.ButtonSecondary;
             Image mark = Rect("Mark", box.transform, Vector2.zero, new Vector2(42f, 42f)).gameObject.AddComponent<Image>();
-            mark.color = UiStyle.Currency;
+            mark.color = UiStyle.Accent;
             toggle.targetGraphic = box;
             toggle.graphic = mark;
             Label("Label", mute, "전체 음소거", new Vector2(50f, 0f), new Vector2(500f, 80f), UiStyle.ActionSize);
@@ -550,7 +550,7 @@ namespace PokerDefense.Editor
             area.anchorMin = Vector2.zero;
             area.anchorMax = Vector2.one;
             Image handle = Rect("Handle", area, Vector2.zero, new Vector2(48f, 65f)).gameObject.AddComponent<Image>();
-            handle.color = UiStyle.Currency;
+            handle.color = UiStyle.Accent;
             slider.handleRect = handle.rectTransform;
             slider.targetGraphic = handle;
             slider.value = 1f;

@@ -9,26 +9,25 @@ namespace PokerDefense.UI
     /**
      * AudioManager
      *
-     * 표현 계층에만 사는 사운드 재생기 - 게임 규칙은 오디오에 의존하지 않는다
-     *
-     * BGM은 준비 / 전투 / 보스 / 결과 상태에 맞춰 두 소스로 크로스페이드한다
-     * SFX는 16개 보이스 풀에서 골라 재생하되, 앞쪽 8개는 전투음 전용으로 나눠
-     * 발사음이 몰려도 알림음용 보이스는 남아 있게 한다
+     * 게임 진행에 맞춰 BGM과 효과음을 재생하는 클래스
      */
     public sealed class AudioManager : MonoBehaviour
     {
-        // 씬에 직렬화된 Cue 배열이 이 순서에 묶여 있으므로 값 순서를 바꾸지 않는다
+        // Sfx 순서를 바꾸면 안 됨
+        // Cue.id는 씬에 int로 저장되므로 순서가 바뀌면 다른 사운드로 연결됨
+        // AudioPolishSetup.CueFiles도 같은 순서를 따름
         public enum Sfx
         {
-            UiButton, CardDeal, ChipGain, UnitPlace, MergeStar2, MergeStar3,
+            UiButton, CardDeal, UnitPlace, MergeStar2, MergeStar3,
             FireRapid, ImpactHit, EnemyDeath, HandHigh, LifeLoss, WaveClear,
-            CardFlip, CardSelect, Exchange, HoldBonus, ShopOpen, UnitSummon,
+            CardFlip, CardSelect, Exchange, UnitSummon,
             JokerPromote, FireHeavy, FireMulti, FireSplash, FirePierce,
             ImpactSplash, ImpactPierce, EnemyDeathBig, BossAppear, HandLow,
             HandMid, GameOver, StageClear, FireRoyalRifle, FirePistol
         }
 
-        // 사운드 하나 - 변형 클립을 여러 개 두고 돌려 써서 반복감을 줄인다
+        // 사운드 하나를 담당하는 클래스
+        // (변형 클립을 여러 개 두고 돌려 써서 반복감을 줄임)
         [Serializable]
         public sealed class Cue
         {
@@ -41,7 +40,7 @@ namespace PokerDefense.UI
 
         public static AudioManager Instance { get; private set; }
 
-        // 로열 라이플은 초당 발사 수가 많아 쿨다운을 따로 짧게 잡는다
+        // 로열 라이플은 초당 발사 수가 많아 쿨타임을 따로 짧게 잡음
         public const float RoyalRifleCooldown = 0.04f;
 
         [SerializeField] AudioSource musicSource;
@@ -56,7 +55,7 @@ namespace PokerDefense.UI
         [SerializeField] AudioClip bgmResult;
         [SerializeField] Cue[] cues = Array.Empty<Cue>();
 
-        // 앞 8개는 전투음 전용, 나머지는 그 외 사운드용
+        // 앞 8개는 전투 사운드 전용, 나머지는 그 외 사운드
         const int CombatVoices = 8;
         const int TotalVoices = 16;
 
@@ -128,7 +127,7 @@ namespace PokerDefense.UI
 
             foreach (Button button in FindObjectsByType<Button>(FindObjectsInactive.Include))
             {
-                // 카드에는 자체 클릭 피드백이 있으므로 공용 클릭음을 덧씌우지 않는다
+                // 카드에는 자체 클릭음이 있으므로 공용 클릭음을 덧씌우지 않음
                 if (button.GetComponentInParent<CardView>() != null)
                 {
                     continue;
@@ -136,10 +135,6 @@ namespace PokerDefense.UI
 
                 buttons.Add(button);
                 button.onClick.AddListener(PlayUiButton);
-            }
-
-            if (flow != null)
-            {
             }
 
             if (combat != null)
@@ -173,8 +168,7 @@ namespace PokerDefense.UI
 
         void LateUpdate()
         {
-            // AudioPreferences의 각 프로퍼티는 접근할 때마다 PlayerPrefs를 다시 읽는다.
-            // 보이스 16개 루프 안에서 매번 읽으면 프레임당 불필요한 재할당이 쌓이므로 한 번만 읽어 재사용한다.
+            // AudioPreferences 속성은 읽을 때마다 PlayerPrefs를 다시 읽으므로 루프 밖에서 한 번만 읽음
             float effectsGain = AudioPreferences.EffectsGain;
 
             for (int i = 0; i < voices.Length; i++)
@@ -182,7 +176,7 @@ namespace PokerDefense.UI
                 voices[i].volume = voiceGains[i] * effectsGain;
             }
 
-            // 결과 -> 드로우 전환이 끝난 뒤의 최종 상태를 읽는다
+            // Update에서 바뀐 상태를 LateUpdate에서 읽어 이번 프레임의 BGM을 고름
             AudioClip desired;
 
             if (flow != null && flow.IsFinished)
@@ -203,7 +197,6 @@ namespace PokerDefense.UI
             blend = Mathf.MoveTowards(blend, targetBlend, Time.unscaledDeltaTime / 0.8f);
             duck = Mathf.MoveTowards(duck, AudioSettings.dspTime < duckUntil ? 0.55f : 1f, Time.unscaledDeltaTime * 3f);
 
-            // 두 소스가 같은 곡을 이어 재생하므로 볼륨 합이 1이 되게 섞어 가운데서 +3 dB 튀는 것을 막는다
             float musicGain = AudioPreferences.MusicGain;
             musicSource.volume = musicVolume * (1f - blend) * duck * musicGain;
             musicB.volume = musicVolume * blend * duck * musicGain;
@@ -226,7 +219,6 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 이미 그 곡을 재생 중이면 해당 소스 쪽으로 블렌드만 되돌린다
             if (musicSource.clip == clip && musicSource.isPlaying)
             {
                 targetBlend = 0;
@@ -239,7 +231,8 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 쉬고 있는 쪽 소스에 새 곡을 걸고, 재생 위치를 맞춘 뒤 그쪽으로 페이드한다
+            // 안 쓰는 소스에서 새 곡을 재생하고 그쪽으로 크로스페이드
+            // 재생 위치는 이전 곡에서 이어받음
             AudioSource outgoing = blend <= 0.5f ? musicSource : musicB;
             AudioSource incoming = blend <= 0.5f ? musicB : musicSource;
 
@@ -277,7 +270,7 @@ namespace PokerDefense.UI
 
         void OnCombatFinished(CombatOutcome outcome, int unresolved)
         {
-            // 마지막 한 마리를 잡아 전투가 끝나면 CombatScreen이 뷰를 지우기 전에 여기서 보스 처치음을 낸다
+            // 보스가 마지막 적이면 CombatScreen이 처치음을 재생하지 못하므로 여기서 재생
             if (bossWave && bossDeathPlayed == false && outcome == CombatOutcome.Cleared)
             {
                 Play(Sfx.EnemyDeathBig);
@@ -297,12 +290,10 @@ namespace PokerDefense.UI
             }
         }
 
-
-
-
         void PlayUiButton() => Play(Sfx.UiButton);
 
-        // 전투용 보이스로 재생해야 하는 사운드인지 - 알림음이 전투음에 밀리지 않게 풀을 나누는 기준
+        // 전투용 보이스로 재생할 사운드인지 확인
+        // 알림음이 전투음에 밀리지 않게 보이스를 나눔
         public static bool IsCombatCue(Sfx id)
         {
             return id == Sfx.FireRapid || id == Sfx.FireHeavy || id == Sfx.FireMulti
@@ -311,7 +302,8 @@ namespace PokerDefense.UI
                 || id == Sfx.FireRoyalRifle || id == Sfx.FirePistol;
         }
 
-        // 유닛이 쏠 때 낼 발사음 - 지정 유닛은 전용 클립, 나머지는 공격 패턴별 클립
+        // 유닛의 발사음을 고름
+        // 지정 유닛은 전용 발사음, 나머지는 공격 패턴별 발사음을 씀
         public static Sfx FireCue(UnitDefinition unit)
         {
             if (unit != null && (unit.Id == "high_card" || unit.Id == "one_pair"))
@@ -331,15 +323,21 @@ namespace PokerDefense.UI
         {
             switch (pattern)
             {
-                case AttackPattern.Heavy: return Sfx.FireHeavy;
-                case AttackPattern.Multi: return Sfx.FireMulti;
-                case AttackPattern.Splash: return Sfx.FireSplash;
-                case AttackPattern.Pierce: return Sfx.FirePierce;
-                default: return Sfx.FireRapid;
+                case AttackPattern.Heavy:
+                    return Sfx.FireHeavy;
+                case AttackPattern.Multi:
+                    return Sfx.FireMulti;
+                case AttackPattern.Splash:
+                    return Sfx.FireSplash;
+                case AttackPattern.Pierce:
+                    return Sfx.FirePierce;
+                default:
+                    return Sfx.FireRapid;
             }
         }
 
-        // 쿨다운 -> 남는 보이스 -> 믹스 헤드룸을 차례로 확인하고, 여유가 있을 때만 클립을 하나 재생한다
+        // 효과음을 재생함
+        // 쿨다운 -> 남는 보이스 -> 남은 볼륨 순서로 확인해 하나라도 부족하면 재생하지 않음
         public void Play(Sfx id)
         {
             if (isActiveAndEnabled == false
@@ -360,7 +358,8 @@ namespace PokerDefense.UI
             int first = combatCue ? 0 : CombatVoices;
             int end = combatCue ? CombatVoices : TotalVoices;
 
-            // 자기 풀에서 노는 보이스를 찾는다. 없으면(풀이 꽉 차면) 잘라내지 않고 그냥 버린다
+            // 비어 있는 보이스를 찾음
+            // 모두 재생 중이면 기존 소리를 끊지 않고 새 소리를 재생하지 않음
             int slot = -1;
 
             for (int i = first; i < end; i++)
@@ -377,7 +376,7 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 변형 클립을 고르되 직전에 쓴 것과 겹치면 다음 것으로 민다
+            // 변형 클립을 고르되 직전에 쓴 것과 겹치면 다음 것으로 넘김
             int variant = random.Next(cue.variants.Length);
 
             if (cue.variants.Length > 1 && lastVariant.TryGetValue(id, out int last) && variant == last)
@@ -392,7 +391,7 @@ namespace PokerDefense.UI
                 return;
             }
 
-            // 같은 풀에서 이미 울리고 있는 볼륨을 합쳐, 남은 헤드룸 안으로만 재생한다
+            // 같은 풀에서 이미 울리고 있는 볼륨을 합쳐, 남은 볼륨 안으로만 재생함
             float usedGain = 0f;
 
             for (int i = first; i < end; i++)
@@ -427,7 +426,7 @@ namespace PokerDefense.UI
             busyUntil[slot] = now + clip.length / source.pitch;
             gate.MarkPlayed((int)id, now, cue.cooldown);
 
-            // 크고 드문 사운드가 나오는 동안에는 BGM을 잠깐 눌러(duck) 앞에 세운다
+            // 중요한 효과음이 잘 들리도록 BGM 볼륨을 잠깐 줄임 (최대 1.5초)
             if (id == Sfx.HandHigh || id == Sfx.BossAppear || id == Sfx.GameOver
                 || id == Sfx.StageClear || id == Sfx.MergeStar3 || id == Sfx.JokerPromote)
             {
@@ -474,10 +473,6 @@ namespace PokerDefense.UI
                 }
             }
 
-            if (flow != null)
-            {
-            }
-
             if (combat != null)
             {
                 combat.CombatStarted -= OnCombatStarted;
@@ -494,8 +489,8 @@ namespace PokerDefense.UI
     /**
      * AudioCueGate
      *
-     * 사운드별 쿨다운만 따지는 순수 로직
-     * 프레임 레이트나 게임 타임스케일과 무관하도록 DSP 시간으로 잰다
+     * 사운드별 쿨타임만 따지는 클래스
+     * 프레임 레이트나 timeScale과 무관하도록 오디오 시스템 시간으로 잼
      */
     public sealed class AudioCueGate
     {

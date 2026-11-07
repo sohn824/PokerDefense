@@ -5,12 +5,9 @@ namespace PokerDefense.UI
     /**
      * SafeAreaFitter
      *
-     * 모바일 화면 대응
-     * 기기마다 화면 위쪽 카메라 홈 · 둥근 모서리 · 아래쪽 제스처 바의 위치가 달라서
-     * OS가 "여기 안에 그리면 안 가린다"고 알려주는 Screen.safeArea 안으로
-     * 이 SafeAreaFitter가 붙어 있는 오브젝트의 RectTransform을 맞츰
-     * 화면을 꽉 채우는 컨테이너에 붙이고 그 아래에 실제 UI를 둠
-     * 파임이 없는 환경(에디터 · PC)에선 safeArea가 화면 전체와 같아 아무 일도 안 함
+     * 오브젝트의 RectTransform을 Screen.safeArea에 맞추는 클래스
+     * 스마트폰 노치·둥근 모서리·제스처 바에 UI가 가려지지 않게 함
+     * 화면을 꽉 채우는 오브젝트에 붙이고 그 아래에 실제 UI를 둠
      */
     [RequireComponent(typeof(RectTransform))]
     public sealed class SafeAreaFitter : MonoBehaviour
@@ -27,7 +24,7 @@ namespace PokerDefense.UI
 
         void Update()
         {
-            // 회전 · 해상도 변화에 맞춰 다시 계산한다
+            // 회전, 해상도 변화에 맞춰 다시 계산함
             if (Screen.safeArea != lastArea || Screen.width != lastScreen.x || Screen.height != lastScreen.y)
             {
                 Apply();

@@ -9,7 +9,8 @@ namespace PokerDefense.UI
     /**
      * MenuScreen
      *
-     * 타이틀과 게임에서 공유하는 옵션·도움말. 씬에 배치된 위젯에 입력만 연결한다.
+     * 타이틀과 게임 씬에서 함께 쓰는 메뉴를 관리하는 클래스
+     * 메뉴 화면 - 일시정지, 오디오 옵션, 도움말, 포기 확인
      */
     public sealed class MenuScreen : MonoBehaviour
     {
@@ -63,6 +64,8 @@ namespace PokerDefense.UI
             }
             optionsButton.onClick.AddListener(OpenOptions);
             helpButton.onClick.AddListener(() => Show(helpPage));
+            // 종료 버튼은 PC·에디터에서만 보이도록 함
+            // (모바일은 OS가 앱 종료를 맡으므로)
             quitButton.gameObject.SetActive(Application.platform == RuntimePlatform.WindowsPlayer
                 || Application.platform == RuntimePlatform.LinuxPlayer || Application.platform == RuntimePlatform.OSXPlayer
                 || Application.isEditor);
@@ -92,6 +95,7 @@ namespace PokerDefense.UI
             }
         }
 
+        // 앱이 백그라운드로 가면 게임 씬에서는 일시정지 메뉴를 열고, 음량 설정을 저장
         void OnApplicationPause(bool paused)
         {
             if (paused && titleScene == false)
@@ -115,6 +119,7 @@ namespace PokerDefense.UI
             Show(pausePage);
         }
 
+        // Run이 끝났으면 바로 타이틀로, 아니면 포기 확인 페이지 띄우기
         public void RequestTitle()
         {
             if (flow != null && flow.IsFinished)
@@ -122,6 +127,7 @@ namespace PokerDefense.UI
                 GameSession.Load(GameSession.TitleScene);
                 return;
             }
+
             Show(abandonPage);
         }
 
@@ -131,6 +137,7 @@ namespace PokerDefense.UI
             Show(optionsPage);
         }
 
+        // 오버레이를 처음 열 때만 입력·일시정지 상태를 저장하고 끔
         void Show(GameObject page)
         {
             if (GameSession.IsLoading)
@@ -163,6 +170,7 @@ namespace PokerDefense.UI
             }
         }
 
+        // 옵션·도움말이면 일시정지 페이지로, 타이틀이거나 일시정지 페이지면 닫음
         void Back()
         {
             AudioPreferences.Save();
@@ -170,7 +178,10 @@ namespace PokerDefense.UI
             {
                 Close();
             }
-            else OpenPause();
+            else
+            {
+                OpenPause();
+            }
         }
 
         public void Close()
@@ -180,7 +191,7 @@ namespace PokerDefense.UI
             {
                 return;
             }
-            if (overlay.activeSelf && previousInput != null)
+            if (previousInput != null)
             {
                 for (int i = 0; i < inputGroups.Length; i++)
                 {
@@ -192,7 +203,7 @@ namespace PokerDefense.UI
             {
                 home.SetActive(true);
             }
-            // 안내 팝업 위에서 메뉴를 열었다면 안내의 일시정지를 유지한다.
+            // 메뉴를 열기 전에 다른 창이 건 일시정지는 그대로 유지
             GameSession.SetPaused(previousPaused);
         }
 

@@ -6,7 +6,6 @@ namespace PokerDefense.UI
      * HandCategoryNames
      *
      * 화면 표기용 족보명
-     * enum 이름을 그대로 쓰지 않는 이유는 표기와 판정을 분리해 두기 위함이다
      */
     public static class HandCategoryNames
     {

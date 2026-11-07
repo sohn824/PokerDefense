@@ -13,7 +13,8 @@ namespace PokerDefense.UI
      *
      * 족보별 교체 확률을 희귀도 순으로 보여 주는 상세 창
      * 결과를 보여 주기만 하고 손패·덱은 바꾸지 않음
-     * 열린 동안 게임을 일시정지하고 입력을 막음, 닫으면 열기 전 상태로 되돌림
+     * 열린 동안 게임을 일시정지하고 입력을 막음
+     * 닫으면 열기 전 상태로 되돌림
      */
     public sealed class HandOddsScreen : MonoBehaviour
     {
@@ -25,8 +26,10 @@ namespace PokerDefense.UI
         [SerializeField] RectTransform[] bars;
         [SerializeField] ScrollRect scroll;
         [SerializeField] Button closeButton;
-        // 창이 열린 동안 막는 입력 묶음과, 열기 전 상태(닫을 때 되돌림)
+        // 창이 열린 동안 입력을 막을 UI 묶음
         [SerializeField] CanvasGroup[] inputGroups;
+
+        // 창을 열기 전 입력 상태 (닫을 때 되돌림)
         bool[] previousInput;
 
         void Awake()
@@ -44,14 +47,16 @@ namespace PokerDefense.UI
             {
                 return;
             }
+
             HandCategory current = round.PreviewHand().Category;
             List<HandOddsEntry> entries = new List<HandOddsEntry>(round.Odds);
             entries.Sort((left, right) => HandRarity.RankOf(right.Category).CompareTo(HandRarity.RankOf(left.Category)));
             heading.text = context;
             description.text = "현재: " + HandCategoryNames.Of(current) + "\n"
                 + HandOddsText.Summary(entries, current) + "\n"
-                + (assist ? "후보 중 고를 확률이 아닌, 한 장을 뽑을 때의 분포입니다."
-                    : "높은 족보는 희귀도 기준이며, 전투 성능과는 다릅니다.");
+                + (assist ? "카드 1장을 뽑을 때의 확률입니다. 후보 중에서 고르면 더 유리합니다."
+                    : "높은 족보는 더 희귀한 족보이며, 항상 더 강하지는 않습니다.");
+
             // 희귀도 순으로 한 줄씩 채우고, 남는 행은 숨김
             for (int i = 0; i < rows.Length; i++)
             {
@@ -67,7 +72,7 @@ namespace PokerDefense.UI
                     + "\n<size=26><color=#9AA0B0>"
                     + entry.Count.ToString("N0", CultureInfo.InvariantCulture) + " / "
                     + entry.Total.ToString("N0", CultureInfo.InvariantCulture) + "가지</color></size>";
-                rows[i].color = entry.Category == current ? UiStyle.Currency : UiStyle.TextPrimary;
+                rows[i].color = entry.Category == current ? UiStyle.Accent : UiStyle.TextPrimary;
                 bars[i].anchorMax = new Vector2(entry.Probability, 1f);
             }
             scroll.content.sizeDelta = new Vector2(0f, entries.Count * 112f);
@@ -84,8 +89,7 @@ namespace PokerDefense.UI
             GameSession.SetPaused(true);
         }
 
-        // 창을 닫고 입력을 열기 전 상태로 되돌린 뒤 일시정지를 풂 (씬 로딩 중이면 일시정지는 건드리지 않음)
-        // 이미 일시정지 중이면 Open이 열리지 않으므로, 열기 전은 항상 일시정지가 아닌 상태임
+        // 창을 닫고 입력을 열기 전 상태로 되돌린 뒤 일시정지를 풀기
         public void Close()
         {
             if (panel == null || panel.activeSelf == false || previousInput == null)

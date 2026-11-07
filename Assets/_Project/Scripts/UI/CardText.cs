@@ -5,10 +5,8 @@ namespace PokerDefense.UI
     /**
      * CardText
      *
-     * 카드의 화면 표기
-     * Card.ToString()은 "4h" 같은 로그·테스트용 표기라 화면에 그대로 쓰지 않는다
-     *
-     * 다이아는 ♦(U+2666)가 Maplestory 폰트에 없어서 ◆(U+25C6)로 대체했다
+     * 카드를 화면에 표시할 문자열로 바꾸는 클래스
+     * Card.ToString()은 "4h" 같은 로그·테스트용 표기라 화면에 그대로 쓰지 않고 이 CardText를 거쳐 표시함
      */
     public static class CardText
     {

@@ -2,7 +2,11 @@ using UnityEngine;
 
 namespace PokerDefense.UI
 {
-    // 씬의 믹스 기준 음량 위에 적용하는 사용자 설정. 기본값은 기존 믹스 그대로다.
+    /**
+     * AudioPreferences
+     *
+     * 씬 믹스 음량 위에 곱하는 사용자 음량 설정 (PlayerPrefs에 저장)
+     */
     public static class AudioPreferences
     {
         const string Prefix = "PokerDefense.Audio.";
