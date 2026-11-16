@@ -109,9 +109,9 @@ namespace PokerDefense.Game
                         return new SubmitOutcome(status, ack.Rank, ack.Total, null);
                     }
                     // 연결 실패·끊김·시간 초과·취소는 모두 Failed로 돌려주고 나중에 다시 보냄
-                    //   SocketException - 연결 실패, 연결 끊김, 주소 조회 실패
-                    //   ObjectDisposedException - 시간 제한·취소로 소켓을 닫아 끝난 경우
-                    //   OperationCanceledException - 작업이 취소로 끝난 경우
+                    // SocketException - 연결 실패, 연결 끊김, 주소 조회 실패
+                    // ObjectDisposedException - 시간 제한·취소로 소켓을 닫아 끝난 경우
+                    // OperationCanceledException - 작업이 취소로 끝난 경우
                     catch (Exception error) when (error is SocketException || error is ObjectDisposedException
                         || error is OperationCanceledException)
                     {
@@ -122,9 +122,9 @@ namespace PokerDefense.Game
         }
 
         // ResolveAsync - host 문자열을 접속할 IP 주소로 바꿈
-        //   "127.0.0.1"처럼 IP면 그대로, "localhost"처럼 이름이면 DNS(Domain Name System)로 조회
-        //   조회 결과 중 IPv4만 고름 (소켓을 IPv4로 만들었고, 서버도 IPv4로만 받음)
-        //   없으면 SocketException
+        // "127.0.0.1"처럼 IP면 그대로, "localhost"처럼 이름이면 DNS(Domain Name System)로 조회
+        // 조회 결과 중 IPv4만 고름 (소켓을 IPv4로 만들었고, 서버도 IPv4로만 받음)
+        // 없으면 SocketException
         async Task<IPAddress> ResolveAsync()
         {
             if (IPAddress.TryParse(host, out IPAddress parsed))

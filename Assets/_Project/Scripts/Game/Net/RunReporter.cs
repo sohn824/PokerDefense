@@ -25,9 +25,9 @@ namespace PokerDefense.Game
      * 씬이 시작될 때(Start)도 지난번에 못 보낸 기록이 있으면 보냄
      * 전송은 Task.Run으로 워커 스레드에서 하고, 끝났는지 확인해 상태를 바꾸는 건 Update(메인 스레드)에서 함
      * 전송에 실패해도 게임에는 영향이 없음
-     *   실패는 예외가 아니라 결과 값(Failed)으로 돌아오고, 전송은 워커 스레드에서 하므로 기다리는 동안에도 게임이 멈추지 않음
-     *   결과 화면은 랭킹 줄만 서버 연결 실패 문구로 바뀜 (Status = Offline)
-     *   기록 파일은 ACK(Accepted·Duplicate)를 받아야 지우므로, 남은 기록은 다음 판 종료나 다음 실행 때 다시 보냄
+     * 실패는 예외가 아니라 결과 값(Failed)으로 돌아오고, 전송은 워커 스레드에서 하므로 기다리는 동안에도 게임이 멈추지 않음
+     * 결과 화면은 랭킹 줄만 서버 연결 실패 문구로 바뀜 (Status = Offline)
+     * 기록 파일은 ACK(Accepted·Duplicate)를 받아야 지우므로, 남은 기록은 다음 판 종료나 다음 실행 때 다시 보냄
      */
     public sealed class RunReporter : MonoBehaviour
     {

@@ -40,7 +40,7 @@ namespace PokerDefense.Poker
      *
      * Find - 한 스레드에서 순서대로 셈 (바꿀 자리가 적어 조합이 적을 때)
      * FindParallel - 조합을 첫 카드 기준으로 묶어 여러 스레드로 나눠 셈 (조합이 많을 때)
-     * 게임에서는 화면이 멈추지 않도록 HandOddsWorker가 백그라운드 스레드에서 둘 중 하나를 골라 호출
+     * 게임에서는 화면이 멈추지 않도록 HandOddsWorker가 Worker 스레드에서 둘 중 하나를 골라 호출
      */
     public static class HandOdds
     {

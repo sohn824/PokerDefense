@@ -10,7 +10,7 @@ namespace PokerDefense.Poker
         Club,
     }
 
-    /// A는 14로 두고 백스트레이트(A-2-3-4-5)의 판정과 정렬에서만 1로 취급
+    // A는 14로 두고 백스트레이트(A-2-3-4-5)의 판정과 정렬에서만 1로 취급
     public enum Rank
     {
         Two = 2,

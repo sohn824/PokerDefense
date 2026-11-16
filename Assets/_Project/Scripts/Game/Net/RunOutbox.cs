@@ -12,9 +12,9 @@ namespace PokerDefense.Game
      *
      * 파일 하나 = 기록 하나 (이름은 runId, 내용은 제출 본문 바이트)
      * 메서드마다 부르는 스레드가 다름 (모두 RunReporter가 부름)
-     *   Save() - 메인 스레드 (게임이 끝났을 때)
-     *   LoadPending()·Remove()·MarkRejected() - 워커 스레드 (전송 루프 안에서)
-     *   (Save()가 .tmp에 다 쓴 뒤 이름을 .run으로 바꾸므로, LoadPending()이 쓰다 만 파일을 읽는 일은 없음)
+     * Save() - 메인 스레드 (게임이 끝났을 때)
+     * LoadPending()·Remove()·MarkRejected() - 워커 스레드 (전송 루프 안에서)
+     * Save()가 .tmp에 다 쓴 뒤 이름을 .run으로 바꾸므로 LoadPending()이 쓰다 만 파일을 읽는 일은 없음
      * 깨진 파일은 .bad, 거부된 기록은 .rejected로 확장자를 바꿔 대기열에서 뺌 (다시 보내지 않음)
      */
     public sealed class RunOutbox
@@ -102,11 +102,11 @@ namespace PokerDefense.Game
         }
 
         // PathOf - runId로 대기열 파일 경로를 만듦
-        //   (이름이 runId 하나로 정해지므로 Remove·MarkRejected가 runId만으로 파일을 찾을 수 있고,
-        //    같은 기록을 두 번 Save해도 파일은 하나뿐임)
+        // 이름이 runId 하나로 정해지므로 Remove·MarkRejected가 runId만으로 파일을 찾을 수 있음
+        // 같은 기록을 두 번 Save해도 파일은 하나뿐임
         //
         // 주의: Guid.ToString("N")은 앞 8바이트를 4·2·2바이트 묶음별로 뒤집어 써서, 서버 로그의 runId(ToHex)와 글자가 다름
-        //   예: 바이트 00 01 02 03 04 05 06 07 … -> 파일 이름 "0302010005040706…", 서버 로그 "0001020304050607…"
+        // 예: 바이트 00 01 02 03 04 05 06 07 … -> 파일 이름 "0302010005040706…", 서버 로그 "0001020304050607…"
         string PathOf(Guid runId, string extension)
         {
             return Path.Combine(directory, runId.ToString("N") + extension);

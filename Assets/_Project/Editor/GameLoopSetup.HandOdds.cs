@@ -165,8 +165,8 @@ namespace PokerDefense.Editor
         }
 
         // InstallOddsSummary - panel에 확률 요약 문구를 넣고, 누르면 확률 창이 열리게 함
-        //   owner - 이 줄을 쓰는 화면(RoundScreen·AssistScreen)
-        //   labelField - 요약 문구를 받을 owner의 필드 이름
+        // owner - 이 줄을 쓰는 화면(RoundScreen·AssistScreen)
+        // labelField - 요약 문구를 받을 owner의 필드 이름
         static void InstallOddsSummary(UnityEngine.Object owner, RectTransform panel, string labelField, HandOddsScreen screen)
         {
             Button button = panel.GetComponent<Button>();

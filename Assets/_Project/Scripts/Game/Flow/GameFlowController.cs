@@ -14,7 +14,7 @@ namespace PokerDefense.Game
      * 이 클래스는 단계 사이를 잇기만 함
      * - 라운드 시작 (RoundController.StartRound 호출)
      * - 전투가 끝나면 RoundSettled로 라운드 결과 화면을 띄우고, DismissBreak가 올 때까지 다음 라운드를 보류
-     *   (DismissBreak = 라운드 결과 화면이 닫혔다고 UI가 알리는 메서드)
+     * DismissBreak는 라운드 결과 화면이 닫혔다고 UI가 알릴 때 부르는 메서드
      * 각 단계 안의 플레이어 입력은 RoundController·PlacementController·CombatController가 맡음
      */
     public sealed class GameFlowController : MonoBehaviour
