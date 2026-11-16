@@ -7,8 +7,7 @@ namespace PokerDefense.EditorTools
     /**
      * WaveSkipWindow
      *
-     * 개발 전용
-     * 전투 없이 웨이브를 클리어한 것으로 치고 다음 라운드로 넘긴다
+     * 전투 없이 웨이브를 클리어한 것으로 처리하거나 원하는 웨이브로 이동하는 에디터 창 (개발 전용)
      */
     public sealed class WaveSkipWindow : EditorWindow
     {
@@ -22,12 +21,14 @@ namespace PokerDefense.EditorTools
 
         void Update()
         {
+            // OnGUI는 입력이 없으면 호출되지 않으므로 상태가 바뀌면 직접 다시 그림
             if (Application.isPlaying)
             {
                 Repaint();
             }
         }
 
+        // 쓸 수 없으면 이유를 보여 주고 버튼을 모두 막음
         void OnGUI()
         {
             GameFlowController flow = FindAnyObjectByType<GameFlowController>();
@@ -44,12 +45,14 @@ namespace PokerDefense.EditorTools
                 if (stageController != null)
                 {
                     StageContext stage = stageController.Stage;
+                    // WaveIndex는 0부터 세므로 1을 더해 보여 줌
                     EditorGUILayout.LabelField("진행 중",
                         $"{stage.WaveIndex + 1} / {stage.TotalWaves} 웨이브");
                 }
 
                 EditorGUILayout.Space();
 
+                // 지금 웨이브를 클리어한 것으로 치고 다음 라운드로 넘김
                 if (GUILayout.Button("다음 웨이브로", GUILayout.Height(24f)))
                 {
                     flow.DevSkipWave();
@@ -57,6 +60,7 @@ namespace PokerDefense.EditorTools
 
                 EditorGUILayout.Space();
 
+                // 입력한 웨이브까지 앞으로만 건너뜀, 총 웨이브보다 크면 끝까지 클리어되어 스테이지가 끝남
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     targetWave = Mathf.Max(1, EditorGUILayout.IntField("이동할 웨이브(1부터)", targetWave));

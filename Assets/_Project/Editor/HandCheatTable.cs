@@ -6,18 +6,13 @@ namespace PokerDefense.EditorTools
     /**
      * HandCheatTable
      *
-     * 개발 전용. 족보 13개를 각각 만들어 내는 카드 5장
-     *
-     * 게임 코드가 아니라 에디터 어셈블리에 둔다 - 빌드에 들어갈 이유가 없고,
-     * RoundContext.ForceHand는 "이 5장으로 갈아끼워라"만 알면 된다
-     *
-     * **표가 틀리면 조용히 다른 유닛이 소환된다.** 특수 승격 넷(백스트레이트/마운틴/
-     * 백스트레이트 플러시/로열)이 정통 스트레이트나 스트레이트 플러시로 떨어지기 쉬우므로
-     * HandCheatTableTests가 13개 전부를 HandEvaluator에 넣어 고정한다
+     * 족보 13개를 각각 만드는 카드 5장을 모아 둔 클래스 (개발 전용)
+     * 표가 틀리면 다른 유닛이 소환되므로 HandCheatTableTests로 13개 전부를 검사함
      */
     public static class HandCheatTable
     {
-        // 표기 순서. 족보가 센 순이 아니라 눈으로 찾기 쉬운 순이다
+        // 표시 순서 - 일반 족보를 익숙한 포커 순서로 두고 특수 족보를 뒤에 모음
+        // 희귀도 순(HandRarity)과는 다름
         public static readonly HandCategory[] Order =
         {
             HandCategory.HighCard,
@@ -57,13 +52,13 @@ namespace PokerDefense.EditorTools
                 C(Rank.Two, Suit.Spade), C(Rank.Two, Suit.Heart), C(Rank.Two, Suit.Diamond),
                 C(Rank.Six, Suit.Club), C(Rank.Jack, Suit.Spade),
             },
-            // 무늬를 갈라 플러시로 승격되지 않게 한다
+            // 무늬를 섞어 스트레이트 플러시가 되지 않게 함
             [HandCategory.Straight] = new[]
             {
                 C(Rank.Five, Suit.Spade), C(Rank.Six, Suit.Heart), C(Rank.Seven, Suit.Diamond),
                 C(Rank.Eight, Suit.Club), C(Rank.Nine, Suit.Spade),
             },
-            // 숫자를 띄워 스트레이트로 승격되지 않게 한다
+            // 숫자를 띄워 스트레이트 플러시가 되지 않게 함
             [HandCategory.Flush] = new[]
             {
                 C(Rank.Two, Suit.Spade), C(Rank.Four, Suit.Spade), C(Rank.Six, Suit.Spade),
@@ -79,7 +74,7 @@ namespace PokerDefense.EditorTools
                 C(Rank.Two, Suit.Spade), C(Rank.Two, Suit.Heart), C(Rank.Two, Suit.Diamond),
                 C(Rank.Two, Suit.Club), C(Rank.Jack, Suit.Spade),
             },
-            // A를 넣지 않아야 마운틴/백스트레이트 플러시로 안 간다
+            // A를 빼서 마운틴·백스트레이트 계열이 되지 않게 함
             [HandCategory.StraightFlush] = new[]
             {
                 C(Rank.Five, Suit.Spade), C(Rank.Six, Suit.Spade), C(Rank.Seven, Suit.Spade),
@@ -110,24 +105,5 @@ namespace PokerDefense.EditorTools
         static Card C(Rank rank, Suit suit) => new Card(rank, suit);
 
         public static IReadOnlyList<Card> HandFor(HandCategory category) => Hands[category];
-
-        // 화면 표기용 한글 이름. 유닛 이름은 HandUnitTable에서 읽으므로 여기 적지 않는다
-        public static string NameOf(HandCategory category) => category switch
-        {
-            HandCategory.HighCard => "하이카드",
-            HandCategory.OnePair => "원페어",
-            HandCategory.TwoPair => "투페어",
-            HandCategory.ThreeOfAKind => "트리플",
-            HandCategory.Straight => "스트레이트",
-            HandCategory.Flush => "플러시",
-            HandCategory.FullHouse => "풀하우스",
-            HandCategory.FourOfAKind => "포카드",
-            HandCategory.StraightFlush => "스트레이트 플러시",
-            HandCategory.BackStraight => "백스트레이트",
-            HandCategory.Mountain => "마운틴",
-            HandCategory.BackStraightFlush => "백스트레이트 플러시",
-            HandCategory.RoyalStraightFlush => "로열 스트레이트 플러시",
-            _ => category.ToString(),
-        };
     }
 }

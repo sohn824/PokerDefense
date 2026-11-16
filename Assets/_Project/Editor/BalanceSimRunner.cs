@@ -12,10 +12,14 @@ namespace PokerDefense.EditorTools
     /**
      * BalanceSimRunner
      *
-     * 개발/밸런스 검증 전용. 정상적인 포커 드로우(치트 없음)로 스테이지를 끝까지 자동 플레이해
-     * 라이프·성급 추이를 CSV로 남긴다. GUI 없이 StartRun 호출(주로 MCP execute_code)로만 제어한다.
-     * 배속(GameSession.SetSpeed → Time.timeScale)으로 CombatController.Update를 가속하는 기존 검증 방식을 그대로 따른다 —
-     * combat.Tick을 직접 호출하지 않는다(CombatController와의 순서 어긋남으로 결과 유실 버그가 났던 적이 있음).
+     * 스테이지를 자동으로 끝까지 플레이해 웨이브별 라이프·성급 변화를 CSV로 남기는 클래스
+     * Game 씬을 연 상태에서 StartRun으로 시작함
+     * 예 - StartRun("greedy", "run1", "Artifacts/Balance/run1.csv", 10f)
+     * 전략 - no_exchange : 교체하지 않음, 나머지 문자열은 모두 greedy
+     * greedy - 페어·같은 무늬를 남기고 교체한 뒤 족보가 가장 높아지는 후보를 고름
+     *
+     * 배속은 GameSession.SetSpeed로만 올림
+     * combat.Tick을 직접 부르면 CombatController와 순서가 어긋나 결과가 빠질 수 있음
      */
     [InitializeOnLoad]
     public static class BalanceSimRunner
@@ -87,9 +91,10 @@ namespace PokerDefense.EditorTools
                 return;
             }
 
+            // 씬이 아직 준비되지 않음, 다음 프레임에 재시도
             if (setupDone == false && TrySetup() == false)
             {
-                return; // 씬이 아직 준비되지 않음, 다음 프레임에 재시도
+                return;
             }
 
             Drive();
@@ -128,6 +133,7 @@ namespace PokerDefense.EditorTools
             return true;
         }
 
+        // 지금 상태에서 한 프레임에 플레이어가 할 일 하나를 함
         static void Drive()
         {
             if (flow.IsFinished)
@@ -136,9 +142,17 @@ namespace PokerDefense.EditorTools
                 return;
             }
 
+            // 안내는 저장하지 않고 닫음
             var guide = UnityEngine.Object.FindAnyObjectByType<PokerDefense.UI.OnboardingGuide>();
-            if (guide != null) guide.Close();
-            if (flow.IsWaitingForBreak) { flow.DismissBreak(); return; }
+            if (guide != null)
+                guide.Close();
+
+            if (flow.IsWaitingForBreak)
+            { 
+                flow.DismissBreak();
+                return;
+            }
+
             if (placement.Pending != null)
             {
                 DoPlacement();
@@ -162,13 +176,16 @@ namespace PokerDefense.EditorTools
                 }
             }
 
+            // 전투는 CombatController가 알아서 진행하므로 시작만 함
             if (combat.CanStart)
             {
                 combat.StartCombat();
             }
         }
 
-        // 빈 칸보다 머지를 우선한다 (실제 플레이어가 보통 그렇게 하듯)
+        // 소환된 유닛을 보드에 놓고, 놓을 자리가 없으면 버림
+        // 합치기 -> 첫 빈 칸 -> 소환 포기 순으로 처리
+        // 교체는 사용하지 않음
         static void DoPlacement()
         {
             GridBoard board = placement.Board;
@@ -176,11 +193,15 @@ namespace PokerDefense.EditorTools
             int mergeIndex = -1;
             int emptyIndex = -1;
 
+            // 첫 빈 칸은 기억만 하고 합칠 칸을 찾으면 바로 멈춤
             for (int i = 0; i < GridBoard.SlotCount; i++)
             {
                 if (board[i] == null)
                 {
-                    if (emptyIndex < 0) emptyIndex = i;
+                    if (emptyIndex < 0)
+                        emptyIndex = i;
+
+
                     continue;
                 }
 
@@ -205,7 +226,7 @@ namespace PokerDefense.EditorTools
             }
         }
 
-        // 조커를 쓸 수 있는 슬롯 중 지금 DPS가 가장 높은 유닛을 고른다 (에이스를 더 키우는 흔한 플레이)
+        // 승급권을 쓸 수 있는 칸 중 DPS가 가장 높은 유닛을 고름
         static int BestJokerTarget()
         {
             GridBoard board = placement.Board;
@@ -231,6 +252,9 @@ namespace PokerDefense.EditorTools
             return best;
         }
 
+        // 받은 손패를 전략에 따라 교체하고 확정해 이번 손패를 결정함
+        // 교체 -> 선택 교체 -> 손패 확정 순으로 처리
+        // (전략이 no_exchange일 경우 교체 없이 바로 확정함)
         static void DoHandDecision()
         {
             List<int> exchange = strategy == "no_exchange" || cachedHand == null
@@ -255,15 +279,12 @@ namespace PokerDefense.EditorTools
             round.ConfirmHand();
         }
 
-        // 이미 든 카드와 같은 숫자를 우선 사서(놓으면 확정 페어) 손패 편차를 줄인다.
-
-        // 같은 숫자가 손패에 있으면 페어·트리플을 만들고, 없으면 같은 무늬 3장
-        // 이상일 때만 플러시를 노려 놓는다. 그 외에는 아껴 둔다.
-
-        // 같은 숫자가 2장 이상 모이면 그 그룹(들)을 남기고 나머지를 교체.
-        // 페어가 없으면 무늬 3장 이상(플러시 노림)을, 그것도 없으면 숫자 높은 2장만 남긴다.
+        // 확률을 따지지 않고 지금 손패에서 이미 맞은 쪽만 남기고 나머지를 교체할 자리로 고름
+        // 같은 숫자가 2장 이상이면 그 묶음을 남기고 나머지를 교체함
+        // 페어가 없으면 같은 무늬 3장 이상을, 그것도 없으면 숫자가 높은 2장을 남김
         static List<int> DecideGreedyExchange(IReadOnlyList<Card> hand)
         {
+            // 같은 숫자끼리 자리 번호를 모음
             Dictionary<Rank, List<int>> byRank = new Dictionary<Rank, List<int>>();
 
             for (int i = 0; i < hand.Count; i++)
@@ -277,6 +298,7 @@ namespace PokerDefense.EditorTools
                 list.Add(i);
             }
 
+            // 장수가 많은 묶음부터, 장수가 같으면 숫자가 높은 묶음부터 둠
             List<List<int>> groups = byRank.Values
                 .OrderByDescending(g => g.Count)
                 .ThenByDescending(g => (int)hand[g[0]].Rank)
@@ -284,10 +306,12 @@ namespace PokerDefense.EditorTools
 
             HashSet<int> keep = new HashSet<int>();
 
+            // 페어 이상이 있으면 가장 큰 묶음을 남김
             if (groups[0].Count >= 2)
             {
                 keep.UnionWith(groups[0]);
 
+                // 투페어·풀하우스면 두 번째 묶음도 남김
                 if (groups.Count > 1 && groups[1].Count >= 2)
                 {
                     keep.UnionWith(groups[1]);
@@ -295,6 +319,7 @@ namespace PokerDefense.EditorTools
             }
             else
             {
+                // 페어가 없으면 같은 무늬끼리 자리 번호를 모음
                 Dictionary<Suit, List<int>> bySuit = new Dictionary<Suit, List<int>>();
 
                 for (int i = 0; i < hand.Count; i++)
@@ -310,25 +335,30 @@ namespace PokerDefense.EditorTools
 
                 List<int> bestSuit = bySuit.Values.OrderByDescending(g => g.Count).First();
 
+                // 가장 많은 무늬가 3장 이상이면 플러시를 노리고 그 무늬를 남김
                 if (bestSuit.Count >= 3)
                 {
                     keep.UnionWith(bestSuit);
                 }
                 else
                 {
+                    // 노릴 것이 없으면 숫자가 높은 2장만 남김
                     keep.UnionWith(Enumerable.Range(0, hand.Count).OrderByDescending(i => (int)hand[i].Rank).Take(2));
                 }
             }
 
+            // 남기지 않은 자리를 교체 목록으로 돌려줌
             return Enumerable.Range(0, hand.Count).Where(i => keep.Contains(i) == false).ToList();
         }
 
+        // 웨이브 전투가 끝날 때마다 CSV에 로그 한 줄을 추가함
         static void LogWaveRow(CombatOutcome outcome)
         {
             StageContext stage = stageCtrl.Stage;
             GridBoard board = placement.Board;
             int star1 = 0, star2 = 0, star3 = 0, occupied = 0;
 
+            // 보드의 유닛 수를 성급별로 셈
             for (int i = 0; i < GridBoard.SlotCount; i++)
             {
                 UnitInstance u = board[i];
@@ -339,6 +369,7 @@ namespace PokerDefense.EditorTools
                 else star3++;
             }
 
+            // 값 순서가 EnsureHeader의 열 이름 순서와 같아야 하므로 열을 바꾸면 FinalizeRun까지 세 곳을 함께 고침
             string row = string.Join(",", new[]
             {
                 runId, strategy, stage.WaveIndex.ToString(), outcome.ToString(),
@@ -350,6 +381,7 @@ namespace PokerDefense.EditorTools
             File.AppendAllText(logPath, row + "\n");
         }
 
+        // 파일이 없을 때만 헤더를 쓰고, 있으면 기존 결과 아래에 이어 씀
         static void EnsureHeader()
         {
             if (File.Exists(logPath))
@@ -366,6 +398,8 @@ namespace PokerDefense.EditorTools
             StageContext stage = stageCtrl.Stage;
             string reason = stage.IsGameOver ? "GameOver" : "Cleared";
 
+            // 값 순서가 EnsureHeader의 열 이름 순서와 같아야 하므로 열을 바꾸면 LogWaveRow까지 세 곳을 함께 고침
+            // 보드 집계 네 칸은 비워 둠
             string summary = string.Join(",", new[]
             {
                 runId, strategy, "FINAL", reason,

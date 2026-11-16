@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using PokerDefense.UI;
 using TMPro;
@@ -13,8 +14,8 @@ namespace PokerDefense.Editor
     /**
      * ArenaUiVisualSetup
      *
-     * 기존 배선과 조작 영역은 건드리지 않고 씬 UI에 비주얼만 다시 입히는 재실행 가능한 도구
-     * 값은 코드로 고정해 두고 메뉴에서 다시 적용할 수 있게 한다
+     * 연결과 조작 영역은 그대로 두고 씬 UI의 외형만 다시 입히는 클래스
+     * 메뉴에서 몇 번이든 다시 적용할 수 있음
      */
     public static class ArenaUiVisualSetup
     {
@@ -33,8 +34,29 @@ namespace PokerDefense.Editor
                 throw new InvalidOperationException("Open Game.unity first.");
             }
 
-            RectTransform[] rects = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<RectTransform>(true)).ToArray();
-            Undo.RegisterFullObjectHierarchyUndo(scene.GetRootGameObjects().First(g => g.name == "Canvas"), "Arena UI visuals");
+            GameObject[] roots = scene.GetRootGameObjects();
+            RectTransform[] rects = roots.SelectMany(g => g.GetComponentsInChildren<RectTransform>(true)).ToArray();
+
+            // 이름마다 씬 전체에서 같은 이름이 몇 개인지 세고, 개수가 1이 아닌 이름들을 invalid에 모음
+            List<string> invalid = new[] { "HudBar", "ThreatBar", "DetailPlate", "HandPlate", "BottomBarPlate", "ResultPanel",
+                "CategoryLabel", "StatusLabel", "PendingLabel", "CombatLabel", "TitleLabel", "Hint" }
+                .Where(n => rects.Count(r => r.name == n) != 1).ToList();
+
+            // Plate는 이름만으로 구분할 수 없어 IsBreakPlate 메소드로 부모까지 확인함
+            if (rects.Count(IsBreakPlate) != 1)
+            {
+                invalid.Add("RoundBreakPanel/Plate");
+            }
+
+            if (invalid.Count > 0)
+            {
+                throw new InvalidOperationException("Missing or duplicated scene objects: " + string.Join(", ", invalid));
+            }
+
+            foreach (GameObject root in roots)
+            {
+                Undo.RegisterFullObjectHierarchyUndo(root, "Arena UI visuals");
+            }
 
             string[] panels = { "HudBar", "ThreatBar", "DetailPlate", "HandPlate", "BottomBarPlate" };
 
@@ -58,18 +80,15 @@ namespace PokerDefense.Editor
                 EditorUtility.SetDirty(skin);
             }
 
-            foreach (string name in new[] { "ResultPanel" })
-            {
-                RectTransform rt = rects.Single(r => r.name == name);
-                rt.GetComponent<Image>().color = UiStyle.PanelBg;
+            RectTransform resultPanel = rects.Single(r => r.name == "ResultPanel");
+            resultPanel.GetComponent<Image>().color = UiStyle.PanelBg;
 
-                ArenaPanelGraphic frame = Decoration(rt, "ArenaModalFrame");
-                frame.rectTransform.offsetMin = new Vector2(30f, 48f);
-                frame.rectTransform.offsetMax = new Vector2(-30f, -48f);
-                frame.Configure(UiStyle.PanelBg, UiStyle.Border, true);
-            }
+            ArenaPanelGraphic frame = Decoration(resultPanel, "ArenaModalFrame");
+            frame.rectTransform.offsetMin = new Vector2(30f, 48f);
+            frame.rectTransform.offsetMax = new Vector2(-30f, -48f);
+            frame.Configure(UiStyle.PanelBg, UiStyle.Border, true);
 
-            RectTransform breakPlate = rects.Single(r => r.name == "Plate" && r.parent.name == "RoundBreakPanel");
+            RectTransform breakPlate = rects.Single(IsBreakPlate);
             breakPlate.sizeDelta = new Vector2(980f, 380f);
             Skin(breakPlate, UiStyle.Plate, UiStyle.Border, true);
 
@@ -79,7 +98,7 @@ namespace PokerDefense.Editor
 
                 if (text == null || text is TextMeshPro)
                 {
-                    // 월드 좌표 성급 텍스트는 건드리지 않는다
+                    // 월드 공간 텍스트는 건드리지 않음
                     continue;
                 }
 
@@ -103,11 +122,11 @@ namespace PokerDefense.Editor
 
                 if (name == "TitleLabel" || (name == "Title" && rt.parent.name == "RoundBreakPanel"))
                 {
-                    text.color = new Color(0.92f, 0.78f, 0.53f, 1f);
+                    text.color = UiStyle.TitleGold;
                     text.characterSpacing = 1f;
                 }
 
-                if (name == "Hint" || name == "HeldLabel" || name == "TrayLabel")
+                if (name == "Hint")
                 {
                     text.color = UiStyle.TextMuted;
                 }
@@ -125,22 +144,28 @@ namespace PokerDefense.Editor
             EditorSceneManager.SaveScene(scene);
         }
 
+        static bool IsBreakPlate(RectTransform r) => r.name == "Plate" && r.parent != null && r.parent.name == "RoundBreakPanel";
+
+        // 기존 Image를 숨기고 그 자리에 ArenaPanelGraphic 판을 깔아 외형을 입힘
         static ArenaPanelGraphic Skin(RectTransform target, Color fill, Color rim, bool decorate)
         {
             Image image = target.GetComponent<Image>();
 
             if (image != null)
             {
+                // 지우지 않고 투명하게만 해서 입력 판정은 남김
                 image.color = Color.clear;
                 EditorUtility.SetDirty(image);
             }
 
-            ArenaPanelGraphic graphic = Decoration(target, "ArenaSurface");
+            // GameLoopSetup이 만든 버튼은 판 이름이 Frame이므로 있으면 그대로 씀
+            ArenaPanelGraphic graphic = Decoration(target, target.Find("Frame") != null ? "Frame" : "ArenaSurface");
             graphic.Configure(fill, rim, decorate);
             EditorUtility.SetDirty(graphic);
             return graphic;
         }
 
+        // 이름이 같은 판이 있으면 다시 쓰고 없으면 만들어 부모를 꽉 채우는 배경으로 맞춤
         static ArenaPanelGraphic Decoration(RectTransform parent, string name)
         {
             Transform child = parent.Find(name);
@@ -154,6 +179,7 @@ namespace PokerDefense.Editor
                 child.SetParent(parent, false);
             }
 
+            // 부모 아래 첫 번째로 옮겨 글자보다 먼저 그려지게 함
             child.SetAsFirstSibling();
 
             RectTransform rt = (RectTransform)child;
@@ -161,6 +187,7 @@ namespace PokerDefense.Editor
             rt.anchorMax = Vector2.one;
             rt.offsetMin = rt.offsetMax = Vector2.zero;
 
+            // 부모의 레이아웃 그룹이 판을 칸으로 세지 않게 함
             LayoutElement layout = child.GetComponent<LayoutElement>();
 
             if (layout == null)

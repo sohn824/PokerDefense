@@ -2,16 +2,14 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using PokerDefense.EditorTools;
 using PokerDefense.Poker;
+using PokerDefense.UI;
 
 namespace PokerDefense.Tests
 {
     /**
      * HandCheatTableTests
      *
-     * 개발용 족보 소환(HandCheatTable)이 실제로 그 족보로 판정되는지 고정한다
-     *
-     * 표를 손으로 적었으므로 틀려도 조용히 다른 유닛이 소환된다.
-     * 특히 특수 승격 넷은 정통 스트레이트/스트레이트 플러시로 떨어지기 쉽다
+     * HandCheatTable의 카드가 실제로 해당 족보로 판정되는지 검사하는 클래스
      */
     public class HandCheatTableTests
     {
@@ -23,7 +21,7 @@ namespace PokerDefense.Tests
                 IReadOnlyList<Card> hand = HandCheatTable.HandFor(category);
 
                 Assert.AreEqual(category, HandEvaluator.Evaluate(hand).Category,
-                    $"{HandCheatTable.NameOf(category)} 자리의 카드가 다른 족보로 판정된다");
+                    $"{HandCategoryNames.Of(category)} 자리의 카드가 다른 족보로 판정된다");
             }
         }
 
@@ -42,7 +40,7 @@ namespace PokerDefense.Tests
             foreach (HandCategory category in HandCheatTable.Order)
             {
                 IReadOnlyList<Card> hand = HandCheatTable.HandFor(category);
-                string name = HandCheatTable.NameOf(category);
+                string name = HandCategoryNames.Of(category);
 
                 Assert.AreEqual(RoundContextHandSize, hand.Count, $"{name} 손패 장수가 다르다");
 

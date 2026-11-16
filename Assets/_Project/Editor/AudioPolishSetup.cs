@@ -9,14 +9,15 @@ namespace PokerDefense.Editor
     /**
      * AudioPolishSetup
      *
-     * Audio 폴더의 클립 임포트 설정과 씬의 AudioManager cues 배열을 한 번에 맞춰 주는 에디터 도구
-     * 값은 코드로 고정해 두고 메뉴에서 다시 적용할 수 있게 한다 (손으로 인스펙터를 채우지 않는다)
+     * 오디오 클립의 임포트 설정과 AudioManager의 효과음·BGM 값을 코드에 적힌 값으로 맞추는 클래스
+     * 효과음마다 클립·볼륨·재생 간격·음높이 흔들림을 정함
+     * 실행하면 인스펙터에서 직접 고친 값은 덮어씀
      */
     public static class AudioPolishSetup
     {
         const string Folder = "Assets/_Project/Audio/";
 
-        // AudioManager.Sfx enum 순서와 1:1로 맞춘 파일 이름 (sfx_ 접두사와 .wav 확장자는 뺀 것)
+        // Sfx 순서와 같은 순서의 파일 이름
         public static readonly string[] CueFiles = {
             "ui_button", "ui_card_deal", "unit_place", "merge_star2", "merge_star3",
             "fire_rapid", "impact_hit", "enemy_death", "hand_high", "state_life_loss", "state_wave_clear",
@@ -41,7 +42,7 @@ namespace PokerDefense.Editor
                 throw new InvalidOperationException("Open Game scene first.");
             }
 
-            // BGM은 스트리밍 + Vorbis, SFX는 통째로 풀어 두는 PCM + 모노
+            // BGM은 메모리를 아끼도록 압축해 재생 중에 읽고, 효과음은 바로 나도록 압축 없이 모노로 미리 올려 둠
             foreach (string guid in AssetDatabase.FindAssets("t:AudioClip", new[] { Folder.TrimEnd('/') }))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -80,7 +81,6 @@ namespace PokerDefense.Editor
                     || id == AudioManager.Sfx.UnitSummon || id == AudioManager.Sfx.JokerPromote
                     || id >= AudioManager.Sfx.EnemyDeathBig;
 
-                // 발사음과 종이 넘기는 계열만 변형 클립 3개, 나머지는 1개
                 SerializedProperty variants = cue.FindPropertyRelative("variants");
                 variants.arraySize = fire || paper ? 3 : 1;
 
@@ -92,7 +92,7 @@ namespace PokerDefense.Editor
 
                 cue.FindPropertyRelative("gain").floatValue = fire ? 0.22f : battle ? 0.11f : musical ? 0.33f : 0.20f;
 
-                // 자주 울리는 피드백은 작고 담백하게, 큰 강세는 드문 이벤트에만 남겨 둔다
+                // 자주 나는 소리는 작게, 드문 이벤트의 소리는 크게 함
                 switch ((AudioManager.Sfx)i)
                 {
                     case AudioManager.Sfx.UiButton: cue.FindPropertyRelative("gain").floatValue = 0.12f; break;
@@ -119,8 +119,6 @@ namespace PokerDefense.Editor
                 if ((AudioManager.Sfx)i == AudioManager.Sfx.FireRoyalRifle)
                 {
                     cue.FindPropertyRelative("gain").floatValue = 0.24f;
-                    // 한 번 공격에 타격 이벤트가 여러 개 나오므로 그 중복은 쳐 내되,
-                    // Sovereign의 초당 13.5발 최대 발사 속도는 그대로 통과시킨다
                     cue.FindPropertyRelative("cooldown").floatValue = AudioManager.RoyalRifleCooldown;
                 }
 
@@ -137,7 +135,7 @@ namespace PokerDefense.Editor
             EditorSceneManager.MarkSceneDirty(manager.gameObject.scene);
             EditorSceneManager.SaveScene(manager.gameObject.scene);
             AssetDatabase.SaveAssets();
-            Debug.Log("Audio polish V2 configured: 30 cues / 52 SFX clips, 4 streaming music arrangements.");
+            Debug.Log("Audio polish V2 configured: 30 cues / 52 SFX clips, 1 streaming music clip.");
         }
 
         static AudioClip Required(string name)

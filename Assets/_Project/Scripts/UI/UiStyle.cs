@@ -35,6 +35,9 @@ namespace PokerDefense.UI
         // 강조 금색 - 현재 족보 강조·음소거 체크 표시 등
         public static readonly Color Accent =new Color(1f, 0.843f, 0.420f, 1f);
 
+        // 제목 금색 - 결과 화면·라운드 결과 제목
+        public static readonly Color TitleGold = new Color(0.92f, 0.78f, 0.53f, 1f);
+
         // 글자 크기 네 단계 - 제목 / 행동(버튼) / 본문 / 보조
         public const float TitleSize   = 72f;
         public const float ActionSize  = 40f;

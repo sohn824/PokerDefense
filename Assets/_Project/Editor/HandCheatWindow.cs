@@ -1,5 +1,6 @@
 using PokerDefense.Game;
 using PokerDefense.Poker;
+using PokerDefense.UI;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,13 +9,9 @@ namespace PokerDefense.EditorTools
     /**
      * HandCheatWindow
      *
-     * 개발 전용. 원하는 족보를 손패에 쥐여 준다
-     *
-     * 인게임 패널이 아니라 에디터 창인 이유는 두 가지다.
-     * 화면에 빈 자리가 없고, 빌드에 들어갈 코드를 만들지 않기 위해서다.
-     *
-     * 손패만 갈아끼우고 라운드를 다시 열지 않는다 - 루프의 주인은 GameFlowController다.
-     * 누른 뒤에는 평소대로 확정을 누르면 된다
+     * 원하는 족보로 손패를 바꾸는 에디터 창 (개발 전용)
+     * 손패만 바꾸며 라운드는 다시 열지 않음
+     * 바꾼 뒤에는 평소대로 손패 확정을 눌러 소환
      */
     public sealed class HandCheatWindow : EditorWindow
     {
@@ -29,7 +26,7 @@ namespace PokerDefense.EditorTools
 
         void Update()
         {
-            // 페이즈가 바뀌면 버튼이 켜지고 꺼져야 하는데 OnGUI는 입력이 없으면 안 돈다
+            // OnGUI는 입력이 없으면 호출되지 않으므로 단계가 바뀌면 직접 다시 그림
             if (Application.isPlaying)
             {
                 Repaint();
@@ -89,7 +86,7 @@ namespace PokerDefense.EditorTools
         // 어떤 유닛이 소환되는지 같이 보여줌 (유닛 이름은 HandUnitTable에서 읽어 데이터와 어긋나지 않도록 함)
         string Label(HandCategory category)
         {
-            string hand = HandCheatTable.NameOf(category);
+            string hand = HandCategoryNames.Of(category);
             UnitDefinition unit = UnitFor(category);
 
             return unit == null ? hand : $"{hand}  →  {unit.DisplayName}";

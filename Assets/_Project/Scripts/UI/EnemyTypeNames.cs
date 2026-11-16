@@ -20,7 +20,7 @@ namespace PokerDefense.UI
             _ => "일반",
         };
 
-        // 종류별 특성 한 줄 (속도·체력 경향만)
+        // 종류별 특성 한 줄
         public static string TraitOf(EnemyType type) => type switch
         {
             EnemyType.Swarm => "다수 · 체력 낮음",
