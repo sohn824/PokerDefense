@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using PokerDefense.Game;
@@ -279,11 +280,24 @@ namespace PokerDefense.EditorTools
             round.ConfirmHand();
         }
 
+        // 다섯 장이 모두 족보를 이루므로 한 장이라도 바꾸면 깨지는 족보
+        static readonly HashSet<HandCategory> CompleteHands = new HashSet<HandCategory>
+        {
+            HandCategory.Straight, HandCategory.BackStraight, HandCategory.Mountain, HandCategory.Flush, HandCategory.FullHouse,
+            HandCategory.StraightFlush, HandCategory.BackStraightFlush, HandCategory.RoyalStraightFlush,
+        };
+
         // 확률을 따지지 않고 지금 손패에서 이미 맞은 쪽만 남기고 나머지를 교체할 자리로 고름
         // 같은 숫자가 2장 이상이면 그 묶음을 남기고 나머지를 교체함
         // 페어가 없으면 같은 무늬 3장 이상을, 그것도 없으면 숫자가 높은 2장을 남김
+        // 다섯 장이 모두 쓰이는 족보(스트레이트 계열·플러시·풀하우스)가 이미 완성돼 있으면 바꾸지 않음
         static List<int> DecideGreedyExchange(IReadOnlyList<Card> hand)
         {
+            if (CompleteHands.Contains(HandEvaluator.CategoryOf(hand)))
+            {
+                return new List<int>();
+            }
+
             // 같은 숫자끼리 자리 번호를 모음
             Dictionary<Rank, List<int>> byRank = new Dictionary<Rank, List<int>>();
 
@@ -375,7 +389,7 @@ namespace PokerDefense.EditorTools
                 runId, strategy, stage.WaveIndex.ToString(), outcome.ToString(),
                 stage.Life.ToString(), stage.Jokers.ToString(),
                 star1.ToString(), star2.ToString(), star3.ToString(), occupied.ToString(),
-                (Time.realtimeSinceStartup - startedRealtime).ToString("F1"),
+                (Time.realtimeSinceStartup - startedRealtime).ToString("F1", CultureInfo.InvariantCulture),
             });
 
             File.AppendAllText(logPath, row + "\n");
@@ -405,7 +419,7 @@ namespace PokerDefense.EditorTools
                 runId, strategy, "FINAL", reason,
                 stage.Life.ToString(), stage.Jokers.ToString(),
                 "", "", "", "",
-                (Time.realtimeSinceStartup - startedRealtime).ToString("F1"),
+                (Time.realtimeSinceStartup - startedRealtime).ToString("F1", CultureInfo.InvariantCulture),
             });
 
             File.AppendAllText(logPath, summary + "\n");

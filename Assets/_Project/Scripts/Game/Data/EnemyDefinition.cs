@@ -14,16 +14,16 @@ namespace PokerDefense.Game
         // 기본 적
         Normal,
 
-        // HP 낮음 · 수가 많음
+        // HP 낮음·수가 많음
         Swarm,
 
         // HP 매우 높음 (하나라도 남으면 라이프가 상한만큼 깎임)
         Boss,
 
-        // HP 낮음 · 속도 빠름
+        // HP 낮음·속도 빠름
         Runner,
 
-        // HP 높음 · 속도 느림
+        // HP 높음·속도 느림
         Tank,
     }
 

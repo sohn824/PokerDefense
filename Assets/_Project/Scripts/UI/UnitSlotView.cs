@@ -100,7 +100,7 @@ namespace PokerDefense.UI
             actionHint.outlineWidth = 0.35f;
             actionHint.alignment = TextAlignmentOptions.Center;
             actionHint.sortingOrder = 8;
-            actionHint.enableWordWrapping = false;
+            actionHint.textWrappingMode = TextWrappingModes.NoWrap;
             actionHint.text = string.Empty;
             actionHint.gameObject.SetActive(false);
         }

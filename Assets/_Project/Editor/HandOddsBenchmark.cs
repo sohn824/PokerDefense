@@ -39,6 +39,8 @@ namespace PokerDefense.EditorTools
             Pending = Task.Run(() => Run(environment, path));
             // Pending을 기다리는 곳이 없어 실패를 여기서 콘솔에 남김
             Pending.ContinueWith(task => UnityEngine.Debug.LogException(task.Exception), TaskContinuationOptions.OnlyOnFaulted);
+            // 끝난 것을 알 수 있게 결과 파일 경로를 남김
+            Pending.ContinueWith(task => UnityEngine.Debug.Log("교체 확률 벤치마크 완료: " + path), TaskContinuationOptions.OnlyOnRanToCompletion);
         }
 
         // 시드 2개 × 교체 1~4장 × 계산 방식 5개를 재서 한 줄씩 기록함
@@ -103,6 +105,7 @@ namespace PokerDefense.EditorTools
                         Array.Sort(allocations);
                         // 메모리 할당량은 지금 스레드에서 쓴 양만 잴 수 있으므로
                         // 같은 스레드에서 계산하는 inline 방식만 숫자로 적고 나머지는 NA(값 없음)로 적음
+                        // 에디터의 Mono는 이 값을 항상 0으로 돌려주므로 0도 잴 수 없는 것으로 보고 NA로 적음
                         report.Append(seed).Append(',').Append(k).Append(',').Append(mode).Append(',')
                             .Append(elapsed[4].ToString("F3", CultureInfo.InvariantCulture)).Append(',')
                             .Append(elapsed[8].ToString("F3", CultureInfo.InvariantCulture)).Append(',')

@@ -46,8 +46,10 @@ namespace PokerDefense.EditorTools
                 {
                     StageContext stage = stageController.Stage;
                     // WaveIndex는 0부터 세므로 1을 더해 보여 줌
-                    EditorGUILayout.LabelField("진행 중",
-                        $"{stage.WaveIndex + 1} / {stage.TotalWaves} 웨이브");
+                    // 마지막 웨이브를 클리어하면 WaveIndex가 총 웨이브 수와 같아지므로 따로 표시함
+                    EditorGUILayout.LabelField("진행 중", stage.IsAllWavesCleared
+                        ? "모든 웨이브 클리어"
+                        : $"{stage.WaveIndex + 1} / {stage.TotalWaves} 웨이브");
                 }
 
                 EditorGUILayout.Space();
@@ -60,10 +62,12 @@ namespace PokerDefense.EditorTools
 
                 EditorGUILayout.Space();
 
-                // 입력한 웨이브까지 앞으로만 건너뜀, 총 웨이브보다 크면 끝까지 클리어되어 스테이지가 끝남
+                // 입력한 웨이브까지 앞으로만 건너뜀
+                // 실수로 스테이지가 끝나지 않도록 마지막 웨이브까지만 입력받음
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    targetWave = Mathf.Max(1, EditorGUILayout.IntField("이동할 웨이브(1부터)", targetWave));
+                    int lastWave = stageController != null ? stageController.Stage.TotalWaves : int.MaxValue;
+                    targetWave = Mathf.Clamp(EditorGUILayout.IntField("이동할 웨이브(1부터)", targetWave), 1, lastWave);
 
                     if (GUILayout.Button("이동", GUILayout.Width(60f)))
                     {
