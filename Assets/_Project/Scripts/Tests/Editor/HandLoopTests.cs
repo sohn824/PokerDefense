@@ -4,6 +4,12 @@ using UnityEngine;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * HandLoopTests
+     *
+     * 보드가 가득 찼을 때 GridBoard.TryReplace가 확인한 유닛만 교체하는지 검사하는 클래스
+     * 이름과 달리 TryReplace 하나만 검사함
+     */
     public class HandLoopTests
     {
         // TryReplace는 확인한 유닛(expected)이 그대로 있고 합칠 수 없는 유닛일 때만 바꿈

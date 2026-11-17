@@ -4,6 +4,11 @@ using UnityEngine;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * TrackPathTests
+     *
+     * 적 이동 경로에서 같은 시간에 같은 거리를 가고, 한 바퀴의 끝과 시작이 끊기지 않는지 검사하는 클래스
+     */
     public class TrackPathTests
     {
         // 2000등분한 progress 간격마다 이동 거리가 같고 진행 방향(MoveDirection) 길이가 1인지 확인

@@ -5,6 +5,11 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * HandEvaluatorTests
+     *
+     * HandEvaluator가 13개 족보를 바르게 판정하고, 족보를 만든 카드(KeyCards)를 정해진 순서로 고르는지 검사하는 클래스
+     */
     public class HandEvaluatorTests
     {
         // 13개 카테고리 각각의 대표 핸드

@@ -6,6 +6,11 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * DeckTests
+     *
+     * 덱이 중복 없는 52장으로 시드에 따라 섞이고, 뽑을 때마다 줄어드는지 검사하는 클래스
+     */
     public class DeckTests
     {
         [Test]

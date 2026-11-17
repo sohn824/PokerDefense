@@ -7,6 +7,12 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * AssistTests
+     *
+     * 선택 교체(Assist)가 일반 교체한 자리에서만 손패당 한 번 되는지 검사하는 클래스
+     * 기회가 다음 손패로 쌓이지 않는지, 후보가 이미 나온 카드와 겹치지 않는지도 확인함
+     */
     public class AssistTests
     {
         [Test]

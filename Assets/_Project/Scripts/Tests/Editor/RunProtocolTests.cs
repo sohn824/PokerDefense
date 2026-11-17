@@ -6,6 +6,11 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * RunProtocolTests
+     *
+     * 결과 전송 메시지를 바이트로 만들고 다시 읽는 과정이 서버와 같은 형식인지 검사하는 클래스
+     */
     public class RunProtocolTests
     {
         // 서버와 클라이언트가 같은 바이트를 만드는지 확인하는 기준

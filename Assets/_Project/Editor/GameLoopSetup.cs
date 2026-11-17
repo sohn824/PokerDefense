@@ -14,7 +14,14 @@ using UnityEngine.UI;
 
 namespace PokerDefense.Editor
 {
-    // 메뉴 씬과 공통 UI 설치 (이미 연결된 참조는 건드리지 않으므로 여러 번 실행해도 중복으로 생기지 않음)
+    /**
+     * GameLoopSetup
+     *
+     * Game·Title·Boot 씬의 UI와 참조 연결을 코드로 다시 만드는 클래스
+     * 메뉴 - Install Game Loop(세 씬 전체와 빌드 씬 목록), Update Guide and Assist UI, Update Hand Odds UI, Install Run Reporter
+     * 각 Install 메서드는 기존 오브젝트를 지우고 새로 만들므로 여러 번 실행해도 중복으로 생기지 않음
+     * 씬에서 직접 고친 위치·문구는 덮어씀
+     */
     public static partial class GameLoopSetup
     {
         const string Scenes = "Assets/_Project/Scenes/";

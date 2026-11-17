@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * GridBoardTests
+     *
+     * 보드의 슬롯 좌표와 배치·머지·이동·자리 교환 규칙을 검사하는 클래스
+     */
     public class GridBoardTests
     {
         UnitDefinition archer;

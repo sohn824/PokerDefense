@@ -50,7 +50,7 @@ namespace PokerDefense.Game
         readonly UnitInstance[] slots = new UnitInstance[SlotCount];
 
         // 슬롯 번호 -> 보드 중심을 원점으로 하는 로컬 좌표
-        // 번호 = 행 × 5 + 열 (ex: 0번 좌상단, 7번 정중앙 = 원점, 14번 우하단)
+        // 번호 = 행 × 5 + 열 (예: 0번 좌상단, 7번 정중앙 = 원점, 14번 우하단)
         public static Vector2 SlotToLocalPosition(int index)
         {
             if (index < 0 || index >= SlotCount)

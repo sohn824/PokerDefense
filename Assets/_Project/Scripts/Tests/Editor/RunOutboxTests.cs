@@ -6,6 +6,11 @@ using PokerDefense.Game;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * RunOutboxTests
+     *
+     * 결과 대기열 파일의 저장·삭제·거부 처리와, 깨진 파일·쓰다 만 파일을 다루는 방식을 검사하는 클래스
+     */
     public class RunOutboxTests
     {
         string directory;

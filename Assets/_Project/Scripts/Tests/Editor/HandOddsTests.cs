@@ -4,6 +4,11 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * HandOddsTests
+     *
+     * HandOdds.Find가 족보별 경우의 수와 확률을 정확히 세고, 희귀한 족보부터 정렬하는지 검사하는 클래스
+     */
     public class HandOddsTests
     {
         [Test]

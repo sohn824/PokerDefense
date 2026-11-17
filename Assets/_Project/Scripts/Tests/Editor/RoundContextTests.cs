@@ -7,6 +7,11 @@ using PokerDefense.Poker;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * RoundContextTests
+     *
+     * 한 라운드의 손패 뽑기 -> 일반 교체 -> 확정 순서와 교체 규칙을 검사하는 클래스
+     */
     public class RoundContextTests
     {
         static RoundContext Drawn(int seed = 1)

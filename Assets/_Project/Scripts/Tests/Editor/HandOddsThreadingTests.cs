@@ -13,6 +13,12 @@ using UnityEngine.TestTools;
 
 namespace PokerDefense.Tests
 {
+    /**
+     * HandOddsThreadingTests
+     *
+     * 교체 확률 계산을 순차·병렬로 했을 때 결과가 같고, 취소되면 중간 결과를 내놓지 않는지 검사하는 클래스
+     * CategoryOf가 모든 족보에서 Evaluate와 같은 결과를 내는지도 확인함
+     */
     public class HandOddsThreadingTests
     {
         [Test]
