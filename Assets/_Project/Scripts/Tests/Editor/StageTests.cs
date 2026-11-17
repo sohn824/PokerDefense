@@ -233,5 +233,76 @@ namespace PokerDefense.Tests
             Assert.AreSame(strong, stats.BestUnit);
         }
 
+        // ---------- 이어하기 복원 ----------
+
+        [Test]
+        public void 복원한_스테이지는_그_웨이브부터_규칙대로_이어진다()
+        {
+            var context = new StageContext(MakeStage(20, 3, MakeWave(1, 0), MakeWave(2, 0), MakeWave(3, 1)));
+
+            context.Restore(12, 2, 2);
+
+            Assert.AreEqual(12, context.Life);
+            Assert.AreEqual(2, context.Jokers);
+            Assert.AreEqual(2, context.WaveIndex);
+
+            context.ApplyResult(CombatOutcome.Cleared, 0, 0);
+
+            Assert.AreEqual(3, context.Jokers, "복원한 웨이브(보스)를 클리어하면 보상을 받는다");
+            Assert.IsTrue(context.IsAllWavesCleared);
+        }
+
+        [TestCase(0, 0, 0, TestName = "라이프 0")]
+        [TestCase(21, 0, 0, TestName = "시작 라이프보다 많은 라이프")]
+        [TestCase(10, -1, 0, TestName = "음수 승급권")]
+        [TestCase(10, 0, 3, TestName = "모든 웨이브를 넘긴 번호")]
+        public void 끝났거나_범위_밖인_스테이지는_복원하지_않는다(int life, int jokers, int waveIndex)
+        {
+            var context = new StageContext(MakeStage(20, 3, MakeWave(1, 0), MakeWave(2, 0), MakeWave(3, 1)));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => context.Restore(life, jokers, waveIndex));
+            Assert.AreEqual(20, context.Life, "실패하면 값을 바꾸지 않는다");
+        }
+
+        [Test]
+        public void 복원한_통계는_이후_기록과_이어진다()
+        {
+            var stats = new RunStats();
+            var best = UnitInstance.Restore(MakeUnit("cannon", 100f, 0.5f), 2);
+
+            stats.Restore(7, HandCategory.FullHouse, best);
+            stats.RecordHand(HandCategory.OnePair);
+            stats.RecordSummon(new UnitInstance(MakeUnit("scout", 10f, 1f)));
+
+            Assert.AreEqual(8, stats.Summons);
+            Assert.AreEqual(HandCategory.FullHouse, stats.BestHand, "더 흔한 족보로 덮이지 않는다");
+            Assert.AreSame(best, stats.BestUnit);
+        }
+
+        [Test]
+        public void 유닛은_저장한_성급으로_복원되고_범위_밖_성급은_거부한다()
+        {
+            var cannon = MakeUnit("cannon", 100f, 0.5f);
+
+            var restored = UnitInstance.Restore(cannon, 2);
+
+            Assert.AreEqual(2, restored.Star);
+            Assert.AreEqual(3, restored.Promoted().Star);
+            Assert.Throws<ArgumentOutOfRangeException>(() => UnitInstance.Restore(cannon, 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => UnitInstance.Restore(cannon, UnitDefinition.MaxStar + 1));
+        }
+
+        [Test]
+        public void 복원한_유닛을_빈_보드에_놓으면_성급이_그대로다()
+        {
+            var cannon = MakeUnit("cannon", 100f, 0.5f);
+            var board = new GridBoard();
+
+            Assert.AreEqual(PlacementResult.Placed, board.TryPlace(4, UnitInstance.Restore(cannon, 3)));
+            Assert.AreEqual(PlacementResult.Placed, board.TryPlace(5, UnitInstance.Restore(cannon, 3)));
+
+            Assert.AreEqual(3, board[4].Star);
+            Assert.AreEqual(3, board[5].Star, "옆 칸에 같은 ★3이 있어도 빈 칸 배치는 합치지 않는다");
+        }
     }
 }

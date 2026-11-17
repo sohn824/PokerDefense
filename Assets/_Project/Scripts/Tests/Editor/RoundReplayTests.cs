@@ -10,7 +10,7 @@ namespace PokerDefense.Tests
     /**
      * RoundReplayTests
      *
-     * RoundContext의 행동 기록을 같은 시드로 다시 실행하면 손패·덱·후보가 같은 라운드가 되는지 검사하는 클래스
+     * RoundContext의 행동 기록을 같은 시드로 재현하면 손패·덱·후보가 같은 라운드가 되는지 검사하는 클래스
      * 이어하기에서 후보를 다시 뽑을 수 없게 하는 근거가 되는 동작임
      */
     public class RoundReplayTests

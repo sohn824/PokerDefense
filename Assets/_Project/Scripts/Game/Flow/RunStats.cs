@@ -55,6 +55,19 @@ namespace PokerDefense.Game
             BestUnit = unit;
         }
 
+        // 이어하기 - 저장해 둔 소환 수·최고 족보·최고 유닛으로 되돌림 (기록한 적이 없으면 bestHand·bestUnit은 null)
+        public void Restore(int summons, HandCategory? bestHand, UnitInstance bestUnit)
+        {
+            if (summons < 0)
+            {
+                throw new System.ArgumentOutOfRangeException(nameof(summons), $"소환 수는 0 이상이어야 함: {summons}");
+            }
+
+            Summons = summons;
+            BestHand = bestHand;
+            BestUnit = bestUnit;
+        }
+
         static float Dps(UnitInstance unit) => unit.AttackPower * unit.AttacksPerSecond;
     }
 }

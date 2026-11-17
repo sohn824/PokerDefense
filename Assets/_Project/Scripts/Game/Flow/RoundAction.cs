@@ -28,7 +28,7 @@ namespace PokerDefense.Game
      * RoundAction
      *
      * RoundContext에서 성공한 행동 하나
-     * 같은 시드로 만든 RoundContext에 같은 순서로 다시 실행하면 손패·덱·후보가 원래와 같아짐
+     * 같은 시드로 만든 RoundContext에 같은 순서로 재현하면 손패·덱·후보가 원래와 같아짐
      * 이어하기에서 라운드를 복원하는 데 씀
      *
      * Indices - Exchange에서 바꾼 자리들 (다른 종류는 빈 목록)

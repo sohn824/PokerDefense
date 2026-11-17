@@ -22,7 +22,19 @@ namespace PokerDefense.Game
         {
         }
 
-        // 성급을 지정하는 생성자 (Promoted만 씀)
+        // 이어하기 - 저장해 둔 종류·성급으로 유닛을 다시 만듦
+        // 성급이 1~MaxStar 밖이면 예외
+        public static UnitInstance Restore(UnitDefinition definition, int star)
+        {
+            if (star < 1 || star > UnitDefinition.MaxStar)
+            {
+                throw new ArgumentOutOfRangeException(nameof(star), $"성급은 1~{UnitDefinition.MaxStar}이어야 함: {star}");
+            }
+
+            return new UnitInstance(definition, star);
+        }
+
+        // 성급을 지정하는 생성자 (Promoted·Restore만 씀)
         UnitInstance(UnitDefinition definition, int star)
         {
             if (definition == null)

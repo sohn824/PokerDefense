@@ -62,5 +62,27 @@ namespace PokerDefense.Game
             Jokers--;
             return true;
         }
+
+        // 이어하기 - 저장해 둔 라이프·승급권·웨이브 번호로 되돌림
+        // 끝난 Run(라이프 0, 모든 웨이브 클리어)은 저장하지 않으므로 그런 값이 오면 예외
+        public void Restore(int life, int jokers, int waveIndex)
+        {
+            if (life <= 0 || life > definition.StartingLife)
+            {
+                throw new ArgumentOutOfRangeException(nameof(life), $"라이프는 1~{definition.StartingLife}이어야 함: {life}");
+            }
+            if (jokers < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(jokers), $"승급권은 0 이상이어야 함: {jokers}");
+            }
+            if (waveIndex < 0 || waveIndex >= TotalWaves)
+            {
+                throw new ArgumentOutOfRangeException(nameof(waveIndex), $"웨이브 번호는 0~{TotalWaves - 1}이어야 함: {waveIndex}");
+            }
+
+            Life = life;
+            Jokers = jokers;
+            WaveIndex = waveIndex;
+        }
     }
 }

@@ -32,7 +32,7 @@ namespace PokerDefense.Game
      * 손패 확정 -> 족보 판정
      *
      * Actions - 이번 라운드에서 성공한 행동을 순서대로 기록함 (실패한 행동은 남기지 않음)
-     * Replay() - 같은 시드로 새로 만든 뒤 기록을 다시 실행해 손패·덱·후보가 같은 라운드를 만듦
+     * Replay() - 같은 시드로 새로 만든 뒤 기록을 재현해 손패·덱·후보가 같은 라운드를 만듦
      * 덱은 시드로 한 번 섞은 뒤 순서대로 뽑기만 하므로 시드와 행동만 같으면 결과도 같음
      * 이어하기에서 덱 순서를 따로 저장하지 않고 이 방식으로 복원함
      */
@@ -69,7 +69,7 @@ namespace PokerDefense.Game
         // ForceHand(치트)는 덱에서 뽑지 않고 손패를 바꾸므로 쓰면 false가 됨
         public bool IsReplayable { get; private set; } = true;
 
-        // seed로 새 RoundContext를 만들고 actions를 순서대로 다시 실행함
+        // seed로 새 RoundContext를 만들고 actions를 순서대로 재현함
         // 기록이 이 시드의 라운드와 맞지 않으면(공개할 수 없는 자리 등) 예외
         public static RoundContext Replay(int seed, IReadOnlyList<RoundAction> actions)
         {
