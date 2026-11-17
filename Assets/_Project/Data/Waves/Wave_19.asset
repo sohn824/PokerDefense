@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Wave_19
   m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.WaveDefinition
   waveNumber: 19
-  timeLimit: 39
+  timeLimit: 29
   jokerReward: 0
   entries:
   - enemy: {fileID: 11400000, guid: d0aca76ef896fb74e95222ca3006bf95, type: 2}

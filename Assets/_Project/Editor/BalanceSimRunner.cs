@@ -387,6 +387,8 @@ namespace PokerDefense.EditorTools
             string row = string.Join(",", new[]
             {
                 runId, strategy, stage.WaveIndex.ToString(), outcome.ToString(),
+                combat.LatestCombatContext.ElapsedTime.ToString("F1", CultureInfo.InvariantCulture),
+                combat.LatestCombatContext.Wave.TimeLimit.ToString("F0", CultureInfo.InvariantCulture),
                 stage.Life.ToString(), stage.Jokers.ToString(),
                 star1.ToString(), star2.ToString(), star3.ToString(), occupied.ToString(),
                 (Time.realtimeSinceStartup - startedRealtime).ToString("F1", CultureInfo.InvariantCulture),
@@ -404,7 +406,7 @@ namespace PokerDefense.EditorTools
             }
 
             File.WriteAllText(logPath,
-                "run_id,strategy,wave,outcome,life,jokers,star1,star2,star3,occupied,wall_sec\n");
+                "run_id,strategy,wave,outcome,combat_sec,time_limit,life,jokers,star1,star2,star3,occupied,wall_sec\n");
         }
 
         static void FinalizeRun()
@@ -416,7 +418,7 @@ namespace PokerDefense.EditorTools
             // 보드 집계 네 칸은 비워 둠
             string summary = string.Join(",", new[]
             {
-                runId, strategy, "FINAL", reason,
+                runId, strategy, "FINAL", reason, "", "",
                 stage.Life.ToString(), stage.Jokers.ToString(),
                 "", "", "", "",
                 (Time.realtimeSinceStartup - startedRealtime).ToString("F1", CultureInfo.InvariantCulture),
