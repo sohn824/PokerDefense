@@ -30,6 +30,11 @@ namespace PokerDefense.Game
      * 일반 교체로 A·D를 바꿈 -> A'·B·C·D'·E (A'·D' 자리는 잠김)
      * 선택 교체로 D' 자리를 고름 -> 후보 X·Y·Z 공개 -> Y 선택 -> A'·B·C·Y·E
      * 손패 확정 -> 족보 판정
+     *
+     * Actions - 이번 라운드에서 성공한 행동을 순서대로 기록함 (실패한 행동은 남기지 않음)
+     * Replay() - 같은 시드로 새로 만든 뒤 기록을 다시 실행해 손패·덱·후보가 같은 라운드를 만듦
+     * 덱은 시드로 한 번 섞은 뒤 순서대로 뽑기만 하므로 시드와 행동만 같으면 결과도 같음
+     * 이어하기에서 덱 순서를 따로 저장하지 않고 이 방식으로 복원함
      */
     public sealed class RoundContext
     {
@@ -49,8 +54,54 @@ namespace PokerDefense.Game
         // 선택 교체로 바꿀 자리 (후보를 고르는 중이 아니면 -1)
         int assistTarget = -1;
 
+        // 이번 라운드에서 성공한 행동 기록
+        readonly List<RoundAction> actions = new List<RoundAction>();
+
         // 이번 손패의 선택 교체 기회를 썼는지 (후보를 공개하는 순간 쓴 것으로 취급)
         public bool AssistUsed { get; private set; }
+
+        // 덱을 섞은 시드
+        public int Seed { get; }
+
+        public IReadOnlyList<RoundAction> Actions => actions;
+
+        // 시드와 행동 기록만으로 다시 만들 수 있는지
+        // ForceHand(치트)는 덱에서 뽑지 않고 손패를 바꾸므로 쓰면 false가 됨
+        public bool IsReplayable { get; private set; } = true;
+
+        // seed로 새 RoundContext를 만들고 actions를 순서대로 다시 실행함
+        // 기록이 이 시드의 라운드와 맞지 않으면(공개할 수 없는 자리 등) 예외
+        public static RoundContext Replay(int seed, IReadOnlyList<RoundAction> actions)
+        {
+            if (actions == null)
+            {
+                throw new ArgumentNullException(nameof(actions));
+            }
+
+            RoundContext round = new RoundContext(seed);
+
+            foreach (RoundAction action in actions)
+            {
+                switch (action.Type)
+                {
+                    case RoundActionType.Draw: round.Draw(); break;
+                    case RoundActionType.Exchange: round.Exchange(action.Indices); break;
+                    case RoundActionType.ChooseCandidate: round.ChooseCandidate(action.Index); break;
+                    case RoundActionType.FinishExchange: round.FinishExchange(); break;
+                    case RoundActionType.Evaluate: round.Evaluate(); break;
+                    case RoundActionType.RevealCandidates:
+                        if (round.TryRevealCandidates(action.Index) == false)
+                        {
+                            throw new InvalidOperationException($"기록과 맞지 않아 후보를 공개할 수 없음: {action.Index}");
+                        }
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(actions), $"알 수 없는 행동: {action.Type}");
+                }
+            }
+
+            return round;
+        }
 
         // 고른 자리들을 한꺼번에 일반 교체했을 때 족보별 경우의 수를 계산해 바로 돌려줌 (테스트용)
         // 호출한 스레드에서 끝날 때까지 계산하므로 게임에서는 쓰지 않음 (4자리면 178,365가지라 화면이 멈춤)
@@ -152,6 +203,7 @@ namespace PokerDefense.Game
             candidates = deck.DrawUpTo(CandidateCount);
             assistTarget = index;
             AssistUsed = true;
+            actions.Add(RoundAction.RevealCandidates(index));
             return true;
         }
 
@@ -172,6 +224,7 @@ namespace PokerDefense.Game
             exchangedCount++;
             assistTarget = -1;
             candidates = Array.Empty<Card>();
+            actions.Add(RoundAction.ChooseCandidate(index));
         }
 
         void ValidateCandidate(int index)
@@ -188,6 +241,7 @@ namespace PokerDefense.Game
 
         public RoundContext(int seed)
         {
+            Seed = seed;
             deck = new Deck(seed);
         }
 
@@ -232,6 +286,7 @@ namespace PokerDefense.Game
             }
 
             Phase = RoundPhase.Exchange;
+            actions.Add(RoundAction.Of(RoundActionType.Draw));
         }
 
         // 고른 자리를 덱의 다음 카드로 바꾸고 그 자리를 잠금
@@ -260,6 +315,7 @@ namespace PokerDefense.Game
             }
 
             exchangedCount += indices.Count;
+            actions.Add(RoundAction.Exchange(indices));
         }
 
         // Exchange Phase를 끝내고 Evaluate Phase로 넘김
@@ -268,6 +324,7 @@ namespace PokerDefense.Game
             Require(RoundPhase.Exchange);
 
             Phase = RoundPhase.Evaluate;
+            actions.Add(RoundAction.Of(RoundActionType.FinishExchange));
         }
 
         // Evaluate Phase - 족보를 판정하고 Place Phase로 넘김
@@ -277,6 +334,7 @@ namespace PokerDefense.Game
 
             Result = HandEvaluator.Evaluate(hand);
             Phase = RoundPhase.Place;
+            actions.Add(RoundAction.Of(RoundActionType.Evaluate));
             return Result;
         }
 
@@ -302,6 +360,8 @@ namespace PokerDefense.Game
             {
                 hand[i] = cards[i];
             }
+
+            IsReplayable = false;
         }
 #endif // UNITY_EDITOR
 
