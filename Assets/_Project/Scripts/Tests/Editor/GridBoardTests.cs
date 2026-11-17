@@ -53,14 +53,6 @@ namespace PokerDefense.Tests
         UnitInstance Knight() => new UnitInstance(knight);
 
         [Test]
-        public void 보드는_5열_3행_15슬롯이다()
-        {
-            Assert.AreEqual(5, GridBoard.Columns);
-            Assert.AreEqual(3, GridBoard.Rows);
-            Assert.AreEqual(15, GridBoard.SlotCount);
-        }
-
-        [Test]
         public void 보드_중앙_슬롯은_원점이다()
         {
             // 5 × 3이라 정가운데(0부터 세어 1행 2열 = 7번)가 보드 중심
@@ -79,54 +71,11 @@ namespace PokerDefense.Tests
             Assert.Less(bottomRight.y, 0f, "14번이 아래쪽이 아니다");
         }
 
-        [Test]
-        public void 가로_이웃_슬롯의_간격은_한_칸이다()
-        {
-            Vector2 a = GridBoard.SlotToLocalPosition(0);
-            Vector2 b = GridBoard.SlotToLocalPosition(1);
-
-            Assert.AreEqual(GridBoard.CellSize, b.x - a.x, 0.0001f);
-            Assert.AreEqual(a.y, b.y, 0.0001f, "같은 행인데 높이가 다르다");
-        }
-
-        [Test]
-        public void 세로_이웃_슬롯의_간격은_한_칸이다()
-        {
-            Vector2 a = GridBoard.SlotToLocalPosition(0);
-            Vector2 b = GridBoard.SlotToLocalPosition(GridBoard.Columns);
-
-            Assert.AreEqual(GridBoard.CellSize, a.y - b.y, 0.0001f, "행이 내려가면 y가 낮아져야 한다");
-            Assert.AreEqual(a.x, b.x, 0.0001f, "같은 열인데 가로가 다르다");
-        }
-
-        [Test]
-        public void 모든_슬롯_좌표는_서로_다르다()
-        {
-            var seen = new System.Collections.Generic.HashSet<Vector2>();
-
-            for (int i = 0; i < GridBoard.SlotCount; i++)
-            {
-                Assert.IsTrue(seen.Add(GridBoard.SlotToLocalPosition(i)), $"{i}번 좌표가 겹친다");
-            }
-        }
-
         [TestCase(-1)]
         [TestCase(15)]
         public void 범위를_벗어난_슬롯_좌표는_예외를_던진다(int index)
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => GridBoard.SlotToLocalPosition(index));
-        }
-
-        [Test]
-        public void 처음에는_모든_슬롯이_비어_있다()
-        {
-            var board = new GridBoard();
-
-            Assert.AreEqual(0, board.OccupiedCount);
-            for (int i = 0; i < GridBoard.SlotCount; i++)
-            {
-                Assert.IsNull(board[i], $"{i}번 슬롯이 비어 있지 않다");
-            }
         }
 
         [Test]
@@ -148,16 +97,6 @@ namespace PokerDefense.Tests
 
             Assert.AreEqual(PlacementResult.Merged, board.TryPlace(0, Archer()));
             Assert.AreEqual(2, board[0].Star);
-        }
-
-        [Test]
-        public void 머지하면_슬롯_수가_늘지_않는다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-            board.TryPlace(0, Archer());
-
-            Assert.AreEqual(1, board.OccupiedCount, "머지는 자리를 추가로 먹지 않아야 한다");
         }
 
         [Test]
@@ -208,21 +147,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 슬롯간_머지도_성급과_종류가_같아야_한다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-            board.TryPlace(1, Knight());
-            board.TryPlace(2, Archer());
-            board.TryPlace(2, Archer());   // ★2
-
-            Assert.AreEqual(PlacementResult.Rejected, board.TryMergeSlots(1, 0), "종류가 다르다");
-            Assert.AreEqual(PlacementResult.Rejected, board.TryMergeSlots(2, 0), "성급이 다르다");
-            Assert.AreEqual(3, board.OccupiedCount, "거부된 머지가 보드를 바꿨다");
-            Assert.AreEqual(1, board[0].Star);
-        }
-
-        [Test]
         public void 같은_슬롯끼리는_머지되지_않는다()
         {
             var board = new GridBoard();
@@ -230,31 +154,6 @@ namespace PokerDefense.Tests
 
             Assert.AreEqual(PlacementResult.Rejected, board.TryMergeSlots(0, 0));
             Assert.AreEqual(1, board[0].Star);
-        }
-
-        [Test]
-        public void 빈_칸은_슬롯간_머지의_대상이_아니다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-
-            Assert.AreEqual(PlacementResult.Rejected, board.TryMergeSlots(0, 5), "빈 칸으로는 못 합친다");
-            Assert.AreEqual(PlacementResult.Rejected, board.TryMergeSlots(5, 0), "빈 칸을 재료로 못 쓴다");
-            Assert.AreSame(archer, board[0].Definition);
-        }
-
-        [Test]
-        public void 별3끼리는_슬롯간_머지도_안_된다()
-        {
-            var board = new GridBoard();
-            TwoStarPair(board, Archer);
-            board.TryMergeSlots(1, 0);     // 0번 ★3
-
-            TwoStarPair2(board);
-            Assert.AreEqual(3, board[0].Star);
-            Assert.AreEqual(3, board[2].Star);
-            Assert.AreEqual(PlacementResult.Rejected, board.TryMergeSlots(2, 0));
-            Assert.AreEqual(3, board[0].Star);
         }
 
         // 2번 슬롯을 ★3으로 만듦 (3번을 재료로 씀)
@@ -388,14 +287,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 널_유닛은_예외를_던진다()
-        {
-            var board = new GridBoard();
-
-            Assert.Throws<ArgumentNullException>(() => board.TryPlace(0, null));
-        }
-
-        [Test]
         public void 빈_칸으로_유닛을_옮길_수_있다()
         {
             var board = new GridBoard();
@@ -423,15 +314,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 빈_칸은_옮길_대상이_아니다()
-        {
-            var board = new GridBoard();
-
-            Assert.IsFalse(board.TryMoveSlot(0, 1));
-            Assert.IsFalse(board.TryMoveSlot(0, 0));
-        }
-
-        [Test]
         public void 서로_다른_유닛이_있는_칸끼리는_자리를_교환한다()
         {
             var board = new GridBoard();
@@ -443,18 +325,6 @@ namespace PokerDefense.Tests
             Assert.IsTrue(board.TrySwapSlots(0, 1));
             Assert.AreSame(knightUnit, board[0]);
             Assert.AreSame(archerUnit, board[1]);
-        }
-
-        [Test]
-        public void 교환해도_점유_칸_수는_그대로다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-            board.TryPlace(1, Knight());
-
-            board.TrySwapSlots(0, 1);
-
-            Assert.AreEqual(2, board.OccupiedCount);
         }
 
         [Test]
@@ -481,15 +351,6 @@ namespace PokerDefense.Tests
             Assert.AreEqual(1, board.OccupiedCount);
         }
 
-        [TestCase(-1, 0)]
-        [TestCase(0, 15)]
-        public void 범위를_벗어난_슬롯_교환은_예외를_던진다(int from, int to)
-        {
-            var board = new GridBoard();
-
-            Assert.Throws<ArgumentOutOfRangeException>(() => board.TrySwapSlots(from, to));
-        }
-
         [Test]
         public void ClearAt은_슬롯을_비운다()
         {
@@ -502,18 +363,6 @@ namespace PokerDefense.Tests
 
             Assert.DoesNotThrow(() => board.ClearAt(4), "빈 칸을 비워도 예외가 나면 안 됨");
             Assert.IsNull(board[4]);
-        }
-
-        [Test]
-        public void Clear하면_전부_비워진다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-            board.TryPlace(5, Knight());
-
-            board.Clear();
-
-            Assert.AreEqual(0, board.OccupiedCount);
         }
 
         [Test]

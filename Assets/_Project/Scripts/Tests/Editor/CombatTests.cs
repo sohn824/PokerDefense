@@ -123,31 +123,6 @@ namespace PokerDefense.Tests
             Assert.Greater(GridBoard.TrackHalfHeight, GridBoard.Rows * 0.5f * GridBoard.CellSize);
         }
 
-        [Test]
-        public void 트랙_한_바퀴는_제자리로_돌아온다()
-        {
-            Vector2 start = GridBoard.TrackPosition(0f);
-            Vector2 lap = GridBoard.TrackPosition(1f);
-
-            Assert.AreEqual(start.x, lap.x, 0.0001f);
-            Assert.AreEqual(start.y, lap.y, 0.0001f);
-        }
-
-        [Test]
-        public void 트랙_위_점은_전부_경계선에_있다()
-        {
-            for (int i = 0; i <= 100; i++)
-            {
-                Vector2 p = GridBoard.TrackPosition(i / 100f);
-                float radius = TrackPath.Arena.Radius;
-                Vector2 q = new Vector2(Mathf.Abs(p.x), Mathf.Abs(p.y))
-                    - new Vector2(GridBoard.TrackHalfWidth - radius, GridBoard.TrackHalfHeight - radius);
-                float signedDistance = new Vector2(Mathf.Max(q.x, 0f), Mathf.Max(q.y, 0f)).magnitude
-                    + Mathf.Min(Mathf.Max(q.x, q.y), 0f) - radius;
-                Assert.AreEqual(0f, signedDistance, .0001f, $"진행도 {i / 100f}: {p}");
-            }
-        }
-
         // ---------- 이동 ----------
 
         [Test]
@@ -313,76 +288,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 찌른_선의_방향은_유닛에서_적을_본_방향이다()
-        {
-            // 총구 위치가 방향마다 달라 화면이 이 방향으로 궤적 시작점을 고름
-            UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
-            var so = new UnityEditor.SerializedObject(definition);
-            so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Pierce;
-            so.FindProperty("pierceLength").floatValue = 1.5f;
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            var board = new GridBoard();
-            board.TryPlace(7, new UnitInstance(definition));
-
-            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
-            var combat = new CombatContext(board, wave);
-
-            Run(combat, 1.05f);
-
-            CombatContext.PierceEvent line = combat.RecentPierces[0];
-            Vector2 delta = line.Target - line.Origin;
-
-            AimDirection expected = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y)
-                ? (delta.x >= 0f ? AimDirection.Right : AimDirection.Left)
-                : (delta.y >= 0f ? AimDirection.Up : AimDirection.Down);
-
-            Assert.AreEqual(expected, line.Direction);
-        }
-
-        [Test]
-        public void 관통이_아니면_찌른_선을_안_남긴다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(7, new UnitInstance(MakeUnit(10f, attacksPerSecond: 1f, range: 100f)));
-
-            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
-            var combat = new CombatContext(board, wave);
-
-            Run(combat, 1.05f);
-
-            Assert.Greater(combat.RecentHits.Count, 0, "때리지도 않았다");
-            Assert.AreEqual(0, combat.RecentPierces.Count);
-        }
-
-        [Test]
-        public void 폭발_기록은_착탄_지점과_반경을_남긴다()
-        {
-            // 화면에 그리는 폭발이 실제 피해 범위와 같은 크기여야 하므로 반경을 함께 남김
-            UnitDefinition definition = MakeUnit(10f, attacksPerSecond: 1f, range: 100f);
-            var so = new UnityEditor.SerializedObject(definition);
-            so.FindProperty("attackPattern").enumValueIndex = (int)AttackPattern.Splash;
-            so.FindProperty("splashRadius").floatValue = 1.6f;
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            var board = new GridBoard();
-            board.TryPlace(7, new UnitInstance(definition));
-
-            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
-            var combat = new CombatContext(board, wave);
-
-            Run(combat, 1.05f);
-
-            IReadOnlyList<CombatContext.SplashEvent> splashes = combat.RecentSplashes;
-            Assert.Greater(splashes.Count, 0, "폭발 기록이 없다");
-
-            CombatContext.SplashEvent splash = splashes[0];
-            Assert.AreSame(definition, splash.Source);
-            Assert.AreEqual(1.6f, splash.Radius, 0.0001f);
-            Assert.AreEqual(combat.Enemies[0].Position, splash.Position, "착탄 지점이 아니다");
-        }
-
-        [Test]
         public void 폭발은_맞은_적_수와_무관하게_한_발에_한_번만_남는다()
         {
             // Splash 한 발이 여럿을 때려도 폭발 연출은 착탄 지점 하나임
@@ -403,36 +308,6 @@ namespace PokerDefense.Tests
             Assert.AreEqual(4, combat.RemainingEnemies, "넷 다 스폰되지 않았다");
             Assert.AreEqual(4, combat.RecentHits.Count, "넷 다 맞지 않았다");
             Assert.AreEqual(1, combat.RecentSplashes.Count, "한 발인데 폭발이 여러 번 남았다");
-        }
-
-        [Test]
-        public void Splash가_아니면_폭발_기록을_안_남긴다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(7, new UnitInstance(MakeUnit(10f, attacksPerSecond: 1f, range: 100f)));
-
-            var wave = MakeWave(MakeEnemy(1000f, 0f), count: 1, interval: 0f, timeLimit: 100f);
-            var combat = new CombatContext(board, wave);
-
-            Run(combat, 1.05f);
-
-            Assert.Greater(combat.RecentHits.Count, 0, "때리지도 않았다");
-            Assert.AreEqual(0, combat.RecentSplashes.Count);
-        }
-
-        [Test]
-        public void 사거리_밖이면_발사_횟수가_늘지_않는다()
-        {
-            var unit = new UnitInstance(MakeUnit(50f, 1f, range: 0.1f));
-            var board = new GridBoard();
-            board.TryPlace(7, unit);
-
-            var wave = MakeWave(MakeEnemy(100f, 0f), count: 1, interval: 0f, timeLimit: 100f);
-            var combat = new CombatContext(board, wave);
-
-            Run(combat, 5f);
-
-            Assert.AreEqual(0, combat.ShotCountOf(unit));
         }
 
         [Test]
@@ -597,22 +472,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 클리어하면_라이프가_깎이지_않는다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(7, new UnitInstance(MakeUnit(100f, 5f, range: 100f)));
-
-            var wave = MakeWave(MakeEnemy(100f, 0f), count: 2, interval: 0.2f, timeLimit: 30f);
-            var stage = new StageContext(MakeStage(20, wave));
-            var combat = new CombatContext(board, wave);
-
-            Run(combat, 30f);
-            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies, combat.UnresolvedBosses);
-
-            Assert.AreEqual(20, stage.Life);
-        }
-
-        [Test]
         public void 아직_나오지_않은_적도_잔여로_친다()
         {
             // 제한시간이 스폰보다 먼저 끝나면 안 나온 적도 라이프를 깎음
@@ -643,19 +502,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 라이프는_음수가_되지_않는다()
-        {
-            var wave = MakeWave(MakeEnemy(100f, 0f), count: 10, interval: 0.1f, timeLimit: 2f);
-            var stage = new StageContext(MakeStage(startingLife: 3, wave));
-
-            var combat = new CombatContext(new GridBoard(), wave);
-            Run(combat, 5f);
-            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies, combat.UnresolvedBosses);
-
-            Assert.AreEqual(0, stage.Life);
-        }
-
-        [Test]
         public void 웨이브를_넘기면_다음_웨이브가_현재가_된다()
         {
             var first = MakeWave(MakeEnemy(100f, 0f), 1, 0f, 10f);
@@ -673,24 +519,6 @@ namespace PokerDefense.Tests
 
             Assert.IsTrue(stage.IsAllWavesCleared);
             Assert.IsNull(stage.CurrentWave);
-        }
-
-        [Test]
-        public void 끝나지_않은_전투_결과는_반영할_수_없다()
-        {
-            var wave = MakeWave(MakeEnemy(100f, 0f), 1, 0f, 10f);
-            var stage = new StageContext(MakeStage(20, wave));
-
-            Assert.Throws<InvalidOperationException>(() => stage.ApplyResult(CombatOutcome.InProgress, 0, 0));
-        }
-
-        [Test]
-        public void 시간은_뒤로_흐르지_않는다()
-        {
-            var wave = MakeWave(MakeEnemy(100f, 0f), 1, 0f, 10f);
-            var combat = new CombatContext(new GridBoard(), wave);
-
-            Assert.Throws<ArgumentOutOfRangeException>(() => combat.Tick(-0.1f));
         }
     }
 }

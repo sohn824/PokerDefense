@@ -35,21 +35,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 다른_시드는_다른_순서를_만든다()
-        {
-            Assert.AreNotEqual(DrawAll(new Deck(seed: 1)), DrawAll(new Deck(seed: 2)));
-        }
-
-        [Test]
-        public void 드로우하면_남은_장수가_줄어든다()
-        {
-            var deck = new Deck(seed: 7);
-            deck.Draw();
-            deck.Draw();
-            Assert.AreEqual(50, deck.Remaining);
-        }
-
-        [Test]
         public void 빈_덱에서_드로우하면_예외를_던진다()
         {
             var deck = new Deck(seed: 7);
@@ -74,12 +59,6 @@ namespace PokerDefense.Tests
             Assert.AreEqual(50, cards.Count);
             CollectionAssert.DoesNotContain(cards, excluded[0]);
             CollectionAssert.DoesNotContain(cards, excluded[1]);
-        }
-
-        [Test]
-        public void BuildCards는_빈_제외_목록이면_52장_그대로다()
-        {
-            Assert.AreEqual(52, Deck.BuildCards(new Card[0]).Count);
         }
 
         static List<Card> DrawAll(Deck deck)

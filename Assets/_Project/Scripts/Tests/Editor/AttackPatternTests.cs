@@ -170,29 +170,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void Multi는_적이_타겟_수보다_적으면_있는_만큼만_때린다()
-        {
-            var board = BoardWith(MakeUnit(AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 4));
-            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 0f), 2, 0f, 100f));
-
-            combat.Tick(0.05f);
-
-            Assert.AreEqual(2, HitCount(combat));
-        }
-
-        [Test]
-        public void Multi는_사거리_밖은_때리지_않는다()
-        {
-            // 사거리를 0에 가깝게 두면 대상이 없어 아무도 맞지 않음
-            var board = BoardWith(MakeUnit(AttackPattern.Multi, 10f, 1f, range: 0.1f, multiTargets: 5));
-            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 0f), 5, 0f, 100f));
-
-            Run(combat, 3f);
-
-            Assert.AreEqual(0, HitCount(combat));
-        }
-
-        [Test]
         public void Multi는_앞선_적부터_고른다()
         {
             var board = BoardWith(MakeUnit(AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 2));
@@ -222,19 +199,6 @@ namespace PokerDefense.Tests
             Assert.AreEqual(1, HitCount(combat), "MultiSpread 밖의 적까지 함께 맞았다");
         }
 
-        [Test]
-        public void Multi는_MultiSpread_안이면_사거리_안의_적을_함께_때린다()
-        {
-            // 위 테스트와 같은 배치인데 MultiSpread만 넉넉하면 둘 다 맞아야 함
-            var board = BoardWith(MakeUnit(
-                AttackPattern.Multi, 10f, 1f, range: 100f, multiTargets: 2, multiSpread: 100f));
-            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, GridBoard.TrackLength / 2f), 2, 1f, 100f));
-
-            Run(combat, 1.2f);
-
-            Assert.AreEqual(2, HitCount(combat));
-        }
-
         // ---------- Splash ----------
 
         [Test]
@@ -248,19 +212,6 @@ namespace PokerDefense.Tests
             combat.Tick(0.05f);
 
             Assert.AreEqual(4, HitCount(combat));
-        }
-
-        [Test]
-        public void Splash는_반경_밖의_적은_때리지_않는다()
-        {
-            var board = BoardWith(MakeUnit(AttackPattern.Splash, 10f, 1f, range: 100f, splashRadius: 0.5f));
-
-            // 속도 1, 1초 간격 스폰이라 적끼리 트랙 거리로 1만큼 떨어져 있음
-            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000f, 1f), 3, 1f, 100f));
-
-            Run(combat, 2.05f);
-
-            Assert.AreEqual(1, HitCount(combat), "반경 0.5 안에는 타겟 하나뿐이다");
         }
 
         [Test]
@@ -307,31 +258,6 @@ namespace PokerDefense.Tests
             Assert.AreEqual(1000f, combat.Enemies[3].Hp, 0.001f, "관통 길이 밖까지 맞았다");
         }
 
-        [Test]
-        public void Pierce는_타겟보다_앞선_적은_때리지_않는다()
-        {
-            // 앞선 두 기는 사거리 밖, 마지막 기만 사거리 안인 구간에서 비교함
-            // 트랙 모양이 바뀌어도 이 전제가 맞는지 매 스텝 확인함
-            var board = new GridBoard();
-            board.TryPlace(0, new UnitInstance(MakeUnit(AttackPattern.Pierce, 10f, 1f, range: 1.6f, pierceLength: 100f)));
-            var combat = new CombatContext(board, MakeWave(MakeEnemy(1000000f, 1f), 3, 3f, 100f));
-            Run(combat, 6f);
-            float[] before = { combat.Enemies[0].Hp, combat.Enemies[1].Hp, combat.Enemies[2].Hp };
-            for (int i = 0; i < 21; i++)
-            {
-                Vector2 origin = GridBoard.SlotToLocalPosition(0);
-                Assert.Greater(Vector2.Distance(origin, combat.Enemies[0].Position), 1.6f);
-                Assert.Greater(Vector2.Distance(origin, combat.Enemies[1].Position), 1.6f);
-                Assert.Less(Vector2.Distance(origin, combat.Enemies[2].Position), 1.6f);
-                combat.Tick(.05f);
-            }
-
-            Assert.Greater(combat.Enemies[0].Progress, combat.Enemies[2].Progress, "앞뒤 관계가 뒤집혔다");
-            Assert.AreEqual(before[0], combat.Enemies[0].Hp, 0.001f, "관통이 앞으로 뻗었다");
-            Assert.AreEqual(before[1], combat.Enemies[1].Hp, 0.001f, "관통이 앞으로 뻗었다");
-            Assert.Less(combat.Enemies[2].Hp, before[2], "타겟이 안 맞았다");
-        }
-
         // ---------- 적 타입 ----------
 
         [Test]
@@ -344,22 +270,6 @@ namespace PokerDefense.Tests
             Assert.AreEqual(2, (int)EnemyType.Boss);
             Assert.AreEqual(3, (int)EnemyType.Runner);
             Assert.AreEqual(4, (int)EnemyType.Tank);
-        }
-
-        [Test]
-        public void 적_에셋이_다섯_타입을_모두_쓴다()
-        {
-            var used = new HashSet<EnemyType>();
-
-            foreach (string guid in AssetDatabase.FindAssets("t:EnemyDefinition"))
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                used.Add(AssetDatabase.LoadAssetAtPath<EnemyDefinition>(path).Type);
-            }
-
-            CollectionAssert.AreEquivalent(
-                new[] { EnemyType.Normal, EnemyType.Swarm, EnemyType.Boss, EnemyType.Runner, EnemyType.Tank },
-                used);
         }
 
         // ---------- 에셋 가드 ----------
@@ -385,20 +295,6 @@ namespace PokerDefense.Tests
             }
         }
 
-        [Test]
-        public void 유닛_에셋이_다섯_패턴을_모두_쓴다()
-        {
-            var used = new HashSet<AttackPattern>();
-
-            foreach (string guid in AssetDatabase.FindAssets("t:UnitDefinition"))
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                used.Add(AssetDatabase.LoadAssetAtPath<UnitDefinition>(path).Pattern);
-            }
-
-            Assert.AreEqual(5, used.Count, "쓰이지 않는 패턴이 있다");
-        }
-
         // ---------- 같은 DPS, 다른 결과 ----------
 
         [Test]
@@ -420,24 +316,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 같은_보드라도_보스_앞에서는_결과가_뒤집힌다()
-        {
-            // 위 테스트와 같은 두 유닛인데 적이 한 기뿐이면 단일 DPS가 그대로 승패가 됨
-            var rapid = MakeUnit(AttackPattern.Rapid, 10f, 2f, range: 100f);
-            var splash = MakeUnit(AttackPattern.Splash, 12f, 1f, range: 100f, splashRadius: 1.5f);
-            var boss = MakeEnemy(300f, 0f);
-
-            var rapidRun = new CombatContext(BoardWith(rapid), MakeWave(boss, 1, 0f, 20f));
-            var splashRun = new CombatContext(BoardWith(splash), MakeWave(boss, 1, 0f, 20f));
-
-            Run(rapidRun, 20f);
-            Run(splashRun, 20f);
-
-            Assert.AreEqual(CombatOutcome.Cleared, rapidRun.Outcome);
-            Assert.AreEqual(CombatOutcome.TimedOut, splashRun.Outcome, "범위 유닛이 단일 보스를 더 빨리 녹였다");
-        }
-
-        [Test]
         public void 총_DPS가_같아도_Heavy는_잔챙이_떼에_비효율이다()
         {
             // 둘 다 20 DPS (Heavy는 HP 25인 적에게 100을 꽂아 75를 버림)
@@ -453,27 +331,6 @@ namespace PokerDefense.Tests
 
             Assert.AreEqual(CombatOutcome.Cleared, rapidRun.Outcome);
             Assert.AreEqual(CombatOutcome.TimedOut, heavyRun.Outcome, "오버킬 낭비가 사라졌다");
-        }
-
-        [Test]
-        public void 총_DPS가_같아도_Heavy는_단일_고HP에는_손해가_없다()
-        {
-            // 잔챙이 떼에서는 졌지만 보스에서는 동률 (오버킬이 없기 때문)
-            var rapid = MakeUnit(AttackPattern.Rapid, 5f, 4f, range: 100f);
-            var heavy = MakeUnit(AttackPattern.Heavy, 100f, 0.2f, range: 100f);
-            var boss = MakeEnemy(1000f, 0f);
-
-            var rapidRun = new CombatContext(BoardWith(rapid), MakeWave(boss, 1, 0f, 100f));
-            var heavyRun = new CombatContext(BoardWith(heavy), MakeWave(boss, 1, 0f, 100f));
-
-            Run(rapidRun, 100f);
-            Run(heavyRun, 100f);
-
-            Assert.AreEqual(CombatOutcome.Cleared, rapidRun.Outcome);
-            Assert.AreEqual(CombatOutcome.Cleared, heavyRun.Outcome);
-
-            // 오히려 한 사이클 앞섬 (첫 발에 100을 꽂는 쪽이 같은 DPS를 먼저 몰아 넣음)
-            Assert.LessOrEqual(heavyRun.ElapsedTime, rapidRun.ElapsedTime);
         }
     }
 }

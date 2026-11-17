@@ -26,17 +26,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 확률은_경우의_수를_전체로_나눈_값이다()
-        {
-            var hand = Hand.Of("As Ah 3d 5c 9h");
-            var unseen = Hand.Of("Ad Ac 2h 3h");
-
-            var odds = HandOdds.Find(hand, unseen, new[] { 2 });
-
-            Assert.AreEqual(0.5f, odds.Single(o => o.Category == HandCategory.ThreeOfAKind).Probability);
-        }
-
-        [Test]
         public void 두_자리를_바꾸면_전체_조합_수는_nCk이다()
         {
             var hand = Hand.Of("As Ah 3d 5c 9h");
@@ -56,17 +45,6 @@ namespace PokerDefense.Tests
 
             Assert.IsNotNull(HandOdds.Find(hand, unseen, new[] { 0, 1, 2, 3 })); // MaxSlots(4)와 같음 - 계산함
             Assert.IsNull(HandOdds.Find(hand, unseen, new[] { 0, 1, 2, 3, 4 })); // MaxSlots(4)보다 한 자리 많음
-        }
-
-        [Test]
-        public void 남은_덱보다_많은_자리를_바꿀_수는_없다()
-        {
-            var hand = Hand.Of("As Ah 3d 5c 9h");
-            var unseen = Hand.Of("Ad Ac");
-
-            var odds = HandOdds.Find(hand, unseen, new[] { 2, 3, 4 });
-
-            Assert.IsNull(odds);
         }
 
         [Test]

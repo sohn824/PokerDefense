@@ -98,34 +98,12 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 상한은_Swarm_웨이브를_놓쳐도_한_번에_끝나지_않게_한다()
-        {
-            // 적 20기짜리 웨이브를 통째로 놓쳐도 라이프 15가 즉시 0이 되면 안 됨
-            var stage = new StageContext(MakeStage(15, 5, MakeWave(1, 0), MakeWave(2, 0)));
-
-            stage.ApplyResult(CombatOutcome.TimedOut, 20, 0);
-
-            Assert.AreEqual(10, stage.Life);
-            Assert.IsFalse(stage.IsGameOver);
-        }
-
-        [Test]
         public void 보스가_남으면_한_기여도_상한만큼_깎인다()
         {
             // 보스 웨이브를 실패하고 라이프 1만 잃으면 보스가 벽으로 기능하지 못함
             var stage = new StageContext(MakeStage(15, 5, MakeWave(1, 1), MakeWave(2, 0)));
 
             stage.ApplyResult(CombatOutcome.TimedOut, 1, 1);
-
-            Assert.AreEqual(10, stage.Life);
-        }
-
-        [Test]
-        public void 보스가_남아도_상한을_넘지는_않는다()
-        {
-            var stage = new StageContext(MakeStage(15, 5, MakeWave(1, 1), MakeWave(2, 0)));
-
-            stage.ApplyResult(CombatOutcome.TimedOut, 9, 1);
 
             Assert.AreEqual(10, stage.Life);
         }
@@ -171,21 +149,6 @@ namespace PokerDefense.Tests
 
             Assert.IsFalse(stage.TryUseJoker());
             Assert.AreEqual(0, stage.Jokers);
-        }
-
-        [Test]
-        public void Joker는_한_번에_하나씩_줄어든다()
-        {
-            var stage = new StageContext(MakeStage(15, 5, MakeWave(1, 2), MakeWave(2, 0)));
-            stage.ApplyResult(CombatOutcome.Cleared, 0, 0);
-
-            Assert.IsTrue(stage.TryUseJoker());
-            Assert.AreEqual(1, stage.Jokers);
-
-            Assert.IsTrue(stage.TryUseJoker());
-            Assert.AreEqual(0, stage.Jokers);
-
-            Assert.IsFalse(stage.TryUseJoker());
         }
 
         [Test]

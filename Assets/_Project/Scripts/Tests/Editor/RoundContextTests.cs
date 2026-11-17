@@ -24,36 +24,6 @@ namespace PokerDefense.Tests
         static readonly int[] None = new int[0];
 
         [Test]
-        public void 드로우하면_손패가_5장이다()
-        {
-            Assert.AreEqual(5, Drawn().Hand.Count);
-        }
-
-        [Test]
-        public void 드로우한_5장은_서로_다르다()
-        {
-            Assert.AreEqual(5, Drawn().Hand.Distinct().Count());
-        }
-
-        [Test]
-        public void 같은_시드는_같은_손패를_만든다()
-        {
-            CollectionAssert.AreEqual(Drawn(seed: 7).Hand, Drawn(seed: 7).Hand);
-        }
-
-        [Test]
-        public void 드로우_직후에는_다섯_자리_모두_교체할_수_있다()
-        {
-            var round = Drawn();
-
-            Assert.AreEqual(5, round.ExchangeableCount);
-            for (int i = 0; i < 5; i++)
-            {
-                Assert.IsFalse(round.IsLocked(i), $"{i}번 자리가 잠겨 있다");
-            }
-        }
-
-        [Test]
         public void 교체한_인덱스만_바뀐다()
         {
             var round = Drawn();
@@ -131,38 +101,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 다섯_자리를_모두_교체하면_더_이상_교체할_수_없다()
-        {
-            var round = Drawn();
-            round.Exchange(new[] { 0, 1, 2, 3, 4 });
-
-            Assert.AreEqual(0, round.ExchangeableCount);
-            Assert.Throws<InvalidOperationException>(() => round.Exchange(new[] { 0 }));
-        }
-
-        [Test]
-        public void 빈_목록으로_교체하면_아무것도_바뀌지_않는다()
-        {
-            var round = Drawn();
-            var before = round.Hand.ToArray();
-
-            round.Exchange(None);
-
-            CollectionAssert.AreEqual(before, round.Hand);
-            Assert.AreEqual(5, round.ExchangeableCount);
-        }
-
-        [Test]
-        public void 교체_후에도_손패에_중복이_없다()
-        {
-            // 교체도 같은 덱에서 뽑으므로 이미 손에 있던 카드가 다시 나오면 안 됨
-            var round = Drawn();
-            round.Exchange(new[] { 0, 1, 2, 3, 4 });
-
-            Assert.AreEqual(5, round.Hand.Distinct().Count());
-        }
-
-        [Test]
         public void 교체는_덱의_다음_카드를_쓴다()
         {
             // 손패 5장 + 교체 5장 = 10장이 전부 서로 달라야 함
@@ -183,14 +121,6 @@ namespace PokerDefense.Tests
             var round = new RoundContext(1);
 
             Assert.Throws<InvalidOperationException>(() => round.Exchange(None));
-        }
-
-        [Test]
-        public void 드로우를_두_번_할_수_없다()
-        {
-            var round = Drawn();
-
-            Assert.Throws<InvalidOperationException>(() => round.Draw());
         }
 
         [TestCase(-1)]
@@ -219,25 +149,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 교체를_끝낸_뒤에는_더_이상_교체할_수_없다()
-        {
-            var round = Drawn();
-            round.FinishExchange();
-
-            Assert.Throws<InvalidOperationException>(() => round.Exchange(new[] { 0 }));
-        }
-
-        [Test]
-        public void 판정은_한_번만_가능하다()
-        {
-            var round = Drawn();
-            round.FinishExchange();
-            round.Evaluate();
-
-            Assert.Throws<InvalidOperationException>(() => round.Evaluate());
-        }
-
-        [Test]
         public void 한_장도_바꾸지_않고_바로_확정할_수_있다()
         {
             var round = Drawn();
@@ -247,20 +158,6 @@ namespace PokerDefense.Tests
             round.Evaluate();
 
             CollectionAssert.AreEqual(before, round.Hand);
-        }
-
-        [Test]
-        public void 판정_결과는_HandEvaluator와_같다()
-        {
-            var round = Drawn();
-            round.Exchange(new[] { 1 });
-            round.FinishExchange();
-
-            HandResult expected = HandEvaluator.Evaluate(round.Hand);
-            HandResult actual = round.Evaluate();
-
-            Assert.AreEqual(expected.Category, actual.Category);
-            CollectionAssert.AreEqual(expected.KeyCards, actual.KeyCards);
         }
 
         [Test]

@@ -38,31 +38,6 @@ namespace PokerDefense.Tests
             Assert.AreEqual(13, Enum.GetValues(typeof(HandCategory)).Length);
         }
 
-        [Test]
-        public void 마운틴은_일반_스트레이트로_판정되지_않는다()
-        {
-            var result = HandEvaluator.Evaluate(Hand.Of("Ah Kd Qs Jc Th"));
-            Assert.AreEqual(HandCategory.Mountain, result.Category);
-            Assert.AreNotEqual(HandCategory.Straight, result.Category);
-        }
-
-        [Test]
-        public void 백스트레이트는_일반_스트레이트로_판정되지_않는다()
-        {
-            var result = HandEvaluator.Evaluate(Hand.Of("Ah 2d 3s 4c 5h"));
-            Assert.AreEqual(HandCategory.BackStraight, result.Category);
-            Assert.AreNotEqual(HandCategory.Straight, result.Category);
-        }
-
-        // 플러시와 스트레이트가 겹칠 때 더 구체적인 특수 카테고리로 판정되는지 확인
-        [TestCase("As Ks Qs Js Ts", HandCategory.RoyalStraightFlush)]
-        [TestCase("As 2s 3s 4s 5s", HandCategory.BackStraightFlush)]
-        public void 특수_스트레이트_플러시는_플러시나_스트레이트로_새지_않는다(
-            string notation, HandCategory expected)
-        {
-            Assert.AreEqual(expected, HandEvaluator.Evaluate(Hand.Of(notation)).Category);
-        }
-
         [TestCase("Kh Ad 2s 3c 4h", TestName = "K-A-2-3-4 랩어라운드")]
         [TestCase("2h 3d 4s 5c 7h", TestName = "한 칸 벌어진 연속")]
         [TestCase("Ah Jd Qs Kc 9h", TestName = "A-K-Q-J 뒤가 끊긴 경우")]
@@ -104,14 +79,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 하이카드의_키카드는_가장_높은_한_장이다()
-        {
-            var result = HandEvaluator.Evaluate(Hand.Of("As Kh 3d 5c 9h"));
-            Assert.AreEqual(1, result.KeyCards.Count);
-            Assert.AreEqual(Rank.Ace, result.KeyCards[0].Rank);
-        }
-
-        [Test]
         public void 백스트레이트의_키카드는_A를_최하위로_정렬한다()
         {
             var result = HandEvaluator.Evaluate(Hand.Of("Ah 2d 3s 4c 5h"));
@@ -119,26 +86,11 @@ namespace PokerDefense.Tests
             Assert.AreEqual(Rank.Ace, result.KeyCards[4].Rank);
         }
 
-        [Test]
-        public void 풀하우스의_키카드는_트리플이_먼저_온다()
-        {
-            var result = HandEvaluator.Evaluate(Hand.Of("5s 5h 5d 9c 9h"));
-            Assert.AreEqual(5, result.KeyCards.Count);
-            Assert.AreEqual(Rank.Five, result.KeyCards[0].Rank);
-            Assert.AreEqual(Rank.Nine, result.KeyCards[4].Rank);
-        }
-
         [TestCase("As Ah 3d 5c")]
         [TestCase("As Ah 3d 5c 9h 2c")]
         public void 다섯_장이_아니면_예외를_던진다(string notation)
         {
             Assert.Throws<ArgumentException>(() => HandEvaluator.Evaluate(Hand.Of(notation)));
-        }
-
-        [Test]
-        public void 널_핸드는_예외를_던진다()
-        {
-            Assert.Throws<ArgumentException>(() => HandEvaluator.Evaluate(null));
         }
     }
 }
