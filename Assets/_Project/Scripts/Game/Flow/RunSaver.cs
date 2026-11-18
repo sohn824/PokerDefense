@@ -30,6 +30,9 @@ namespace PokerDefense.Game
         [SerializeField] StageController stage;
         [SerializeField] HandUnitTable unitTable;
 
+        // 저장 파일 폴더 (타이틀의 이어하기 버튼도 이 폴더를 봄)
+        public static string SaveDirectory => Path.Combine(Application.persistentDataPath, "RunSave");
+
         RunSaveStore store;
         // 마지막 저장 뒤 Run 상태가 바뀌었는지
         bool dirty;
@@ -38,7 +41,7 @@ namespace PokerDefense.Game
 
         void Awake()
         {
-            store = new RunSaveStore(Path.Combine(Application.persistentDataPath, "RunSave"));
+            store = new RunSaveStore(SaveDirectory);
 
             round.HandChanged += OnHandChanged;
             round.PhaseChanged += OnPhaseChanged;

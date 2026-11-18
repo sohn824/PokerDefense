@@ -10,7 +10,8 @@ namespace PokerDefense.UI
      * MenuScreen
      *
      * 타이틀과 게임 씬에서 함께 쓰는 메뉴를 관리하는 클래스
-     * 메뉴 화면 - 일시정지, 오디오 옵션, 도움말, 포기 확인
+     * 메뉴 화면 - 일시정지, 오디오 옵션, 도움말, 포기 확인, 새 게임 확인
+     * 타이틀 - 이어하기 저장이 있으면 이어하기 버튼을 보이고, 새 게임은 저장이 사라진다고 확인받은 뒤 시작함
      */
     public sealed class MenuScreen : MonoBehaviour
     {
@@ -26,7 +27,11 @@ namespace PokerDefense.UI
         [SerializeField] GameObject optionsPage;
         [SerializeField] GameObject helpPage;
         [SerializeField] GameObject abandonPage;
+        [SerializeField] GameObject newGamePage;
         [SerializeField] Button startButton;
+        [SerializeField] Button continueButton;
+        [SerializeField] Button newGameConfirmButton;
+        [SerializeField] Button newGameCancelButton;
         [SerializeField] Button menuButton;
         [SerializeField] Button resumeButton;
         [SerializeField] Button optionsButton;
@@ -48,7 +53,24 @@ namespace PokerDefense.UI
             overlay.SetActive(false);
             if (startButton != null)
             {
-                startButton.onClick.AddListener(() => GameSession.Load(GameSession.GameScene));
+                startButton.onClick.AddListener(StartNewGame);
+            }
+            if (continueButton != null)
+            {
+                bool hasSave = new RunSaveStore(RunSaver.SaveDirectory).Exists;
+                continueButton.gameObject.SetActive(hasSave);
+                continueButton.onClick.AddListener(GameSession.LoadContinue);
+                // 이어하기와 나란히 있을 때는 무엇이 다른지 드러나게 "새 게임"으로 부름
+                startButton.GetComponentInChildren<TMP_Text>().text = hasSave ? "새 게임" : "게임 시작";
+            }
+            if (newGameConfirmButton != null)
+            {
+                newGameConfirmButton.onClick.AddListener(() =>
+                {
+                    new RunSaveStore(RunSaver.SaveDirectory).Delete();
+                    GameSession.Load(GameSession.GameScene);
+                });
+                newGameCancelButton.onClick.AddListener(Close);
             }
             if (menuButton != null)
             {
@@ -125,6 +147,18 @@ namespace PokerDefense.UI
             Show(pausePage);
         }
 
+        // 이어할 저장이 있으면 사라진다고 확인받고, 없으면 바로 새 게임 시작
+        void StartNewGame()
+        {
+            if (newGamePage != null && new RunSaveStore(RunSaver.SaveDirectory).Exists)
+            {
+                Show(newGamePage);
+                return;
+            }
+
+            GameSession.Load(GameSession.GameScene);
+        }
+
         // Run이 끝났으면 바로 타이틀로, 아니면 포기 확인 페이지 띄우기
         public void RequestTitle()
         {
@@ -169,6 +203,10 @@ namespace PokerDefense.UI
             optionsPage.SetActive(page == optionsPage);
             helpPage.SetActive(page == helpPage);
             abandonPage.SetActive(page == abandonPage);
+            if (newGamePage != null)
+            {
+                newGamePage.SetActive(page == newGamePage);
+            }
             backButton.gameObject.SetActive(page == optionsPage || page == helpPage);
             if (home != null)
             {

@@ -489,6 +489,10 @@ namespace PokerDefense.Editor
             Set(menu, "cancelButton", Button("Cancel", abandon, "돌아가기", -270f, UiStyle.ButtonSecondary));
             Button back = Button("Back", overlay, "돌아가기", -700f, UiStyle.ButtonSecondary);
             Set(menu, "backButton", back);
+            if (title)
+            {
+                InstallContinueMenu(menu, home, overlay);
+            }
             overlay.gameObject.SetActive(false);
 
             if (title == false)
