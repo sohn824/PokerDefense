@@ -204,6 +204,10 @@ namespace PokerDefense.Game
             HandChanged?.Invoke(round.Hand);
         }
 
+        // 이어하기로 복원한 라운드를 화면에 알리는 중인지
+        // 이때 오는 이벤트는 플레이어의 새 행동이 아니므로 RunJournal이 기록하지 않음
+        public bool IsRestoring { get; private set; }
+
         // 이어하기 - 저장한 시드와 행동 기록으로 라운드를 재현함 (호출부는 RunSaver)
         // 족보를 확정한 라운드여도 Evaluated는 보내지 않음 (배치 대기 유닛과 최고 족보는 따로 복원하므로)
         public void Restore(int seed, IReadOnlyList<RoundAction> actions)
@@ -214,9 +218,17 @@ namespace PokerDefense.Game
             LastSeed = seed;
             round = restored;
 
-            PhaseChanged?.Invoke(round.Phase);
-            HandChanged?.Invoke(round.Hand);
-            AssistanceChanged?.Invoke();
+            IsRestoring = true;
+            try
+            {
+                PhaseChanged?.Invoke(round.Phase);
+                HandChanged?.Invoke(round.Hand);
+                AssistanceChanged?.Invoke();
+            }
+            finally
+            {
+                IsRestoring = false;
+            }
         }
 
         // 고른 자리 일반 교체 (교체한 자리는 잠김, 일시정지 중이면 무시)

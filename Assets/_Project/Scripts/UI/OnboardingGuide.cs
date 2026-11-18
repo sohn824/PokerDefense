@@ -112,7 +112,11 @@ namespace PokerDefense.UI
                 return;
             }
             showing = false;
-            cardHintRow.SetActive(false);
+            // 씬이 내려가며 OnDisable로 불릴 때는 안내창이 먼저 파괴됐을 수 있음
+            if (cardHintRow != null)
+            {
+                cardHintRow.SetActive(false);
+            }
             for (int i = 0; i < inputGroups.Length; i++)
             {
                 if (inputGroups[i] != null)

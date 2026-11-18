@@ -27,7 +27,7 @@ namespace PokerDefense.Game
             // hand:족보, assist:reveal, assist:choose
             // combat:start, combat:전투 결과(Cleared·TimedOut)
             // board:배치 결과(PlacementResult), board:보드 조작(BoardAction)
-            // round:start, run:finished
+            // round:start, run:finished, run:resumed(이어하기로 시작한 기록의 첫 줄)
             public string action;
 
             // 라운드 번호 (GameFlowController.RoundNumber)
@@ -84,6 +84,8 @@ namespace PokerDefense.Game
 
         // 승급권 사용 직후 Merged 인자로 오는 Placed를 건너뛸지 (board:JokerUsed와 중복 기록 방지)
         bool skipJokerMerge;
+        // run:resumed를 이미 남겼는지
+        bool resumeRecorded;
 
         void Awake()
         {
@@ -125,7 +127,16 @@ namespace PokerDefense.Game
 
         void OnEvaluated(HandResult result) => Record("hand:" + result.Category);
         // 후보 공개 직후에는 IsChoosingCandidate가 true라 reveal, 후보를 고른 뒤에는 false라 choose
-        void OnAssistance() => Record(round.IsChoosingCandidate ? "assist:reveal" : "assist:choose");
+        // 이어하기로 라운드를 복원할 때 오는 알림은 새 행동이 아니므로 남기지 않음
+        void OnAssistance()
+        {
+            if (round.IsRestoring)
+            {
+                return;
+            }
+
+            Record(round.IsChoosingCandidate ? "assist:reveal" : "assist:choose");
+        }
         void OnCombat(CombatContext context) => Record("combat:start");
         void OnFinished(CombatOutcome outcome, int unresolved) => Record("combat:" + outcome);
         void OnPlaced(int index, PlacementResult result)
@@ -144,6 +155,14 @@ namespace PokerDefense.Game
         }
         void OnFlow()
         {
+            // 이어하기로 복원할 때 오는 첫 FlowChanged는 새 라운드가 아니라 이어서 시작한 것임
+            if (flow.IsResumed && resumeRecorded == false)
+            {
+                resumeRecorded = true;
+                Record("run:resumed");
+                return;
+            }
+
             Record(flow.IsFinished ? "run:finished" : "round:start");
             if (flow.IsFinished)
             {

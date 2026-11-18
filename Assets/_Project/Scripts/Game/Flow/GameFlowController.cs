@@ -79,6 +79,9 @@ namespace PokerDefense.Game
         // 루프가 멈춘 시점까지 걸린 시간 (최종 결과 화면이 사용)
         public float ElapsedSeconds { get; private set; }
 
+        // 이어하기로 저장한 Run을 되돌려 시작했는지 (RunJournal이 기록 구분에 씀)
+        public bool IsResumed { get; private set; }
+
         // 지금까지 걸린 시간 (Run이 끝났으면 ElapsedSeconds, 이어하기 저장용)
         public float CurrentElapsedSeconds => IsFinished ? ElapsedSeconds : Time.time - startedAt;
 
@@ -128,6 +131,7 @@ namespace PokerDefense.Game
             }
 
             RoundNumber = roundNumber;
+            IsResumed = true;
             startedAt = Time.time - Mathf.Max(0f, elapsedSeconds);
 #if UNITY_EDITOR
             UsedDevSkip = usedDevSkip;
