@@ -44,6 +44,20 @@ namespace PokerDefense.Game
             return true;
         }
 
+        // 이어하기 - 라이프·승급권·웨이브와 결과 기록을 되돌림 (호출부는 RunSaver)
+        // 값이 범위 밖이면 아무것도 바꾸지 않고 예외
+        public void Restore(int life, int jokers, int waveIndex, int summons, HandCategory? bestHand, UnitInstance bestUnit)
+        {
+            if (summons < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(summons), $"소환 수는 0 이상이어야 함: {summons}");
+            }
+
+            Stage.Restore(life, jokers, waveIndex);
+            Stats.Restore(summons, bestHand, bestUnit);
+            Changed?.Invoke();
+        }
+
         public void ApplyCombatResult(CombatOutcome outcome, int unresolvedEnemies, int unresolvedBosses)
         {
             Stage.ApplyResult(outcome, unresolvedEnemies, unresolvedBosses);

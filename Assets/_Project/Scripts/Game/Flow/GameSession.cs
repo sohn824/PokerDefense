@@ -18,6 +18,9 @@ namespace PokerDefense.Game
         public static bool IsLoading { get; private set; }
         public static float Speed { get; private set; } = 1f;
 
+        // 타이틀에서 이어하기를 골랐는지 (Game 씬의 RunSaver가 한 번 읽고 지움)
+        static bool continueRequested;
+
         // 플레이를 시작할 때마다 static 멤버를 초기값으로 되돌림 (도메인 리로드를 꺼도 이전 플레이 값이 남지 않게)
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void Reset()
@@ -25,7 +28,23 @@ namespace PokerDefense.Game
             SceneManager.sceneLoaded -= OnLoaded;
             IsLoading = false;
             Speed = 1f;
+            continueRequested = false;
             SetPaused(false);
+        }
+
+        // 저장한 Run을 이어서 하도록 표시하고 Game 씬을 엶
+        public static void LoadContinue()
+        {
+            continueRequested = true;
+            Load(GameScene);
+        }
+
+        // 이어하기 요청을 읽고 지움 (한 번만 true)
+        public static bool ConsumeContinueRequest()
+        {
+            bool requested = continueRequested;
+            continueRequested = false;
+            return requested;
         }
 
         public static void SetPaused(bool paused)

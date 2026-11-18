@@ -58,6 +58,29 @@ namespace PokerDefense.Game
             CombatStarted?.Invoke(LatestCombatContext);
         }
 
+        // 이어하기 - 전투 중에 꺼진 웨이브를 화면 없이 끝까지 계산해 결과만 반영함 (호출부는 RunSaver)
+        // 전투에는 무작위가 없으므로 저장한 보드와 웨이브로 돌린 결과를 그대로 씀
+        // 지고 있을 때 꺼서 같은 웨이브를 다시 하는 것을 막기 위함
+        public void ResolveImmediately()
+        {
+            if (CanStart == false)
+            {
+                throw new InvalidOperationException("지금은 전투를 계산할 수 없음");
+            }
+
+            LatestCombatContext = new CombatContext(placement.Board, Stage.CurrentWave);
+
+            while (LatestCombatContext.Outcome == CombatOutcome.InProgress)
+            {
+                LatestCombatContext.Tick(ResolveStep);
+            }
+
+            Finish();
+        }
+
+        // 즉시 계산할 때 Tick 한 번에 넘기는 시간 (60fps 한 프레임)
+        const float ResolveStep = 1f / 60f;
+
         // 전투 중이고 일시정지가 아니면 Tick을 진행하고, 결과가 나면 Stage에 반영한 뒤 CombatFinished로 알림
         void Update()
         {
@@ -73,6 +96,11 @@ namespace PokerDefense.Game
                 return;
             }
 
+            Finish();
+        }
+
+        void Finish()
+        {
             int unresolved = LatestCombatContext.UnresolvedEnemies;
             stageController.ApplyCombatResult(LatestCombatContext.Outcome, unresolved, LatestCombatContext.UnresolvedBosses);
             CombatFinished?.Invoke(LatestCombatContext.Outcome, unresolved);

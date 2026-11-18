@@ -36537,6 +36537,7 @@ GameObject:
   - component: {fileID: 1911605825}
   - component: {fileID: 1911605824}
   - component: {fileID: 1911605826}
+  - component: {fileID: 1911605827}
   m_Layer: 0
   m_Name: GameFlowController
   m_TagString: Untagged
@@ -36559,6 +36560,7 @@ MonoBehaviour:
   round: {fileID: 1529800638}
   combat: {fileID: 986056600}
   stage: {fileID: 2017484794}
+  saver: {fileID: 1911605827}
 --- !u!4 &1911605825
 Transform:
   m_ObjectHideFlags: 0
@@ -36592,6 +36594,24 @@ MonoBehaviour:
   host: 127.0.0.1
   port: 7777
   timeoutSeconds: 3
+--- !u!114 &1911605827
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1911605823}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 733baa198b9e2fa4d85f7af4c0b8ad6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PokerDefense.Game.RunSaver
+  flow: {fileID: 1911605824}
+  round: {fileID: 1529800638}
+  placement: {fileID: 1860071211}
+  combat: {fileID: 986056600}
+  stage: {fileID: 2017484794}
+  unitTable: {fileID: 11400000, guid: e856431bcb1774d4e8c9b36d40dccbae, type: 2}
 --- !u!1 &1914004089
 GameObject:
   m_ObjectHideFlags: 0

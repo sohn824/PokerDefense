@@ -36,6 +36,20 @@ namespace PokerDefense.Game
 
         // category에 연결된 유닛 반환 (표를 위에서부터 훑어 처음 맞는 줄을 씀)
         // unit이 비어 있는 줄은 건너뛰고, 맞는 줄이 하나도 없으면 예외
+        // id가 같은 유닛 (이어하기 저장에서 유닛을 찾을 때 씀, 없으면 null)
+        public UnitDefinition FindById(string id)
+        {
+            foreach (Entry entry in entries)
+            {
+                if (entry.unit != null && entry.unit.Id == id)
+                {
+                    return entry.unit;
+                }
+            }
+
+            return null;
+        }
+
         public UnitDefinition GetDefinition(HandCategory category)
         {
             for (int i = 0; i < entries.Length; i++)

@@ -47,6 +47,12 @@ namespace PokerDefense.Game
         // 이번 라운드 덱 셔플 시드 (RunJournal 기록용)
         public int LastSeed { get; private set; }
 
+        // 이번 라운드에서 성공한 행동 기록 (이어하기 저장용, 라운드 시작 전에는 빈 목록)
+        public IReadOnlyList<RoundAction> Actions => round == null ? Array.Empty<RoundAction>() : round.Actions;
+
+        // 시드와 행동 기록만으로 이번 라운드를 재현할 수 있는지 (라운드 시작 전이거나 ForceHand를 쓰면 false)
+        public bool IsReplayable => round != null && round.IsReplayable;
+
         // 후보를 공개하고 아직 고르지 않은 상태인지
         public bool IsChoosingCandidate => round != null && round.IsChoosingCandidate;
         // 이번 손패의 선택 교체 기회를 썼는지 (후보를 공개하는 순간 쓴 것으로 취급)
@@ -196,6 +202,21 @@ namespace PokerDefense.Game
 
             PhaseChanged?.Invoke(round.Phase);
             HandChanged?.Invoke(round.Hand);
+        }
+
+        // 이어하기 - 저장한 시드와 행동 기록으로 라운드를 재현함 (호출부는 RunSaver)
+        // 족보를 확정한 라운드여도 Evaluated는 보내지 않음 (배치 대기 유닛과 최고 족보는 따로 복원하므로)
+        public void Restore(int seed, IReadOnlyList<RoundAction> actions)
+        {
+            RoundContext restored = RoundContext.Replay(seed, actions);
+            InvalidateOdds();
+            IsAssistOddsActive = false;
+            LastSeed = seed;
+            round = restored;
+
+            PhaseChanged?.Invoke(round.Phase);
+            HandChanged?.Invoke(round.Hand);
+            AssistanceChanged?.Invoke();
         }
 
         // 고른 자리 일반 교체 (교체한 자리는 잠김, 일시정지 중이면 무시)

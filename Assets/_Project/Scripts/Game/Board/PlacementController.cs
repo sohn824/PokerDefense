@@ -85,6 +85,36 @@ namespace PokerDefense.Game
             PendingChanged?.Invoke(Pending);
         }
 
+        // 이어하기 - 빈 보드에 저장한 유닛들을 놓고 배치 대기 유닛을 되돌림 (호출부는 RunSaver)
+        // slots - 칸 번호 순서의 유닛 (빈 칸은 null), 보드가 비어 있지 않으면 예외
+        public void Restore(UnitInstance[] slots, UnitInstance pending)
+        {
+            if (slots == null || slots.Length != GridBoard.SlotCount)
+            {
+                throw new ArgumentException($"보드 칸 수는 {GridBoard.SlotCount}이어야 함", nameof(slots));
+            }
+
+            for (int i = 0; i < GridBoard.SlotCount; i++)
+            {
+                if (board[i] != null)
+                {
+                    throw new InvalidOperationException("빈 보드에만 복원할 수 있음");
+                }
+            }
+
+            for (int i = 0; i < GridBoard.SlotCount; i++)
+            {
+                if (slots[i] != null)
+                {
+                    board.TryPlace(i, slots[i]);
+                }
+            }
+
+            Pending = pending;
+            BoardChanged?.Invoke();
+            PendingChanged?.Invoke(Pending);
+        }
+
         // index 유닛에 승급권(Joker)을 쓸 수 있는지
         public bool CanUseJokerOn(int index)
             => stage.Stage.Jokers > 0 && board[index] != null && board[index].IsMaxStar == false;

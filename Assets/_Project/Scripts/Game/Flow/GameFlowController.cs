@@ -56,6 +56,8 @@ namespace PokerDefense.Game
         [SerializeField] RoundController round;
         [SerializeField] CombatController combat;
         [SerializeField] StageController stage;
+        // 이어하기 저장·복원 (없으면 이어하기 없이 늘 새 Run으로 시작)
+        [SerializeField] RunSaver saver;
 
         // 라운드가 새로 열리거나 루프가 멈췄을 때 발생하는 이벤트
         public event Action FlowChanged;
@@ -76,6 +78,9 @@ namespace PokerDefense.Game
 
         // 루프가 멈춘 시점까지 걸린 시간 (최종 결과 화면이 사용)
         public float ElapsedSeconds { get; private set; }
+
+        // 지금까지 걸린 시간 (Run이 끝났으면 ElapsedSeconds, 이어하기 저장용)
+        public float CurrentElapsedSeconds => IsFinished ? ElapsedSeconds : Time.time - startedAt;
 
         float startedAt;
 
@@ -103,9 +108,37 @@ namespace PokerDefense.Game
         {
             startedAt = Time.time;
 
+            // 이어하기를 골랐고 저장을 복원했으면 새 라운드를 열지 않음
+            if (saver != null && saver.TryResume())
+            {
+                return;
+            }
+
             // 첫 라운드도 GameFlowController가 제어함
             // (라운드 루프의 책임을 GameFlowController 한 곳에 모으기 위함)
             StartNextRound();
+        }
+
+        // 이어하기 - 라운드 번호와 걸린 시간을 되돌림 (호출부는 RunSaver)
+        public void RestoreProgress(int roundNumber, float elapsedSeconds, bool usedDevSkip)
+        {
+            if (roundNumber < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(roundNumber), $"라운드 번호는 1 이상이어야 함: {roundNumber}");
+            }
+
+            RoundNumber = roundNumber;
+            startedAt = Time.time - Mathf.Max(0f, elapsedSeconds);
+#if UNITY_EDITOR
+            UsedDevSkip = usedDevSkip;
+#endif
+            FlowChanged?.Invoke();
+        }
+
+        // 이어하기 - 라운드 결과 화면을 띄운 채 저장된 Run을 다음 손패부터 이어 감 (결과는 이미 반영됨)
+        public void ContinueAfterRestoredBreak()
+        {
+            AdvanceRound();
         }
 
         void OnCombatFinished(CombatOutcome outcome, int unresolved)

@@ -31,6 +31,8 @@ namespace PokerDefense.Game
         public float elapsedSeconds;
         public bool usedDevSkip;
         public bool inCombat;
+        // 라운드 결과 화면을 띄운 채 저장했는지 (전투 결과는 이미 반영됨, 이어하면 다음 손패부터 시작)
+        public bool waitingForBreak;
 
         // 라운드
         public int roundSeed;
