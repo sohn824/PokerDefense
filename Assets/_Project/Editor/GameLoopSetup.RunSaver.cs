@@ -92,18 +92,20 @@ namespace PokerDefense.Editor
         }
 
         // 타이틀 홈에 이어하기 버튼을, 메뉴 오버레이에 새 게임 확인 창을 만들어 MenuScreen에 연결
-        // 이어하기 버튼이 들어갈 자리를 만들려고 제목·부제목을 위로 올림
+        // 버튼 순서 - 게임 시작 -> 이어하기 -> 옵션 -> 도움말 -> 게임 종료
+        // 버튼이 하나 늘어 제목·부제목과 게임 시작 버튼을 위로 올림 (버튼은 모두 150 간격)
         static void InstallContinueMenu(MenuScreen menu, RectTransform home, RectTransform overlay)
         {
-            ((RectTransform)home.Find("Title")).anchoredPosition = new Vector2(0f, 450f);
-            ((RectTransform)home.Find("Subtitle")).anchoredPosition = new Vector2(0f, 330f);
+            ((RectTransform)home.Find("Title")).anchoredPosition = new Vector2(0f, 470f);
+            ((RectTransform)home.Find("Subtitle")).anchoredPosition = new Vector2(0f, 350f);
+            ((RectTransform)home.Find("Start")).anchoredPosition = new Vector2(0f, 220f);
 
             Transform oldContinue = home.Find("Continue");
             if (oldContinue != null)
             {
                 UnityEngine.Object.DestroyImmediate(oldContinue.gameObject);
             }
-            Set(menu, "continueButton", Button("Continue", home, "이어하기", 190f, UiStyle.ButtonPrimary));
+            Set(menu, "continueButton", Button("Continue", home, "이어하기", 70f, UiStyle.ButtonPrimary));
 
             Transform oldPage = overlay.Find("NewGame");
             if (oldPage != null)

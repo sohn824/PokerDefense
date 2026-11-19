@@ -11,7 +11,7 @@ namespace PokerDefense.UI
      *
      * 타이틀과 게임 씬에서 함께 쓰는 메뉴를 관리하는 클래스
      * 메뉴 화면 - 일시정지, 오디오 옵션, 도움말, 타이틀로 갈 때의 선택(저장하고 나가기·포기), 새 게임 확인
-     * 타이틀 - 이어하기 저장이 있으면 이어하기 버튼을 보이고, 새 게임은 저장이 사라진다고 확인받은 뒤 시작함
+     * 타이틀 - 이어하기 저장이 없으면 이어하기 버튼을 비활성화하고, 저장이 있으면 새 게임은 저장이 사라진다고 확인받은 뒤 시작함
      */
     public sealed class MenuScreen : MonoBehaviour
     {
@@ -61,7 +61,8 @@ namespace PokerDefense.UI
             if (continueButton != null)
             {
                 bool hasSave = new RunSaveStore(RunSaver.SaveDirectory).Exists;
-                continueButton.gameObject.SetActive(hasSave);
+                // 버튼 배치가 늘 같도록 숨기지 않고, 저장이 없으면 회색으로 눌리지 않게만 함
+                continueButton.interactable = hasSave;
                 continueButton.onClick.AddListener(GameSession.LoadContinue);
                 // 이어하기와 나란히 있을 때는 무엇이 다른지 드러나게 "새 게임"으로 부름
                 startButton.GetComponentInChildren<TMP_Text>().text = hasSave ? "새 게임" : "게임 시작";
