@@ -245,12 +245,15 @@ namespace PokerDefense.UI
         {
             List<int> indices = SelectedIndices();
 
-            controller.ExchangeCards(indices);
-
-            if (indices.Count > 0)
+            // 고른 카드가 없으면 아무것도 하지 않음
+            // 같은 프레임에 두 번 눌리면 두 번째는 선택이 이미 풀려 빈 교체가 기록되기 때문
+            if (indices.Count == 0)
             {
-                AudioManager.Instance?.Play(AudioManager.Sfx.Exchange);
+                return;
             }
+
+            controller.ExchangeCards(indices);
+            AudioManager.Instance?.Play(AudioManager.Sfx.Exchange);
         }
 
         // 카드 상태, 조작 가능 여부, 버튼 상태, 안내 문구를 현재 상태에 맞춤

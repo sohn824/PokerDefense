@@ -245,10 +245,11 @@ namespace PokerDefense.Game
         }
 
         // 교체를 끝내고 족보 확정 (FinishExchange·Evaluate를 한 번에 실행 -> Place 단계)
-        // 일시정지 중이거나 선택 교체 후보를 고르는 중이면 무시
+        // 일시정지 중이거나, 선택 교체 후보를 고르는 중이거나, 이미 확정해 Exchange 단계가 아니면 무시
+        // 같은 프레임에 확정 버튼이 두 번 눌리면 두 번째는 이미 Place 단계라 무시됨
         public void ConfirmHand()
         {
-            if (GameSession.IsPaused || IsChoosingCandidate)
+            if (GameSession.IsPaused || IsChoosingCandidate || Phase != RoundPhase.Exchange)
             {
                 return;
             }

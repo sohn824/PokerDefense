@@ -174,7 +174,8 @@ namespace PokerDefense.UI
 
         void Choose()
         {
-            if (selected < 0 || GameSession.IsPaused)
+            // 같은 프레임에 두 번 눌리면 두 번째는 이미 선택이 끝난 뒤라 무시함
+            if (selected < 0 || GameSession.IsPaused || round.IsChoosingCandidate == false)
             {
                 return;
             }
