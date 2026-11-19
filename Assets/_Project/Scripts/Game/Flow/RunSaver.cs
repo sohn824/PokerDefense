@@ -16,6 +16,7 @@ namespace PokerDefense.Game
      * 앱이 백그라운드로 가거나 꺼질 때는 바로 씀
      * 저장하지 않는 때 - 라운드 시작 전, ForceHand(치트)를 쓴 라운드, 자동 플레이 시뮬레이션
      * 지우는 때 - Run이 끝났을 때(게임 오버·마지막 웨이브 클리어), 앱 종료가 아닌데 Game 씬을 벗어날 때(메뉴의 포기)
+     * 메뉴의 "저장하고 타이틀로"(SaveAndLeave)로 나갈 때는 지우지 않음
      * 에디터에서 Play를 멈추는 것은 앱 종료로 보므로 지우지 않음
      *
      * 복원 순서 - 값을 모두 만들고 검사한 뒤 스테이지 -> 보드·배치 대기 -> 라운드 -> 진행(라운드 번호·시간)
@@ -38,6 +39,8 @@ namespace PokerDefense.Game
         bool dirty;
         // 앱이 종료되는 중인지 (종료 중에 Game 씬이 사라지는 것은 포기가 아님)
         bool quitting;
+        // 메뉴의 "저장하고 타이틀로"로 나가는 중인지 (이때도 저장을 지우지 않음)
+        bool leavingWithSave;
 
         void Awake()
         {
@@ -69,10 +72,18 @@ namespace PokerDefense.Game
             flow.FlowChanged -= MarkDirty;
 
             // 메뉴에서 포기해 타이틀로 가면 이 Run은 다시 이을 수 없음
-            if (quitting == false)
+            if (quitting == false && leavingWithSave == false)
             {
                 store.Delete();
             }
+        }
+
+        // 메뉴의 "저장하고 타이틀로" - 지금 상태를 바로 저장한 뒤 타이틀로 감 (타이틀에서 이어하기로 이어 감)
+        public void SaveAndLeave()
+        {
+            leavingWithSave = true;
+            Write();
+            GameSession.Load(GameSession.TitleScene);
         }
 
         void MarkDirty() => dirty = true;

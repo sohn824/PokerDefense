@@ -487,6 +487,7 @@ namespace PokerDefense.Editor
             Label("Body", abandon, "현재 런은 저장되지 않습니다.\n타이틀로 돌아가면 처음부터 시작합니다.", new Vector2(0f, 80f), new Vector2(780f, 160f), UiStyle.BodySize);
             Set(menu, "abandonButton", Button("AbandonConfirm", abandon, "포기하고 타이틀로", -110f, UiStyle.ButtonDanger));
             Set(menu, "cancelButton", Button("Cancel", abandon, "돌아가기", -270f, UiStyle.ButtonSecondary));
+            InstallSaveExitChoice(menu, abandon, UnityEngine.Object.FindAnyObjectByType<RunSaver>());
             Button back = Button("Back", overlay, "돌아가기", -700f, UiStyle.ButtonSecondary);
             Set(menu, "backButton", back);
             if (title)

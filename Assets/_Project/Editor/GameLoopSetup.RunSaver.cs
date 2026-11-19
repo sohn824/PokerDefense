@@ -40,7 +40,33 @@ namespace PokerDefense.Editor
             // 유닛 표는 PlacementController가 쓰는 것과 같은 에셋을 씀
             Set(saver, "unitTable", new SerializedObject(placement).FindProperty("unitTable").objectReferenceValue);
             Set(flow, "saver", saver);
+
+            // 메뉴의 타이틀로 가기 창에 "저장하고 타이틀로"를 넣음 (메뉴 전체는 다시 만들지 않음)
+            font = UnityEngine.Object.FindObjectsByType<TMPro.TMP_Text>(FindObjectsInactive.Include).First(t => t.font != null).font;
+            MenuScreen menu = UnityEngine.Object.FindAnyObjectByType<MenuScreen>();
+            GameObject abandon = (GameObject)new SerializedObject(menu).FindProperty("abandonPage").objectReferenceValue;
+            InstallSaveExitChoice(menu, (RectTransform)abandon.transform, saver);
             EditorSceneManager.SaveScene(game);
+        }
+
+        // 메뉴의 타이틀로 가기 창을 "저장하고 타이틀로 / 포기하고 타이틀로 / 돌아가기" 선택 창으로 맞춤
+        // saver가 없으면(타이틀 씬 등) 저장 버튼은 게임에서 숨겨짐
+        static void InstallSaveExitChoice(MenuScreen menu, RectTransform abandon, RunSaver saver)
+        {
+            abandon.Find("Title").GetComponent<TMPro.TMP_Text>().text = "타이틀로 돌아갈까요?";
+            TMPro.TMP_Text body = abandon.Find("Body").GetComponent<TMPro.TMP_Text>();
+            body.text = "포기하면 지금 진행이 지워져 이어할 수 없습니다.\n저장하고 나가면 타이틀에서 이어할 수 있습니다.";
+            body.rectTransform.sizeDelta = new Vector2(840f, 160f);
+
+            Transform old = abandon.Find("SaveTitle");
+            if (old != null)
+            {
+                UnityEngine.Object.DestroyImmediate(old.gameObject);
+            }
+            Set(menu, "saveTitleButton", Button("SaveTitle", abandon, "저장하고 타이틀로", -110f, UiStyle.ButtonPrimary));
+            ((RectTransform)abandon.Find("AbandonConfirm")).anchoredPosition = new Vector2(0f, -260f);
+            ((RectTransform)abandon.Find("Cancel")).anchoredPosition = new Vector2(0f, -410f);
+            Set(menu, "saver", saver);
         }
 
         // Install Title Continue - 이미 있는 Title 씬 메뉴에 이어하기 버튼과 새 게임 확인 창만 추가

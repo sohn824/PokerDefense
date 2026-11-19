@@ -10,7 +10,7 @@ namespace PokerDefense.UI
      * MenuScreen
      *
      * 타이틀과 게임 씬에서 함께 쓰는 메뉴를 관리하는 클래스
-     * 메뉴 화면 - 일시정지, 오디오 옵션, 도움말, 포기 확인, 새 게임 확인
+     * 메뉴 화면 - 일시정지, 오디오 옵션, 도움말, 타이틀로 갈 때의 선택(저장하고 나가기·포기), 새 게임 확인
      * 타이틀 - 이어하기 저장이 있으면 이어하기 버튼을 보이고, 새 게임은 저장이 사라진다고 확인받은 뒤 시작함
      */
     public sealed class MenuScreen : MonoBehaviour
@@ -21,6 +21,8 @@ namespace PokerDefense.UI
 
         [SerializeField] bool titleScene;
         [SerializeField] GameFlowController flow;
+        // "저장하고 타이틀로"에 씀 (없으면 그 버튼을 숨김)
+        [SerializeField] RunSaver saver;
         [SerializeField] GameObject home;
         [SerializeField] GameObject overlay;
         [SerializeField] GameObject pausePage;
@@ -41,6 +43,7 @@ namespace PokerDefense.UI
         [SerializeField] Button backButton;
         [SerializeField] Button resetButton;
         [SerializeField] Button abandonButton;
+        [SerializeField] Button saveTitleButton;
         [SerializeField] Button cancelButton;
         [SerializeField] Slider master;
         [SerializeField] Slider music;
@@ -95,6 +98,14 @@ namespace PokerDefense.UI
             backButton.onClick.AddListener(Back);
             resetButton.onClick.AddListener(() => { AudioPreferences.Set(1f, 1f, 1f, false); RefreshOptions(); });
             abandonButton.onClick.AddListener(() => GameSession.Load(GameSession.TitleScene));
+            if (saveTitleButton != null)
+            {
+                saveTitleButton.gameObject.SetActive(saver != null);
+                if (saver != null)
+                {
+                    saveTitleButton.onClick.AddListener(saver.SaveAndLeave);
+                }
+            }
             cancelButton.onClick.AddListener(OpenPause);
             master.onValueChanged.AddListener(_ => ChangeOptions());
             music.onValueChanged.AddListener(_ => ChangeOptions());
