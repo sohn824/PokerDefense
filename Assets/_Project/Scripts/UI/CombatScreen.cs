@@ -31,9 +31,33 @@ namespace PokerDefense.UI
             public SpriteRenderer Body;
             public SpriteRenderer BarBack;
             public SpriteRenderer BarFill;
+
+            // 몸통 기본 크기 (피격 때 커졌다가 이 크기로 돌아옴)
+            public float BaseScale;
+
+            // 지난 프레임 체력 (이보다 줄었으면 맞은 것으로 봄)
+            public float LastHp;
+
+            // 마지막으로 맞은 시각
+            public float HitAt = float.NegativeInfinity;
+
+            // 죽어서 Dissolve 연출을 시작한 시각 (RemoveView가 기록)
+            // SyncDying이 이 시각부터 DissolveSeconds(0.35초) 동안 진행도를 0 -> 1로 올림
+            public float DyingAt;
         }
 
         const float BodyScale = 0.5f;
+
+        // 피격 연출 - 0.1초 동안 하얗게 번쩍이며 1.12배로 커졌다가 돌아옴
+        const float FlashSeconds = 0.1f;
+        const float FlashPopScale = 1.12f;
+
+        // 처치 연출 - 0.35초 동안 가장자리가 타들어 가며 사라짐
+        const float DissolveSeconds = 0.35f;
+
+        // EnemySprite 셰이더 속성 ID (매번 이름으로 찾지 않도록 미리 ID를 캐시)
+        static readonly int FlashAmountId = Shader.PropertyToID("_FlashAmount");
+        static readonly int DissolveId = Shader.PropertyToID("_Dissolve");
 
         // 타격 이펙트 풀 크기 (다 차면 가장 오래된 것부터 다시 씀)
         const int HitPoolSize = 24;
@@ -78,6 +102,9 @@ namespace PokerDefense.UI
         [SerializeField] Transform boardRoot;
         [SerializeField] Sprite enemySprite;
 
+        [Tooltip("적 몸통에 쓸 머티리얼 (EnemySprite.mat)\nEnemySprite 셰이더용")]
+        [SerializeField] Material enemyMaterial;
+
         [Tooltip("타격 이펙트")]
         [SerializeField] Sprite hitSprite;
 
@@ -95,6 +122,14 @@ namespace PokerDefense.UI
 
         readonly Dictionary<EnemyInstance, EnemyView> views = new Dictionary<EnemyInstance, EnemyView>();
         readonly List<EnemyInstance> gone = new List<EnemyInstance>();
+
+        // Dissolve 연출 중인 죽은 적
+        // 전투가 끝나 views가 지워져도 연출이 끝까지 재생되도록 따로 둠
+        readonly List<EnemyView> dying = new List<EnemyView>();
+
+        // 적마다 다른 Flash, Dissolve 값을 넣기 위한 블록
+        // (머티리얼 자체는 모든 적이 하나를 같이 쓰고, 적마다 복제하지 않음)
+        MaterialPropertyBlock enemyBlock;
 
         SpriteRenderer[] hitPool;
         float[] hitBornAt;
@@ -132,6 +167,7 @@ namespace PokerDefense.UI
             BuildHitPool();
             BuildTrailPool();
             BuildSplashPool();
+            enemyBlock = new MaterialPropertyBlock();
         }
 
         void BuildSplashPool()
@@ -285,6 +321,7 @@ namespace PokerDefense.UI
         void Update()
         {
             SyncEnemies();
+            SyncDying();
             SyncPierceTrails();
             SyncHitEffects();
             SyncSplashEffects();
@@ -592,6 +629,7 @@ namespace PokerDefense.UI
 
                 float ratio = Mathf.Clamp01(enemy.Hp / enemy.Definition.MaxHp);
                 SetBar(view, ratio);
+                SyncHitFlash(view, enemy.Hp);
             }
 
             // 죽어서 목록에서 빠진 적의 표시를 지움
@@ -612,8 +650,7 @@ namespace PokerDefense.UI
                     AudioManager.Instance?.Play(AudioManager.Sfx.EnemyDeathBig);
                 }
 
-                Destroy(views[gone[i]].Root.gameObject);
-                views.Remove(gone[i]);
+                RemoveView(gone[i]);
             }
 
             // 이번 프레임에 죽은 적이 있으면 일반 처치음을 한 번만 냄
@@ -622,6 +659,73 @@ namespace PokerDefense.UI
                 AudioManager.Instance?.Play(AudioManager.Sfx.EnemyDeath);
                 lastDeathSfxAt = Time.time;
             }
+        }
+
+        // 체력이 줄었으면 맞은 것으로 보고 Flash 연출을 다시 시작함
+        // Flash 세기는 맞은 순간 1 -> FlashSeconds 뒤 0, 몸통 크기도 같은 비율로 돌아옴
+        void SyncHitFlash(EnemyView view, float hp)
+        {
+            if (hp < view.LastHp)
+            {
+                view.HitAt = Time.time;
+            }
+            view.LastHp = hp;
+
+            float flash = 1f - Mathf.Clamp01((Time.time - view.HitAt) / FlashSeconds);
+            float scale = view.BaseScale * (1f + (FlashPopScale - 1f) * flash);
+            view.Body.transform.localScale = new Vector3(scale, scale, 1f);
+            SetEnemyBlock(view.Body, flash, 0f);
+        }
+
+        // 적 표시를 views에서 뺌
+        // 죽은 적은 체력 바를 숨기고 Dissolve 목록으로 넘김
+        // 트랙 끝으로 빠져나간 적은 바로 지움
+        void RemoveView(EnemyInstance enemy)
+        {
+            EnemyView view = views[enemy];
+            views.Remove(enemy);
+
+            if (enemy.IsAlive)
+            {
+                Destroy(view.Root.gameObject);
+                return;
+            }
+
+            view.BarBack.enabled = false;
+            view.BarFill.enabled = false;
+            view.Body.transform.localScale = new Vector3(view.BaseScale, view.BaseScale, 1f);
+            view.DyingAt = Time.time;
+            dying.Add(view);
+        }
+
+        // Dissolve 진행도를 0 -> 1로 올리고, 다 사라진 적은 지움
+        void SyncDying()
+        {
+            for (int i = dying.Count - 1; i >= 0; i--)
+            {
+                EnemyView view = dying[i];
+                float t = (Time.time - view.DyingAt) / DissolveSeconds;
+
+                if (t >= 1f)
+                {
+                    Destroy(view.Root.gameObject);
+                    dying.RemoveAt(i);
+                    continue;
+                }
+
+                SetEnemyBlock(view.Body, 0f, t);
+            }
+        }
+
+        // 적 몸통에 Flash·Dissolve 값을 넣음
+        void SetEnemyBlock(SpriteRenderer body, float flash, float dissolve)
+        {
+            // SetPropertyBlock을 호출하면 그 순간 블록 전체를 교체하므로
+            // 기존 값을 먼저 읽어 와 Flash·Dissolve 값만 바꾸고 다시 넣음
+            body.GetPropertyBlock(enemyBlock);
+            enemyBlock.SetFloat(FlashAmountId, flash);
+            enemyBlock.SetFloat(DissolveId, dissolve);
+            body.SetPropertyBlock(enemyBlock);
         }
 
         static bool Contains(IReadOnlyList<EnemyInstance> list, EnemyInstance target)
@@ -670,6 +774,11 @@ namespace PokerDefense.UI
             body.sprite = hasArt ? enemy.Definition.ArtFor(GridBoard.TrackDirection(enemy.Progress)) : enemySprite;
             body.color = hasArt ? Color.white : enemy.Definition.PlaceholderColor;
             body.sortingOrder = 5;
+            // 머티리얼이 없으면 기본 스프라이트로 그림 (Flash·Dissolve 연출 없음)
+            if (enemyMaterial != null)
+            {
+                body.sharedMaterial = enemyMaterial;
+            }
 
             SpriteRenderer back = new GameObject("BarBack").AddComponent<SpriteRenderer>();
             back.transform.SetParent(root.transform, false);
@@ -685,19 +794,26 @@ namespace PokerDefense.UI
             fill.color = BarFillColor;
             fill.sortingOrder = 7;
 
-            EnemyView view = new EnemyView { Root = root.transform, Body = body, BarBack = back, BarFill = fill };
+            EnemyView view = new EnemyView
+            {
+                Root = root.transform, Body = body, BarBack = back, BarFill = fill,
+                BaseScale = scale, LastHp = enemy.Hp
+            };
             SetBar(view, 1f);
             return view;
         }
 
+        // 전투가 끝나면 남은 적 표시를 지움
+        // 마지막 적은 이 프레임에 막 죽었을 수 있어 바로 지우지 않고 RemoveView를 호출해 Dissolve 연출을 남김
         void ClearViews()
         {
-            foreach (KeyValuePair<EnemyInstance, EnemyView> pair in views)
-            {
-                Destroy(pair.Value.Root.gameObject);
-            }
+            gone.Clear();
+            gone.AddRange(views.Keys);
 
-            views.Clear();
+            for (int i = 0; i < gone.Count; i++)
+            {
+                RemoveView(gone[i]);
+            }
         }
 
         void UpdateLabels()
