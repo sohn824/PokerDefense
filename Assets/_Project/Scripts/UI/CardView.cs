@@ -14,6 +14,7 @@ namespace PokerDefense.UI
      * 무늬는 CardVisualSet의 스프라이트로, 숫자(rank)는 텍스트로 그림
      *
      * 상태(CardState)는 색이 아니라 크기·테두리·아래쪽 배지 문구로 구분
+     * 스트레이트 이상 족보를 이룬 카드는 바탕에 Foil 셰이더 연출
      */
     public sealed class CardView : MonoBehaviour
     {
@@ -50,6 +51,10 @@ namespace PokerDefense.UI
         CardState state = CardState.Normal;
         Vector3 baseScale;
         CanvasGroup group;
+
+        // 카드 바탕 이미지 (Foil 머티리얼을 씌우는 곳)
+        Image face;
+
         Image badgeBg;
         TMP_Text badgeText;
 
@@ -57,6 +62,7 @@ namespace PokerDefense.UI
         {
             button.onClick.AddListener(() => Clicked?.Invoke(this));
             baseScale = transform.localScale;
+            face = GetComponent<Image>();
 
             group = GetComponent<CanvasGroup>();
             if (group == null)
@@ -131,6 +137,20 @@ namespace PokerDefense.UI
             string badge = BadgeFor(next);
             badgeBg.gameObject.SetActive(badge.Length > 0);
             badgeText.text = badge;
+        }
+
+        // 바탕에 Foil 머티리얼을 씌우거나 없앰 (RoundScreen.SyncFoil이 호출)
+        // Foil을 없앨 때는 null을 넣어 Image 기본 UI 머티리얼로 되돌림
+        public void SetFoil(bool on)
+        {
+            // 머티리얼을 바꾸면 Canvas를 다시 그리므로 바뀔 때만 넣음
+            // null을 넣은 뒤에도 material은 기본 UI 머티리얼을 돌려주므로 null이 아니라 Foil인지로 비교해야 함
+            bool isOn = face.material == visuals.Foil;
+
+            if (isOn != on)
+            {
+                face.material = on ? visuals.Foil : null;
+            }
         }
 
         static string BadgeFor(CardState s)

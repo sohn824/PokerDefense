@@ -290,6 +290,8 @@ namespace PokerDefense.UI
                 }
             }
 
+            SyncFoil();
+
             confirmButton.interactable = exchanging;
 
             exchangeButton.interactable = exchanging && picked > 0;
@@ -305,6 +307,37 @@ namespace PokerDefense.UI
             }
 
             ShowPreview(picked);
+        }
+
+        // 지금 손패가 스트레이트 이상이면 그 족보를 이룬 키카드에 Foil 연출
+        // 교체 단계에서만 켜고 손패가 바뀔 때마다 다시 정함 (다른 단계에서는 카드가 숨겨져 모두 끔)
+        void SyncFoil()
+        {
+            bool strong = false;
+            HandResult current = default;
+
+            if (phase == RoundPhase.Exchange)
+            {
+                current = controller.PreviewHand();
+                strong = HandRarity.RankOf(current.Category) >= CelebrateRarityThreshold;
+            }
+
+            for (int i = 0; i < cardViews.Length; i++)
+            {
+                // 이 자리의 카드가 키카드에 들어 있는지 확인
+                bool isKey = false;
+
+                for (int k = 0; strong && k < current.KeyCards.Count; k++)
+                {
+                    if (current.KeyCards[k] == controller.Hand[i])
+                    {
+                        isKey = true;
+                        break;
+                    }
+                }
+
+                cardViews[i].SetFoil(isKey);
+            }
         }
 
         // 교체 단계 미리보기 - 지금 확정하면 나올 족보와 유닛, 카드를 골랐으면 그 교체의 확률 요약을 보여줌
