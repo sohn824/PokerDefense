@@ -720,8 +720,8 @@ namespace PokerDefense.UI
         // 적 몸통에 Flash·Dissolve 값을 넣음
         void SetEnemyBlock(SpriteRenderer body, float flash, float dissolve)
         {
-            // SetPropertyBlock을 호출하면 그 순간 블록 전체를 교체하므로
-            // 기존 값을 먼저 읽어 와 Flash·Dissolve 값만 바꾸고 다시 넣음
+            // SetPropertyBlock은 렌더러의 블록을 통째로 바꾸므로
+            // 이 렌더러에만 따로 넣어 둔 셰이더 값을 먼저 읽어 와 Flash·Dissolve 값만 바꿔 다시 넣음
             body.GetPropertyBlock(enemyBlock);
             enemyBlock.SetFloat(FlashAmountId, flash);
             enemyBlock.SetFloat(DissolveId, dissolve);

@@ -2,9 +2,9 @@
  * EnemySprite
  *
  * 적 몸통 스프라이트에 Flash·Dissolve 연출을 그리는 셰이더
- * Flash - 맞았을 때 원래 색을 _FlashColor로 덮음
- * Dissolve - 죽었을 때 불규칙한 구멍이 퍼지며 타들어 가듯 사라짐
- * 두 값(_FlashAmount·_Dissolve)은 CombatScreen이 적마다 0~1로 넣음 (0이면 효과 없음)
+ * Flash 연출 정의 - 맞았을 때 원래 색을 _FlashColor로 덮음
+ * Dissolve 연출 정의 - 죽었을 때 불규칙한 구멍이 퍼지며 타들어 가듯 사라짐
+ * 두 값(_FlashAmount·_Dissolve)은 CombatScreen.cs가 적마다 0~1로 넣음 (0이면 효과 없음)
  */
 Shader "PokerDefense/EnemySprite"
 {

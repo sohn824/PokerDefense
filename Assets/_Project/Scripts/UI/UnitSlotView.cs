@@ -11,10 +11,10 @@ namespace PokerDefense.UI
      * 보드 한 칸의 월드 스페이스 표현과 클릭 판정 영역
      *
      * highlight - 놓을 수 있는 칸·고를 수 있는 칸(흰색)과 고른 칸(노랑)
-     * art - 유닛 아트 (조준 방향별 스프라이트, 호흡·발사 반동으로 크기가 바뀜)
+     * art - 유닛 아트
      * muzzle - 발사 순간의 총구 화염 (총구가 여럿이면 복제해 씀)
      * starLabel - 성급 별
-     * actionHint - 이 칸을 누르면 일어날 일 (배치·합치기·유닛 교체·이동·교환)
+     * actionHint - 이 칸을 누르면 일어날 일 (배치·합치기·유닛 교체·이동·교환 등)
      * hitbox - BoardScreen의 Physics2D 클릭 검사 대상 (누를 수 없는 칸은 꺼 둠)
      */
     public sealed class UnitSlotView : MonoBehaviour
@@ -48,6 +48,10 @@ namespace PokerDefense.UI
         const float MuzzleSeconds = 0.06f;
         const float MuzzleScale = 0.40f;
 
+        // 머지·승급 Sweep 연출용 상수
+        const float SweepSeconds = 0.9f;
+        static readonly int SweepProgressId = Shader.PropertyToID("_SweepProgress");
+
         [SerializeField] SpriteRenderer highlight;
 
         [Tooltip("유닛 아트")]
@@ -74,10 +78,19 @@ namespace PokerDefense.UI
         // 공용 이펙트 (유닛 전용 이펙트가 없는 경우 사용)
         Sprite sharedMuzzleSprite;
 
+        // Sweep 연출을 시작한 Time.time (재생 중이 아니면 -1)
+        float sweepStartedAt = -1f;
+
+        // 이 칸만 빛나게 하려고 Sweep 진행도를 머티리얼 대신 여기에 넣음
+        // (UnitSprite.shader의 _SweepProgress 프로퍼티)
+        MaterialPropertyBlock sweepBlock;
+
         public int Index { get; private set; }
 
         void Awake()
         {
+            sweepBlock = new MaterialPropertyBlock();
+
             starLabel.outlineColor = new Color32(0, 0, 0, 255);
             starLabel.outlineWidth = 0.25f;
             // 유닛 아트(sortingOrder 3)에 가리지 않도록 더 위로 올림
@@ -105,9 +118,15 @@ namespace PokerDefense.UI
             actionHint.gameObject.SetActive(false);
         }
 
-        public void Bind(int index)
+        // 칸 번호를 정하고 유닛 아트에 머티리얼을 씌움 (BoardScreen.Awake에서 한 번 호출)
+        public void Bind(int index, Material artMaterial)
         {
             Index = index;
+
+            if (artMaterial != null)
+            {
+                art.sharedMaterial = artMaterial;
+            }
 
             if (actionHint == null)
             {
@@ -182,6 +201,38 @@ namespace PokerDefense.UI
             float artScale = ApplyArtTransform(punch);
             // 반동으로 커진 만큼 muzzle 이펙트도 밀어줌
             ApplyMuzzle(direction, secondsSinceShot, shotCount, artScale / artFitScale);
+            ApplySweep();
+        }
+
+        // 머지·승급으로 이 칸의 유닛이 강해졌을 때 BoardScreen이 호출하여 Sweep 연출을 시작
+        public void PlaySweep()
+        {
+            sweepStartedAt = Time.time;
+        }
+
+        // Sweep 진행도(0 -> 1)를 셰이더에 넣음 (SetAim에서 매 프레임 호출)
+        // 재생 중이 아니면 블록을 건드리지 않음
+        void ApplySweep()
+        {
+            if (sweepStartedAt < 0f)
+            {
+                return;
+            }
+
+            float progress = (Time.time - sweepStartedAt) / SweepSeconds;
+
+            // 다 지나가면 0으로 되돌려 효과를 끄고 재생을 끝냄
+            if (progress >= 1f)
+            {
+                progress = 0f;
+                sweepStartedAt = -1f;
+            }
+
+            // SetPropertyBlock은 렌더러의 블록을 통째로 바꾸므로
+            // 이 렌더러에만 따로 넣어 둔 셰이더 값을 먼저 읽어 와 _SweepProgress만 바꿔 다시 넣음
+            art.GetPropertyBlock(sweepBlock);
+            sweepBlock.SetFloat(SweepProgressId, progress);
+            art.SetPropertyBlock(sweepBlock);
         }
 
         void ApplyMuzzle(AimDirection direction, float secondsSinceShot, int shotCount, float artGrowth)

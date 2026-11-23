@@ -43,6 +43,9 @@ namespace PokerDefense.UI
         [Tooltip("유닛의 조준 방향·반동을 얻는 CombatController")]
         [SerializeField] CombatController combat;
 
+        [Tooltip("유닛 아트에 쓸 머티리얼 (UnitSprite.mat)\nUnitSprite.shader용")]
+        [SerializeField] Material unitMaterial;
+
         // 사거리 링 (에셋 없이 LineRenderer로 원을 그림)
         const int RingSegments = 48;
         const float RingWidth = 0.05f;
@@ -65,7 +68,7 @@ namespace PokerDefense.UI
         {
             for (int i = 0; i < slots.Length; i++)
             {
-                slots[i].Bind(i);
+                slots[i].Bind(i, unitMaterial);
             }
 
             sellButton.onClick.AddListener(OnSell);
@@ -150,7 +153,7 @@ namespace PokerDefense.UI
         }
 
         // 슬롯 내용이 배치·교체·칸끼리 머지·승급권으로 바뀌었을 때 호출
-        // 결과에 맞는 효과음을 내고, 선택을 해제한 뒤 Refresh
+        // 결과에 맞는 효과음·연출을 발생시키고, 선택을 해제한 뒤 Refresh
         void OnPlaced(int index, PlacementResult result)
         {
             if (result == PlacementResult.Placed || result == PlacementResult.Replaced)
@@ -174,6 +177,9 @@ namespace PokerDefense.UI
                 {
                     AudioManager.Instance?.Play(AudioManager.Sfx.MergeStar2);
                 }
+
+                // 일반 머지·승급권 모두 강해진 칸에 Sweep 연출
+                slots[index].PlaySweep();
             }
 
             selected = NoSelection;
