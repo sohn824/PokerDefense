@@ -109,7 +109,9 @@ Shader "PokerDefense/EnemySprite"
             {
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(input.positionOS);
-                output.color = input.color;
+                // unity_SpriteColor - SRP Batcher로 그릴 때 SpriteRenderer의 color가 들어오는 곳
+                // 그 외에는 정점 색으로 들어오므로 둘 다 곱함
+                output.color = input.color * unity_SpriteColor;
                 output.uv = input.uv;
                 output.noisePos = input.positionOS.xy * _NoiseScale;
                 return output;

@@ -14,7 +14,7 @@ namespace PokerDefense.UI
      * CombatController.LatestCombatContext를 매 프레임 읽어 보여주는 역할
      *
      * 보여주는 것
-     * 적 - 적 목록에 맞춰 몸통·체력 바를 만들고 지움
+     * 적 - 적 목록에 맞춰 몸통·체력 바·보스 Aura를 만들고 지움
      * 이펙트 - 타격·관통 궤적·Splash 폭발을 Pool에서 꺼내 그림
      * 효과음 - 발사·착탄·처치음
      * 라벨 - 라이프·승급권·라운드·남은 시간·적 수·전투 결과
@@ -23,7 +23,7 @@ namespace PokerDefense.UI
     public sealed class CombatScreen : MonoBehaviour
     {
         /**
-         * 적 하나의 표현 - 몸통과 체력 바
+         * 적 하나의 표현 (몸통·체력 바·보스 Aura 등)
          */
         sealed class EnemyView
         {
@@ -31,6 +31,9 @@ namespace PokerDefense.UI
             public SpriteRenderer Body;
             public SpriteRenderer BarBack;
             public SpriteRenderer BarFill;
+
+            // 보스 발밑 Aura를 그릴 렌더러 (실제로 Aura를 그리는건 머티리얼에 붙은 shader고 sprite는 도화지 역할)
+            public SpriteRenderer Aura;
 
             // 몸통 기본 크기 (피격 때 커졌다가 이 크기로 돌아옴)
             public float BaseScale;
@@ -103,6 +106,13 @@ namespace PokerDefense.UI
         const float FlowWidth = 0.45f;
         static readonly Color FlowColor = new Color(1f, 0.85f, 0.5f, 0.45f);
 
+        // 보스 Aura 연출용 상수
+        // AuraWidth - 몸통 크기에 곱하는 가로 배수
+        // AuraFlatten - 바닥에 누운 원으로 보이게 세로를 줄이는 비율
+        const float AuraWidth = 1.4f;
+        const float AuraFlatten = 0.5f;
+        const float AuraAlpha = 0.7f;
+
         [SerializeField] CombatController controller;
         [SerializeField] Transform boardRoot;
         [SerializeField] Sprite enemySprite;
@@ -112,6 +122,9 @@ namespace PokerDefense.UI
 
         [Tooltip("적 경로 표시선에 쓸 머티리얼 (TrackFlow.mat)\nTrackFlow 셰이더용")]
         [SerializeField] Material trackFlowMaterial;
+
+        [Tooltip("보스 발밑 표시에 쓸 머티리얼 (BossAura.mat)\nBossAura 셰이더용")]
+        [SerializeField] Material bossAuraMaterial;
 
         [Tooltip("타격 이펙트")]
         [SerializeField] Sprite hitSprite;
@@ -732,7 +745,7 @@ namespace PokerDefense.UI
         }
 
         // 적 표시를 views에서 뺌
-        // 죽은 적은 체력 바를 숨기고 Dissolve 목록으로 넘김
+        // 죽은 적은 체력 바·Aura를 숨기고 Dissolve 목록으로 넘김
         // 트랙 끝으로 빠져나간 적은 바로 지움
         void RemoveView(EnemyInstance enemy)
         {
@@ -747,6 +760,12 @@ namespace PokerDefense.UI
 
             view.BarBack.enabled = false;
             view.BarFill.enabled = false;
+
+            if (view.Aura != null)
+            {
+                view.Aura.enabled = false;
+            }
+
             view.Body.transform.localScale = new Vector3(view.BaseScale, view.BaseScale, 1f);
             view.DyingAt = Time.time;
             dying.Add(view);
@@ -851,10 +870,34 @@ namespace PokerDefense.UI
             EnemyView view = new EnemyView
             {
                 Root = root.transform, Body = body, BarBack = back, BarFill = fill,
-                BaseScale = scale, LastHp = enemy.Hp
+                BaseScale = scale, LastHp = enemy.Hp, Aura = CreateAura(enemy, root.transform, scale)
             };
             SetBar(view, 1f);
             return view;
+        }
+
+        // 보스 발밑 Aura 생성
+        // 보스가 아니거나 머티리얼이 없으면 Aura를 만들지 않음
+        SpriteRenderer CreateAura(EnemyInstance enemy, Transform root, float bodyScale)
+        {
+            if (enemy.Definition.Type != EnemyType.Boss || bossAuraMaterial == null)
+            {
+                return null;
+            }
+
+            SpriteRenderer aura = new GameObject("Aura").AddComponent<SpriteRenderer>();
+            aura.transform.SetParent(root, false);
+            aura.transform.localScale = new Vector3(bodyScale * AuraWidth, bodyScale * AuraWidth * AuraFlatten, 1f);
+            aura.sprite = enemySprite;
+            aura.sharedMaterial = bossAuraMaterial;
+
+            Color color = enemy.Definition.PlaceholderColor;
+            color.a = AuraAlpha;
+            aura.color = color;
+
+            // 적 경로 표시선(-5)보다 위, 유닛·적보다 아래
+            aura.sortingOrder = -4;
+            return aura;
         }
 
         // 전투가 끝나면 남은 적 표시를 지움
