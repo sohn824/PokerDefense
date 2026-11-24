@@ -77,8 +77,9 @@ Shader "PokerDefense/UnitSprite"
                 half _RimWidth;
             CBUFFER_END
 
-            // 텍스처 한 픽셀의 UV 크기 (x = 1/가로, y = 1/세로, SpriteRenderer가 채워 줌)
-            // 머티리얼 값이 아니라 렌더러마다 정해지므로 CBUFFER 밖에 둠
+            // 텍스처 한 픽셀의 UV 크기 (x = 1/가로, y = 1/세로)
+            // 이름이 텍스처이름_TexelSize면 Unity가 값을 자동으로 넣음
+            // 위치가 CBUFFER 밖이라 SRP Batcher와 호환되지 않음
             float4 _MainTex_TexelSize;
 
             // 가장자리를 찾을 때 둘러보는 이웃 8방향 (상하좌우 + 대각선)

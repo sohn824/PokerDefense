@@ -18,7 +18,7 @@ namespace PokerDefense.UI
      * 이펙트 - 타격·관통 궤적·Splash 폭발을 Pool에서 꺼내 그림
      * 효과음 - 발사·착탄·처치음
      * 라벨 - 라이프·승급권·라운드·남은 시간·적 수·전투 결과
-     * 연출 - 라이프 깎이는 연출
+     * 연출 - 라이프 깎이는 연출, 적 경로 Flow 연출
      */
     public sealed class CombatScreen : MonoBehaviour
     {
@@ -98,12 +98,20 @@ namespace PokerDefense.UI
         // 같은 전투음의 재생 최소 간격
         const float CombatSfxMinGap = 0.05f;
 
+        // 적 경로 Flow 연출용 상수
+        const int FlowSegments = 160;
+        const float FlowWidth = 0.45f;
+        static readonly Color FlowColor = new Color(1f, 0.85f, 0.5f, 0.45f);
+
         [SerializeField] CombatController controller;
         [SerializeField] Transform boardRoot;
         [SerializeField] Sprite enemySprite;
 
         [Tooltip("적 몸통에 쓸 머티리얼 (EnemySprite.mat)\nEnemySprite 셰이더용")]
         [SerializeField] Material enemyMaterial;
+
+        [Tooltip("적 경로 표시선에 쓸 머티리얼 (TrackFlow.mat)\nTrackFlow 셰이더용")]
+        [SerializeField] Material trackFlowMaterial;
 
         [Tooltip("타격 이펙트")]
         [SerializeField] Sprite hitSprite;
@@ -130,6 +138,9 @@ namespace PokerDefense.UI
         // 적마다 다른 Flash, Dissolve 값을 넣기 위한 블록
         // (머티리얼 자체는 모든 적이 하나를 같이 쓰고, 적마다 복제하지 않음)
         MaterialPropertyBlock enemyBlock;
+
+        // 적 경로 표시선
+        LineRenderer trackFlow;
 
         SpriteRenderer[] hitPool;
         float[] hitBornAt;
@@ -167,7 +178,49 @@ namespace PokerDefense.UI
             BuildHitPool();
             BuildTrailPool();
             BuildSplashPool();
+            BuildTrackFlow();
             enemyBlock = new MaterialPropertyBlock();
+        }
+
+        // 트랙을 한 바퀴 도는 선을 만들어 둠 (무늬와 움직임은 TrackFlow 셰이더가 그림)
+        void BuildTrackFlow()
+        {
+            // 머티리얼이 없으면 만들지 않음 (Flow 연출 없음)
+            if (trackFlowMaterial == null)
+            {
+                return;
+            }
+
+            GameObject go = new GameObject("TrackFlow");
+            go.transform.SetParent(boardRoot, false);
+
+            trackFlow = go.AddComponent<LineRenderer>();
+            trackFlow.useWorldSpace = false;
+            trackFlow.loop = true;
+            trackFlow.alignment = LineAlignment.View;
+            trackFlow.textureMode = LineTextureMode.Stretch;
+            trackFlow.sharedMaterial = trackFlowMaterial;
+            trackFlow.widthMultiplier = FlowWidth;
+            trackFlow.startColor = FlowColor;
+            trackFlow.endColor = FlowColor;
+
+            // 트랙 그림(-10)보다 위, 유닛·적보다 아래
+            trackFlow.sortingOrder = -5;
+            trackFlow.positionCount = FlowSegments;
+
+            for (int i = 0; i < FlowSegments; i++)
+            {
+                trackFlow.SetPosition(i, GridBoard.TrackPosition(i / (float)FlowSegments));
+            }
+        }
+
+        // 전투 중이 아닐 때만 적 경로를 보여줌 (전투 중에는 적과 이펙트를 가림)
+        void SyncTrackFlow()
+        {
+            if (trackFlow != null)
+            {
+                trackFlow.enabled = controller.IsFighting == false;
+            }
         }
 
         void BuildSplashPool()
@@ -325,6 +378,7 @@ namespace PokerDefense.UI
             SyncPierceTrails();
             SyncHitEffects();
             SyncSplashEffects();
+            SyncTrackFlow();
             UpdateLabels();
         }
 
