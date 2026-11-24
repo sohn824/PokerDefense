@@ -52,6 +52,9 @@ namespace PokerDefense.UI
         const float SweepSeconds = 0.9f;
         static readonly int SweepProgressId = Shader.PropertyToID("_SweepProgress");
 
+        // 최고 성급 Rim 연출용 프로퍼티
+        static readonly int RimAmountId = Shader.PropertyToID("_RimAmount");
+
         [SerializeField] SpriteRenderer highlight;
 
         [Tooltip("유닛 아트")]
@@ -81,15 +84,15 @@ namespace PokerDefense.UI
         // Sweep 연출을 시작한 Time.time (재생 중이 아니면 -1)
         float sweepStartedAt = -1f;
 
-        // 이 칸만 빛나게 하려고 Sweep 진행도를 머티리얼 대신 여기에 넣음
-        // (UnitSprite.shader의 _SweepProgress 프로퍼티)
-        MaterialPropertyBlock sweepBlock;
+        // 이 칸만 빛나게 하려고 Sweep 진행도·Rim 세기를 머티리얼 대신 여기에 넣음
+        // (UnitSprite.shader의 _SweepProgress·_RimAmount 프로퍼티)
+        MaterialPropertyBlock artBlock;
 
         public int Index { get; private set; }
 
         void Awake()
         {
-            sweepBlock = new MaterialPropertyBlock();
+            artBlock = new MaterialPropertyBlock();
 
             starLabel.outlineColor = new Color32(0, 0, 0, 255);
             starLabel.outlineWidth = 0.25f;
@@ -169,6 +172,9 @@ namespace PokerDefense.UI
             art.sprite = unit.Definition.ArtFor(AimDirection.Down);
             FitArtToCell();
             ApplyArtTransform(0f);
+
+            // 최고 성급(★3)이면 Rim 연출을 켜고 아니면 끔
+            SetArtValue(RimAmountId, unit.IsMaxStar ? 1f : 0f);
         }
 
         // 슬롯에 있는 유닛의 조준 방향과 발사 반동 갱신 (BoardScreen.UpdateSlotArt가 매 프레임 호출)
@@ -228,11 +234,17 @@ namespace PokerDefense.UI
                 sweepStartedAt = -1f;
             }
 
+            SetArtValue(SweepProgressId, progress);
+        }
+
+        // 이 칸의 아트에만 셰이더 값 하나를 넣음 (Sweep 연출 진행도 / Rim 연출 세기)
+        void SetArtValue(int propertyId, float value)
+        {
             // SetPropertyBlock은 렌더러의 블록을 통째로 바꾸므로
-            // 이 렌더러에만 따로 넣어 둔 셰이더 값을 먼저 읽어 와 _SweepProgress만 바꿔 다시 넣음
-            art.GetPropertyBlock(sweepBlock);
-            sweepBlock.SetFloat(SweepProgressId, progress);
-            art.SetPropertyBlock(sweepBlock);
+            // 이 렌더러에만 따로 넣어 둔 셰이더 값을 먼저 읽어 와 이 값만 바꿔 다시 넣음
+            art.GetPropertyBlock(artBlock);
+            artBlock.SetFloat(propertyId, value);
+            art.SetPropertyBlock(artBlock);
         }
 
         void ApplyMuzzle(AimDirection direction, float secondsSinceShot, int shotCount, float artGrowth)
