@@ -15105,6 +15105,7 @@ MonoBehaviour:
   detailToggle: {fileID: 2125072119}
   combat: {fileID: 986056600}
   unitMaterial: {fileID: 2100000, guid: d46c168918d7fff46bbca6acfbafce02, type: 2}
+  ringMaterial: {fileID: 2100000, guid: fb6e278983372ec46a126796154997ac, type: 2}
 --- !u!114 &746656850
 MonoBehaviour:
   m_ObjectHideFlags: 0

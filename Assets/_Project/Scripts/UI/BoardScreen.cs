@@ -46,10 +46,13 @@ namespace PokerDefense.UI
         [Tooltip("유닛 아트에 쓸 머티리얼 (UnitSprite.mat)\nUnitSprite.shader용")]
         [SerializeField] Material unitMaterial;
 
-        // 사거리 링 (에셋 없이 LineRenderer로 원을 그림)
+        [Tooltip("사거리 링에 쓸 머티리얼 (RangeRing.mat)\nTrackFlow.shader용")]
+        [SerializeField] Material ringMaterial;
+
+        // 사거리 링 (LineRenderer로 원을 그리고 점선 무늬는 TrackFlow 셰이더가 그림)
         const int RingSegments = 48;
-        const float RingWidth = 0.05f;
-        static readonly Color RingColor = new Color(1f, 0.95f, 0.6f, 0.5f);
+        const float RingWidth = 0.08f;
+        static readonly Color RingColor = new Color(1f, 0.95f, 0.6f, 0.7f);
 
         int selected = NoSelection;
 
@@ -370,22 +373,9 @@ namespace PokerDefense.UI
             rangeRing.loop = true;
             rangeRing.positionCount = RingSegments;
             rangeRing.widthMultiplier = RingWidth;
-            rangeRing.numCapVertices = 2;
             rangeRing.alignment = LineAlignment.View;
-
-            Shader shader = Shader.Find("Sprites/Default");
-
-            if (shader == null)
-            {
-                shader = Shader.Find("Universal Render Pipeline/Unlit");
-            }
-
-            if (shader == null)
-            {
-                shader = Shader.Find("Unlit/Color");
-            }
-
-            rangeRing.material = new Material(shader);
+            rangeRing.textureMode = LineTextureMode.Stretch;
+            rangeRing.sharedMaterial = ringMaterial;
 
             rangeRing.startColor = RingColor;
             rangeRing.endColor = RingColor;

@@ -1,9 +1,9 @@
 /**
  * TrackFlow
  *
- * 적이 도는 트랙 위에 Flow 연출을 그리는 셰이더 (LineRenderer용)
- * Flow 연출 정의 - 화살촉(>) 무늬가 선을 따라 적이 걷는 방향으로 흐름
- * 선의 색·투명도는 CombatScreen.cs가 LineRenderer의 color로 넣음
+ * 적 경로(TrackFlow.mat)와 사거리 링(RangeRing.mat)에 Flow 연출을 그리는 셰이더 (LineRenderer용)
+ * Flow 연출 정의 - 화살촉(>) 무늬가 선을 따라 흐름 (_Slant가 0이면 점선)
+ * 선의 색·투명도는 CombatScreen.cs·BoardScreen.cs가 LineRenderer의 color로 넣음
  */
 Shader "PokerDefense/TrackFlow"
 {
@@ -82,7 +82,7 @@ Shader "PokerDefense/TrackFlow"
                 // 1. 선 가운데에서 떨어진 거리 - 가운데 0, 양쪽 끝 0.5
                 float side = abs(input.uv.y - 0.5);
 
-                // 2. 무늬 위치 - 시간만큼 빼서 무늬를 적이 걷는 방향으로 흘림
+                // 2. 무늬 위치 - 시간만큼 빼서 무늬를 선을 따라 앞으로 흘림
                 // 선 가장자리일수록 값을 더해 무늬를 뒤로 밀면 가운데가 앞선 화살촉 모양이 됨
                 float x = input.uv.x * _Count - _Time.y * _Speed + side * _Slant;
 
