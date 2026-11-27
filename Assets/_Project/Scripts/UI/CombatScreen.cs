@@ -113,6 +113,14 @@ namespace PokerDefense.UI
         const float AuraFlatten = 0.5f;
         const float AuraAlpha = 0.7f;
 
+        // 보스 등장 Warning 연출용 상수
+        const float WarningSeconds = 1.2f;
+
+        // BossWarning 셰이더 속성 ID
+        static readonly int WarningProgressId = Shader.PropertyToID("_Progress");
+        static readonly int WarningCenterId = Shader.PropertyToID("_Center");
+        static readonly int WarningAspectId = Shader.PropertyToID("_Aspect");
+
         [SerializeField] CombatController controller;
         [SerializeField] Transform boardRoot;
         [SerializeField] Sprite enemySprite;
@@ -125,6 +133,9 @@ namespace PokerDefense.UI
 
         [Tooltip("보스 발밑 표시에 쓸 머티리얼 (BossAura.mat)\nBossAura 셰이더용")]
         [SerializeField] Material bossAuraMaterial;
+
+        [Tooltip("보스 등장 화면 연출에 쓸 머티리얼 (BossWarning.mat)\nBossWarning 셰이더용")]
+        [SerializeField] Material bossWarningMaterial;
 
         [Tooltip("타격 이펙트")]
         [SerializeField] Sprite hitSprite;
@@ -177,6 +188,10 @@ namespace PokerDefense.UI
         string lastOutcome = string.Empty;
 
         Coroutine failFlashRoutine;
+
+        // 보스 등장 Warning 연출을 그리는 전체 화면 이미지 (머티리얼이 없으면 null)
+        Image bossWarning;
+        Coroutine bossWarningRoutine;
         Coroutine lifePopRoutine;
 
         // 마지막으로 착탄음 / 처치음을 낸 시각 (CombatSfxMinGap 간격 확인용)
@@ -192,7 +207,34 @@ namespace PokerDefense.UI
             BuildTrailPool();
             BuildSplashPool();
             BuildTrackFlow();
+            BuildBossWarning();
             enemyBlock = new MaterialPropertyBlock();
+        }
+
+        // 보스 등장 Warning 연출용 이미지를 failFlash와 같은 자리에 만들어 둠
+        // 머티리얼이 없으면 만들지 않음 (Warning 연출 없음)
+        void BuildBossWarning()
+        {
+            if (bossWarningMaterial == null)
+            {
+                return;
+            }
+
+            GameObject go = new GameObject("BossWarning", typeof(RectTransform));
+            RectTransform rect = (RectTransform)go.transform;
+            rect.SetParent(failFlash.transform.parent, false);
+            rect.SetSiblingIndex(failFlash.transform.GetSiblingIndex());
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            bossWarning = go.AddComponent<Image>();
+            bossWarning.raycastTarget = false;
+            bossWarning.enabled = false;
+
+            // 재생 중 값을 바꾸므로 머티리얼 에셋 대신 복제본을 씀
+            bossWarning.material = new Material(bossWarningMaterial);
         }
 
         // 트랙을 한 바퀴 도는 선을 만들어 둠 (무늬와 움직임은 TrackFlow 셰이더가 그림)
@@ -317,6 +359,49 @@ namespace PokerDefense.UI
             {
                 splashPool[i].enabled = false;
             }
+
+            if (bossWarning != null && HasBoss(combat.Wave))
+            {
+                RestartCoroutine(ref bossWarningRoutine, PlayBossWarning());
+            }
+        }
+
+        // 이 웨이브에 보스가 나오는지
+        static bool HasBoss(WaveDefinition wave)
+        {
+            foreach (WaveDefinition.SpawnEntry entry in wave.Entries)
+            {
+                if (entry.count > 0 && entry.enemy != null && entry.enemy.Type == EnemyType.Boss)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // 보스 등장 Warning 연출용 코루틴
+        IEnumerator PlayBossWarning()
+        {
+            Material material = bossWarning.material;
+            RectTransform rect = bossWarning.rectTransform;
+
+            // 고리 중심 - 적이 나오는 트랙 시작점을 이미지 안의 0~1 좌표로 바꿈
+            Vector3 spawn = boardRoot.TransformPoint(GridBoard.TrackPosition(0f));
+            Vector2 screen = Camera.main.WorldToScreenPoint(spawn);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(rect, screen, null, out Vector2 local);
+
+            material.SetVector(WarningCenterId, Rect.PointToNormalized(rect.rect, local));
+            material.SetFloat(WarningAspectId, rect.rect.width / rect.rect.height);
+            bossWarning.enabled = true;
+
+            for (float t = 0f; t < WarningSeconds; t += Time.deltaTime)
+            {
+                material.SetFloat(WarningProgressId, t / WarningSeconds);
+                yield return null;
+            }
+
+            bossWarning.enabled = false;
         }
 
         void OnCombatFinished(CombatOutcome outcome, int unresolved)

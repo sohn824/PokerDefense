@@ -15157,6 +15157,7 @@ MonoBehaviour:
   enemyMaterial: {fileID: 2100000, guid: c2fabeb5a88d84a4ebd8116d101066e5, type: 2}
   trackFlowMaterial: {fileID: 2100000, guid: 9bee709c621545f44b3a7553698f6b3e, type: 2}
   bossAuraMaterial: {fileID: 2100000, guid: 30869cf9f98e83e48a12ecb1f1a6a416, type: 2}
+  bossWarningMaterial: {fileID: 2100000, guid: a848f46ee6b2122448fe4e63d5ac70de, type: 2}
   hitSprite: {fileID: 21300000, guid: fc91a8beb035c814d92932ddd3d49913, type: 3}
   splashSprite: {fileID: 21300000, guid: acd5f51bcfed49349272293a869fb054, type: 3}
   failFlash: {fileID: 206561122}
