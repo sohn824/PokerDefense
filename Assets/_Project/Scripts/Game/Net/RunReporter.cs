@@ -125,7 +125,7 @@ namespace PokerDefense.Game
             StageContext context = stage.Stage;
             RunStats stats = stage.Stats;
             return new RunResult(Guid.NewGuid(), RunResult.CurrentRuleset, context.WaveIndex, context.TotalWaves,
-                context.IsAllWavesCleared, context.Life, stats.Summons, stats.BestHand,
+                context.IsCleared, context.Life, stats.Summons, stats.BestHand,
                 Mathf.RoundToInt(flow.ElapsedSeconds * 1000f));
         }
 

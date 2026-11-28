@@ -32,6 +32,10 @@ namespace PokerDefense.Game
 
         public bool IsGameOver => Life <= 0;
         public bool IsAllWavesCleared => WaveIndex >= TotalWaves;
+
+        // 스테이지 클리어 - 모든 웨이브를 치르고 라이프가 남음
+        // 마지막 웨이브에서 라이프가 0이 되면(보스를 놓친 경우 포함) 모든 웨이브를 치렀어도 패배
+        public bool IsCleared => IsAllWavesCleared && IsGameOver == false;
         public WaveDefinition CurrentWave => IsAllWavesCleared ? null : definition.Waves[WaveIndex];
 
         // 시간 초과면 라이프를 깎고, 클리어면 승급권 보상을 줌 (어느 쪽이든 다음 웨이브로 넘어감)

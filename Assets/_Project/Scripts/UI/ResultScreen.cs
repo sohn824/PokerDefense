@@ -47,7 +47,7 @@ namespace PokerDefense.UI
 
             StageContext context = stage.Stage;
             RunStats stats = stage.Stats;
-            bool cleared = context.IsAllWavesCleared;
+            bool cleared = context.IsCleared;
 
             titleLabel.text = cleared ? "스테이지 클리어" : "게임 오버";
 

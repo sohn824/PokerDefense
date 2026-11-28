@@ -111,6 +111,28 @@ namespace PokerDefense.Tests
         }
 
         [Test]
+        public void 마지막_웨이브에서_보스를_놓치면_클리어가_아니다()
+        {
+            var stage = new StageContext(MakeStage(15, 3, MakeWave(1, 1)));
+
+            stage.ApplyResult(CombatOutcome.TimedOut, 1, 1);
+
+            Assert.IsTrue(stage.IsAllWavesCleared, "모든 웨이브는 치렀다");
+            Assert.IsFalse(stage.IsCleared, "라이프가 0이라 패배다");
+        }
+
+        [Test]
+        public void 라이프가_남은_채로_모든_웨이브를_치르면_클리어다()
+        {
+            var stage = new StageContext(MakeStage(15, 3, MakeWave(1, 0)));
+
+            stage.ApplyResult(CombatOutcome.TimedOut, 2, 0);
+
+            Assert.IsTrue(stage.IsCleared);
+            Assert.AreEqual(13, stage.Life);
+        }
+
+        [Test]
         public void 클리어하면_라이프가_그대로다()
         {
             var stage = new StageContext(MakeStage(15, 3, MakeWave(1, 0)));
