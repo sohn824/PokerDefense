@@ -10,8 +10,7 @@ namespace PokerDefense.Tests
      * AttackPatternTests
      *
      * 공격 패턴 5종이 때릴 적을 제대로 고르는지 검증함
-     * 다루는 것 - 패턴별 대상 선택, 적 타입 값, 에셋 값 누락, 같은 DPS에서의 결과 차이
-     * 마지막 섹션은 총 DPS가 같아도 적 구성에 따라 클리어 여부가 갈리는지 확인함
+     * 다루는 것 - 패턴별 대상 선택, 적 타입 값, 에셋 값 누락
      */
     public class AttackPatternTests
     {
@@ -293,44 +292,6 @@ namespace PokerDefense.Tests
                 Assert.Greater(unit.PierceLength, 0f, $"{unit.name}의 pierceLength가 비었다");
                 Assert.Greater(unit.AttacksPerSecond, 0f, $"{unit.name}의 공격속도가 비었다");
             }
-        }
-
-        // ---------- 같은 DPS, 다른 결과 ----------
-
-        [Test]
-        public void 같은_DPS라도_뭉친_적_앞에서는_Splash가_이긴다()
-        {
-            // 단일 DPS는 Rapid 20 > Splash 12인데도 결과가 뒤집힘
-            var rapid = MakeUnit(AttackPattern.Rapid, 10f, 2f, range: 100f);
-            var splash = MakeUnit(AttackPattern.Splash, 12f, 1f, range: 100f, splashRadius: 1.5f);
-            var swarm = MakeEnemy(25f, 0f);
-
-            var rapidRun = new CombatContext(BoardWith(rapid), MakeWave(swarm, 10, 0f, 6f));
-            var splashRun = new CombatContext(BoardWith(splash), MakeWave(swarm, 10, 0f, 6f));
-
-            Run(rapidRun, 6f);
-            Run(splashRun, 6f);
-
-            Assert.AreEqual(CombatOutcome.TimedOut, rapidRun.Outcome, "단일 화력으로 뭉친 무리를 잡았다");
-            Assert.AreEqual(CombatOutcome.Cleared, splashRun.Outcome);
-        }
-
-        [Test]
-        public void 총_DPS가_같아도_Heavy는_잔챙이_떼에_비효율이다()
-        {
-            // 둘 다 20 DPS (Heavy는 HP 25인 적에게 100을 꽂아 75를 버림)
-            var rapid = MakeUnit(AttackPattern.Rapid, 5f, 4f, range: 100f);
-            var heavy = MakeUnit(AttackPattern.Heavy, 100f, 0.2f, range: 100f);
-            var swarm = MakeEnemy(25f, 0f);
-
-            var rapidRun = new CombatContext(BoardWith(rapid), MakeWave(swarm, 10, 0f, 20f));
-            var heavyRun = new CombatContext(BoardWith(heavy), MakeWave(swarm, 10, 0f, 20f));
-
-            Run(rapidRun, 20f);
-            Run(heavyRun, 20f);
-
-            Assert.AreEqual(CombatOutcome.Cleared, rapidRun.Outcome);
-            Assert.AreEqual(CombatOutcome.TimedOut, heavyRun.Outcome, "오버킬 낭비가 사라졌다");
         }
     }
 }

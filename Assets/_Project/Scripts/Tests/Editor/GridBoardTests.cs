@@ -52,16 +52,23 @@ namespace PokerDefense.Tests
 
         UnitInstance Knight() => new UnitInstance(knight);
 
+        // 0번과 1번을 각각 ★2로 만듦
+        static void TwoStarPair(GridBoard board, Func<UnitInstance> make)
+        {
+            board.TryPlace(0, make());
+            board.TryPlace(0, make());
+            board.TryPlace(1, make());
+            board.TryPlace(1, make());
+        }
+
+        // ---------- 슬롯 좌표 ----------
+
         [Test]
-        public void 보드_중앙_슬롯은_원점이다()
+        public void 슬롯은_좌상단부터_우하단으로_놓이고_중앙이_원점이다()
         {
             // 5 × 3이라 정가운데(0부터 세어 1행 2열 = 7번)가 보드 중심
             Assert.AreEqual(Vector2.zero, GridBoard.SlotToLocalPosition(7));
-        }
 
-        [Test]
-        public void 슬롯_0번은_좌상단_14번은_우하단이다()
-        {
             Vector2 topLeft = GridBoard.SlotToLocalPosition(0);
             Vector2 bottomRight = GridBoard.SlotToLocalPosition(14);
 
@@ -71,15 +78,22 @@ namespace PokerDefense.Tests
             Assert.Less(bottomRight.y, 0f, "14번이 아래쪽이 아니다");
         }
 
-        [TestCase(-1)]
-        [TestCase(15)]
-        public void 범위를_벗어난_슬롯_좌표는_예외를_던진다(int index)
+        [Test]
+        public void 범위를_벗어난_슬롯은_예외를_던진다()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => GridBoard.SlotToLocalPosition(index));
+            var board = new GridBoard();
+
+            foreach (int index in new[] { -1, GridBoard.SlotCount })
+            {
+                Assert.Throws<ArgumentOutOfRangeException>(() => GridBoard.SlotToLocalPosition(index), $"좌표 {index}");
+                Assert.Throws<ArgumentOutOfRangeException>(() => board.TryPlace(index, Archer()), $"배치 {index}");
+            }
         }
 
+        // ---------- 배치와 머지 ----------
+
         [Test]
-        public void 빈_칸에_놓으면_배치된다()
+        public void 빈_칸에_놓고_비울_수_있다()
         {
             var board = new GridBoard();
             var unit = Archer();
@@ -87,174 +101,69 @@ namespace PokerDefense.Tests
             Assert.AreEqual(PlacementResult.Placed, board.TryPlace(7, unit));
             Assert.AreSame(unit, board[7]);
             Assert.AreEqual(1, board.OccupiedCount);
+
+            board.ClearAt(7);
+            Assert.IsNull(board[7]);
+            Assert.AreEqual(0, board.OccupiedCount);
+
+            Assert.DoesNotThrow(() => board.ClearAt(7), "빈 칸을 비워도 예외가 나면 안 됨");
         }
 
         [Test]
-        public void 같은_유닛_같은_성급이면_머지되어_별이_오른다()
+        public void 같은_유닛_같은_성급을_놓으면_머지되어_공격력이_오른다()
         {
+            // UnitInstance는 불변이라 승급은 새 객체를 만듦
             var board = new GridBoard();
-            board.TryPlace(0, Archer());
+            var original = Archer();
+            board.TryPlace(0, original);
+            Assert.AreEqual(10f, board[0].AttackPower);
 
             Assert.AreEqual(PlacementResult.Merged, board.TryPlace(0, Archer()));
             Assert.AreEqual(2, board[0].Star);
+            Assert.AreEqual(20f, board[0].AttackPower, "성급 배수만큼 오른다");
+            Assert.AreEqual(1, original.Star, "원본 인스턴스의 성급이 바뀌었다");
         }
 
         [Test]
-        public void 머지하면_공격력이_성급_배수만큼_오른다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-            float star1 = board[0].AttackPower;
-
-            board.TryPlace(0, Archer());
-            float star2 = board[0].AttackPower;
-
-            Assert.AreEqual(10f, star1);
-            Assert.AreEqual(20f, star2);
-        }
-
-        // 0번과 1번을 각각 ★2로 만듦
-        static void TwoStarPair(GridBoard board, System.Func<UnitInstance> make)
-        {
-            board.TryPlace(0, make());
-            board.TryPlace(0, make());
-            board.TryPlace(1, make());
-            board.TryPlace(1, make());
-        }
-
-        [Test]
-        public void 별2_둘을_슬롯간_머지하면_별3이_된다()
-        {
-            // 소환 유닛을 놓을 때만 머지되면 ★2 두 기를 합칠 방법이 없어 ★3에 도달하지 못함
-            var board = new GridBoard();
-            TwoStarPair(board, Archer);
-
-            Assert.AreEqual(PlacementResult.Merged, board.TryMergeSlots(1, 0));
-            Assert.AreEqual(3, board[0].Star);
-            Assert.AreEqual(40f, board[0].AttackPower);
-        }
-
-        [Test]
-        public void 슬롯간_머지하면_원래_자리가_비워진다()
-        {
-            var board = new GridBoard();
-            TwoStarPair(board, Archer);
-
-            board.TryMergeSlots(1, 0);
-
-            Assert.IsNull(board[1], "합쳐진 쪽 슬롯이 비워지지 않았다");
-            Assert.AreEqual(1, board.OccupiedCount);
-        }
-
-        [Test]
-        public void 같은_슬롯끼리는_머지되지_않는다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-
-            Assert.AreEqual(PlacementResult.Rejected, board.TryMergeSlots(0, 0));
-            Assert.AreEqual(1, board[0].Star);
-        }
-
-        // 2번 슬롯을 ★3으로 만듦 (3번을 재료로 씀)
-        void TwoStarPair2(GridBoard board)
-        {
-            board.TryPlace(2, Archer());
-            board.TryPlace(2, Archer());   // ★2
-            board.TryPlace(3, Archer());
-            board.TryPlace(3, Archer());   // ★2
-            board.TryMergeSlots(3, 2);     // ★3
-        }
-
-        [Test]
-        public void HasMergePartner는_합칠_상대가_있을_때만_참이다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-            board.TryPlace(1, Archer());
-            board.TryPlace(2, Knight());
-
-            Assert.IsTrue(board.HasMergePartner(0));
-            Assert.IsTrue(board.HasMergePartner(1));
-            Assert.IsFalse(board.HasMergePartner(2), "짝 없는 유닛");
-            Assert.IsFalse(board.HasMergePartner(9), "빈 칸");
-        }
-
-        [Test]
-        public void CanMergeSlots는_TryMergeSlots의_결과와_일치한다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-            board.TryPlace(1, Archer());
-            board.TryPlace(2, Knight());
-
-            Assert.IsTrue(board.CanMergeSlots(1, 0));
-            Assert.IsFalse(board.CanMergeSlots(2, 0));
-            Assert.IsFalse(board.CanMergeSlots(0, 0));
-            Assert.IsFalse(board.CanMergeSlots(0, 9));
-        }
-
-        [Test]
-        public void 성급이_다르면_머지되지_않는다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-            board.TryPlace(0, Archer());   // ★2
-
-            Assert.AreEqual(PlacementResult.Rejected, board.TryPlace(0, Archer()), "★2에 ★1을 얹을 수 없다");
-            Assert.AreEqual(2, board[0].Star);
-        }
-
-        [Test]
-        public void 다른_종류는_머지되지_않는다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-
-            Assert.AreEqual(PlacementResult.Rejected, board.TryPlace(0, Knight()));
-            Assert.AreSame(archer, board[0].Definition);
-            Assert.AreEqual(1, board[0].Star);
-        }
-
-        [Test]
-        public void 별3에는_소환_유닛을_얹을_수_없다()
-        {
-            var board = new GridBoard();
-            TwoStarPair(board, Archer);
-            board.TryMergeSlots(1, 0);   // 0번 ★3
-
-            Assert.AreEqual(3, board[0].Star);
-            Assert.AreEqual(PlacementResult.Rejected, board.TryPlace(0, Archer()));
-            Assert.AreEqual(3, board[0].Star);
-        }
-
-        [Test]
-        public void 거부된_배치는_보드를_바꾸지_않는다()
+        public void 머지할_수_없는_배치는_거부되고_보드를_바꾸지_않는다()
         {
             var board = new GridBoard();
             var placed = Archer();
             board.TryPlace(3, placed);
 
-            board.TryPlace(3, Knight());
-
+            Assert.AreEqual(PlacementResult.Rejected, board.TryPlace(3, Knight()), "다른 종류");
             Assert.AreSame(placed, board[3]);
+            Assert.AreEqual(1, board.OccupiedCount);
+
+            board.TryPlace(4, Archer());
+            board.TryPlace(4, Archer());   // ★2
+            Assert.AreEqual(PlacementResult.Rejected, board.TryPlace(4, Archer()), "★2에 ★1을 얹을 수 없다");
+            Assert.AreEqual(2, board[4].Star);
+
+            TwoStarPair(board, Archer);
+            board.TryMergeSlots(1, 0);   // 0번 ★3
+            Assert.AreEqual(PlacementResult.Rejected, board.TryPlace(0, Archer()), "★3에는 얹을 수 없다");
+            Assert.AreEqual(3, board[0].Star);
+        }
+
+        [Test]
+        public void 별2_둘을_슬롯간_머지하면_별3이_되고_원래_자리가_비워진다()
+        {
+            // 소환 유닛을 놓을 때만 머지되면 ★2 두 기를 합칠 방법이 없어 ★3에 도달하지 못함
+            var board = new GridBoard();
+            TwoStarPair(board, Archer);
+
+            Assert.AreEqual(PlacementResult.Rejected, board.TryMergeSlots(0, 0), "같은 슬롯끼리는 머지하지 않는다");
+
+            Assert.AreEqual(PlacementResult.Merged, board.TryMergeSlots(1, 0));
+            Assert.AreEqual(3, board[0].Star);
+            Assert.AreEqual(40f, board[0].AttackPower);
+            Assert.IsNull(board[1], "합쳐진 쪽 슬롯이 비워지지 않았다");
             Assert.AreEqual(1, board.OccupiedCount);
         }
 
         [Test]
-        public void CanPlaceAt는_TryPlace의_결과와_일치한다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(0, Archer());
-            board.TryPlace(1, Knight());
-
-            Assert.IsTrue(board.CanPlaceAt(2, Archer()), "빈 칸");
-            Assert.IsTrue(board.CanPlaceAt(0, Archer()), "같은 유닛 같은 성급");
-            Assert.IsFalse(board.CanPlaceAt(1, Archer()), "다른 유닛");
-        }
-
-        [Test]
-        public void 보드가_가득_차면_새_유닛을_받지_못한다()
+        public void 가득_찬_보드는_머지할_수_있는_유닛만_받는다()
         {
             var board = new GridBoard();
             for (int i = 0; i < GridBoard.SlotCount; i++)
@@ -263,58 +172,53 @@ namespace PokerDefense.Tests
             }
 
             Assert.IsFalse(board.CanAccept(Archer()), "빈 칸도 머지 대상도 없다");
-        }
-
-        [Test]
-        public void 가득_차도_머지할_수_있으면_받는다()
-        {
-            var board = new GridBoard();
-            for (int i = 0; i < GridBoard.SlotCount; i++)
-            {
-                board.TryPlace(i, Knight());
-            }
-
             Assert.IsTrue(board.CanAccept(Knight()), "가득 차 있어도 같은 유닛이면 머지로 받을 수 있다");
         }
 
-        [TestCase(-1)]
-        [TestCase(15)]
-        public void 범위를_벗어난_슬롯은_예외를_던진다(int index)
-        {
-            var board = new GridBoard();
-
-            Assert.Throws<ArgumentOutOfRangeException>(() => board.TryPlace(index, Archer()));
-        }
-
         [Test]
-        public void 빈_칸으로_유닛을_옮길_수_있다()
+        public void 미리_보는_판정은_실제_배치_머지_결과와_일치한다()
         {
-            var board = new GridBoard();
-            var unit = Archer();
-            board.TryPlace(0, unit);
-
-            Assert.IsTrue(board.TryMoveSlot(0, 8));
-
-            Assert.IsNull(board[0]);
-            Assert.AreSame(unit, board[8]);
-            Assert.AreEqual(1, board.OccupiedCount);
-        }
-
-        [Test]
-        public void 유닛이_있는_칸으로는_옮길_수_없다()
-        {
-            // 옮기기와 머지를 섞지 않음 (머지는 TryMergeSlots가 맡음)
             var board = new GridBoard();
             board.TryPlace(0, Archer());
             board.TryPlace(1, Archer());
+            board.TryPlace(2, Knight());
 
-            Assert.IsFalse(board.TryMoveSlot(0, 1));
-            Assert.IsNotNull(board[0]);
+            Assert.IsTrue(board.CanPlaceAt(5, Archer()), "빈 칸");
+            Assert.IsTrue(board.CanPlaceAt(0, Archer()), "같은 유닛 같은 성급");
+            Assert.IsFalse(board.CanPlaceAt(2, Archer()), "다른 유닛");
+
+            Assert.IsTrue(board.CanMergeSlots(1, 0));
+            Assert.IsFalse(board.CanMergeSlots(2, 0));
+            Assert.IsFalse(board.CanMergeSlots(0, 0));
+            Assert.IsFalse(board.CanMergeSlots(0, 9));
+
+            Assert.IsTrue(board.HasMergePartner(0));
+            Assert.IsFalse(board.HasMergePartner(2), "짝 없는 유닛");
+            Assert.IsFalse(board.HasMergePartner(9), "빈 칸");
+        }
+
+        // ---------- 이동과 자리 교환 ----------
+
+        [Test]
+        public void 유닛은_빈_칸으로만_옮길_수_있다()
+        {
+            // 옮기기와 머지를 섞지 않음 (머지는 TryMergeSlots가 맡음)
+            var board = new GridBoard();
+            var unit = Archer();
+            board.TryPlace(0, unit);
+            board.TryPlace(1, Archer());
+
+            Assert.IsFalse(board.TryMoveSlot(0, 1), "유닛이 있는 칸");
             Assert.AreEqual(1, board[1].Star);
+
+            Assert.IsTrue(board.TryMoveSlot(0, 8));
+            Assert.IsNull(board[0]);
+            Assert.AreSame(unit, board[8]);
+            Assert.AreEqual(2, board.OccupiedCount);
         }
 
         [Test]
-        public void 서로_다른_유닛이_있는_칸끼리는_자리를_교환한다()
+        public void 자리_교환은_서로_다른_칸의_두_유닛끼리만_된다()
         {
             var board = new GridBoard();
             var archerUnit = Archer();
@@ -322,61 +226,14 @@ namespace PokerDefense.Tests
             board.TryPlace(0, archerUnit);
             board.TryPlace(1, knightUnit);
 
+            Assert.IsFalse(board.TrySwapSlots(0, 0), "같은 슬롯");
+            Assert.IsFalse(board.TrySwapSlots(0, 2), "상대 칸이 비어 있다");
+            Assert.IsFalse(board.TrySwapSlots(2, 0), "출발 칸이 비어 있다");
+            Assert.AreSame(archerUnit, board[0]);
+
             Assert.IsTrue(board.TrySwapSlots(0, 1));
             Assert.AreSame(knightUnit, board[0]);
             Assert.AreSame(archerUnit, board[1]);
-        }
-
-        [Test]
-        public void 같은_슬롯끼리는_교환되지_않는다()
-        {
-            var board = new GridBoard();
-            var unit = Archer();
-            board.TryPlace(0, unit);
-
-            Assert.IsFalse(board.TrySwapSlots(0, 0));
-            Assert.AreSame(unit, board[0]);
-        }
-
-        [Test]
-        public void 빈_칸이_섞이면_교환되지_않는다()
-        {
-            var board = new GridBoard();
-            var unit = Archer();
-            board.TryPlace(0, unit);
-
-            Assert.IsFalse(board.TrySwapSlots(0, 1), "상대 칸이 비어 있다");
-            Assert.IsFalse(board.TrySwapSlots(1, 0), "출발 칸이 비어 있다");
-            Assert.AreSame(unit, board[0]);
-            Assert.AreEqual(1, board.OccupiedCount);
-        }
-
-        [Test]
-        public void ClearAt은_슬롯을_비운다()
-        {
-            var board = new GridBoard();
-            board.TryPlace(4, Archer());
-
-            board.ClearAt(4);
-            Assert.IsNull(board[4]);
-            Assert.AreEqual(0, board.OccupiedCount);
-
-            Assert.DoesNotThrow(() => board.ClearAt(4), "빈 칸을 비워도 예외가 나면 안 됨");
-            Assert.IsNull(board[4]);
-        }
-
-        [Test]
-        public void 머지는_원본_인스턴스를_바꾸지_않는다()
-        {
-            // UnitInstance는 불변이라 승급은 새 객체를 만듦
-            var board = new GridBoard();
-            var original = Archer();
-            board.TryPlace(0, original);
-
-            board.TryPlace(0, Archer());
-
-            Assert.AreEqual(1, original.Star, "원본 인스턴스의 성급이 바뀌었다");
-            Assert.AreEqual(2, board[0].Star);
         }
     }
 }

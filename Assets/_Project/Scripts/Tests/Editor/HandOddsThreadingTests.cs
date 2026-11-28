@@ -41,11 +41,10 @@ namespace PokerDefense.Tests
             }
         }
 
-        [TestCase(1)]
-        [TestCase(2)]
-        [TestCase(4)]
-        public void 순차와_병렬의_모든_집계가_일치한다(int degree)
+        [Test]
+        public void 순차와_병렬의_모든_집계가_일치한다()
         {
+            foreach (int degree in new[] { 1, 2, 4 })
             for (int seed = 0; seed < 8; seed++)
             {
                 var deck = new Deck(seed);
@@ -56,7 +55,7 @@ namespace PokerDefense.Tests
                     var indices = Enumerable.Range(0, k).ToArray();
                     var sequential = HandOdds.Find(hand, pool, indices, maxSlots: 4);
                     var parallel = HandOdds.FindParallel(hand, pool, indices, degree, maxSlots: 4);
-                    CollectionAssert.AreEqual(sequential, parallel);
+                    CollectionAssert.AreEqual(sequential, parallel, $"degree={degree} seed={seed} k={k}");
                     int combinations = 1;
                     for (int i = 1; i <= k; i++)
                     {

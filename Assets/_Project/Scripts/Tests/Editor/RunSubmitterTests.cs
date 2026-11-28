@@ -109,9 +109,10 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 서버가_받으면_순위를_돌려준다()
+        public void 서버가_받으면_순위를_돌려주고_중복_응답도_저장된_것으로_본다()
         {
-            using (var server = new FakeServer(payload => AckFor(payload, RunAckStatus.Accepted, 3, 12)))
+            // 응답을 한 바이트씩 나눠 보내도 이어 붙여 읽어야 함
+            using (var server = new FakeServer(payload => AckFor(payload, RunAckStatus.Accepted, 3, 12), dribble: true))
             {
                 var outcome = Submit(server.Port);
                 Assert.AreEqual(SubmitStatus.Accepted, outcome.Status);
@@ -120,11 +121,7 @@ namespace PokerDefense.Tests
                 Assert.AreEqual(12, outcome.Total);
                 Assert.IsTrue(RunProtocol.TryDecodeSubmit(server.Received, out _));
             }
-        }
 
-        [Test]
-        public void 중복_응답도_저장된_것으로_본다()
-        {
             using (var server = new FakeServer(payload => AckFor(payload, RunAckStatus.Duplicate, 1, 5)))
             {
                 var outcome = Submit(server.Port);
@@ -134,32 +131,27 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 응답을_조각내_보내도_읽는다()
-        {
-            using (var server = new FakeServer(payload => AckFor(payload, RunAckStatus.Accepted, 2, 2), dribble: true))
-            {
-                Assert.AreEqual(SubmitStatus.Accepted, Submit(server.Port).Status);
-            }
-        }
-
-        [Test]
-        public void 다른_기록의_ACK는_실패로_본다()
+        public void 이_기록의_ACK를_받지_못하면_실패로_본다()
         {
             using (var server = new FakeServer(payload => AckFor(payload, RunAckStatus.Accepted, 1, 1, Guid.NewGuid())))
             {
                 var outcome = Submit(server.Port);
-                Assert.AreEqual(SubmitStatus.Failed, outcome.Status);
+                Assert.AreEqual(SubmitStatus.Failed, outcome.Status, "다른 기록의 ACK");
                 Assert.IsFalse(outcome.IsStored);
             }
-        }
 
-        [Test]
-        public void 응답_전에_끊기면_실패로_본다()
-        {
             using (var server = new FakeServer(payload => null))
             {
-                Assert.AreEqual(SubmitStatus.Failed, Submit(server.Port).Status);
+                Assert.AreEqual(SubmitStatus.Failed, Submit(server.Port).Status, "응답 전에 끊김");
             }
+
+            // 빈 포트를 하나 받아 바로 닫아서, 아무도 듣지 않는 포트를 만듦
+            var probe = new TcpListener(IPAddress.Loopback, 0);
+            probe.Start();
+            int port = ((IPEndPoint)probe.LocalEndpoint).Port;
+            probe.Stop();
+
+            Assert.AreEqual(SubmitStatus.Failed, Submit(port).Status, "서버가 없음");
         }
 
         [Test]
@@ -172,18 +164,6 @@ namespace PokerDefense.Tests
                 Assert.AreEqual(SubmitStatus.Failed, outcome.Status);
                 Assert.Less(watch.ElapsedMilliseconds, 1500, "시간 제한이 지나면 응답을 기다리지 않아야 함");
             }
-        }
-
-        [Test]
-        public void 서버가_없으면_실패한다()
-        {
-            // 빈 포트를 하나 받아 바로 닫아서, 아무도 듣지 않는 포트를 만듦
-            var probe = new TcpListener(IPAddress.Loopback, 0);
-            probe.Start();
-            int port = ((IPEndPoint)probe.LocalEndpoint).Port;
-            probe.Stop();
-
-            Assert.AreEqual(SubmitStatus.Failed, Submit(port).Status);
         }
     }
 }

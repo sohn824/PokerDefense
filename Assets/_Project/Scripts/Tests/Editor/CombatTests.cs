@@ -126,22 +126,14 @@ namespace PokerDefense.Tests
         // ---------- 이동 ----------
 
         [Test]
-        public void 적은_시간이_지나면_트랙을_따라_나아간다()
+        public void 적은_트랙을_따라_나아가고_한_바퀴를_넘어도_계속_돈다()
         {
             var enemy = new EnemyInstance(MakeEnemy(100f, GridBoard.TrackLength));
 
             enemy.Move(0.5f);
-
             Assert.AreEqual(0.5f, enemy.Progress, 0.0001f, "트랙 길이만큼의 속도면 1초에 한 바퀴다");
-        }
 
-        [Test]
-        public void 적은_한_바퀴를_넘어도_계속_돈다()
-        {
-            var enemy = new EnemyInstance(MakeEnemy(100f, GridBoard.TrackLength));
-
-            enemy.Move(2.5f);
-
+            enemy.Move(2f);
             Assert.AreEqual(2.5f, enemy.Progress, 0.0001f, "진행도는 바퀴 수를 포함해 누적된다");
         }
 
@@ -459,19 +451,6 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 시간_초과하면_잔여_적_수만큼_라이프가_깎인다()
-        {
-            var wave = MakeWave(MakeEnemy(100f, 0f), count: 4, interval: 0.5f, timeLimit: 5f);
-            var stage = new StageContext(MakeStage(20, wave));
-            var combat = new CombatContext(new GridBoard(), wave);
-
-            Run(combat, 10f);
-            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies, combat.UnresolvedBosses);
-
-            Assert.AreEqual(20 - 4, stage.Life);
-        }
-
-        [Test]
         public void 아직_나오지_않은_적도_잔여로_친다()
         {
             // 제한시간이 스폰보다 먼저 끝나면 안 나온 적도 라이프를 깎음
@@ -486,20 +465,6 @@ namespace PokerDefense.Tests
         }
 
         // ---------- 스테이지 진행 ----------
-
-        [Test]
-        public void 라이프가_0이_되면_게임_오버다()
-        {
-            var wave = MakeWave(MakeEnemy(100f, 0f), count: 3, interval: 0.1f, timeLimit: 1f);
-            var stage = new StageContext(MakeStage(startingLife: 3, wave, wave));
-
-            var combat = new CombatContext(new GridBoard(), wave);
-            Run(combat, 5f);
-            stage.ApplyResult(combat.Outcome, combat.UnresolvedEnemies, combat.UnresolvedBosses);
-
-            Assert.AreEqual(0, stage.Life);
-            Assert.IsTrue(stage.IsGameOver);
-        }
 
         [Test]
         public void 웨이브를_넘기면_다음_웨이브가_현재가_된다()

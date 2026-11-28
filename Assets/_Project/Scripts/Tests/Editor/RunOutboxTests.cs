@@ -31,26 +31,19 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 저장한_기록을_다시_읽는다()
+        public void 저장한_기록은_runId마다_하나씩_다시_읽힌다()
         {
+            Assert.AreEqual(0, new RunOutbox(directory).LoadPending().Count, "폴더가 없으면 빈 목록이다");
+
             var outbox = new RunOutbox(directory);
             var sample = RunProtocolTests.Sample(Guid.NewGuid());
+            outbox.Save(sample);
             outbox.Save(sample);
 
             var pending = new RunOutbox(directory).LoadPending();
-            Assert.AreEqual(1, pending.Count);
+            Assert.AreEqual(1, pending.Count, "같은 runId를 두 번 저장해도 하나만 남는다");
             Assert.AreEqual(sample.RunId, pending[0].RunId);
             Assert.AreEqual(sample.Wave, pending[0].Wave);
-        }
-
-        [Test]
-        public void 같은_runId를_두_번_저장해도_하나만_남는다()
-        {
-            var outbox = new RunOutbox(directory);
-            var sample = RunProtocolTests.Sample(Guid.NewGuid());
-            outbox.Save(sample);
-            outbox.Save(sample);
-            Assert.AreEqual(1, outbox.LoadPending().Count);
         }
 
         [Test]
@@ -70,33 +63,19 @@ namespace PokerDefense.Tests
         }
 
         [Test]
-        public void 깨진_파일은_bad로_바꾸고_나머지는_읽는다()
+        public void 깨지거나_쓰다_만_파일은_대기열에_섞이지_않는다()
         {
             var outbox = new RunOutbox(directory);
             var sample = RunProtocolTests.Sample(Guid.NewGuid());
             outbox.Save(sample);
             File.WriteAllBytes(Path.Combine(directory, Guid.NewGuid().ToString("N") + ".run"), new byte[] { 1, 2, 3 });
-
-            var pending = outbox.LoadPending();
-            Assert.AreEqual(1, pending.Count);
-            Assert.AreEqual(sample.RunId, pending[0].RunId);
-            Assert.AreEqual(1, Directory.GetFiles(directory, "*.bad").Length);
-        }
-
-        [Test]
-        public void 쓰다_만_임시_파일은_대기열에_섞이지_않는다()
-        {
-            Directory.CreateDirectory(directory);
             var partial = RunProtocol.EncodeSubmit(RunProtocolTests.Sample(Guid.NewGuid())).Take(10).ToArray();
             File.WriteAllBytes(Path.Combine(directory, Guid.NewGuid().ToString("N") + ".tmp"), partial);
 
-            Assert.AreEqual(0, new RunOutbox(directory).LoadPending().Count);
-        }
-
-        [Test]
-        public void 폴더가_없으면_빈_목록이다()
-        {
-            Assert.AreEqual(0, new RunOutbox(directory).LoadPending().Count);
+            var pending = outbox.LoadPending();
+            Assert.AreEqual(1, pending.Count, "멀쩡한 기록만 읽는다");
+            Assert.AreEqual(sample.RunId, pending[0].RunId);
+            Assert.AreEqual(1, Directory.GetFiles(directory, "*.bad").Length, "깨진 파일은 bad로 바꾼다");
         }
     }
 }
