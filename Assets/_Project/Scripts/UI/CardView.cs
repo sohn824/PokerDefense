@@ -39,7 +39,8 @@ namespace PokerDefense.UI
         const float LockedScale = 0.92f;
         const float LockedAlpha = 0.5f;
 
-        // 교체 Burn 연출용 상수 (덮개는 카드 바탕과 비슷한 밝은 색)
+        // 교체 Burn 연출용 상수
+        // BurnCoverColor - 덮개 색 (카드 바탕과 비슷한 밝은 크림색)
         const float BurnSeconds = 0.45f;
         static readonly Color BurnCoverColor = new Color(1f, 0.96f, 0.85f, 1f);
         static readonly int BurnProgressId = Shader.PropertyToID("_Progress");
@@ -208,7 +209,7 @@ namespace PokerDefense.UI
             burnCover.material = new Material(visuals.Burn);
         }
 
-        // Burn 진행도를 0 -> 1로 올리고 끝나면 덮개를 끔
+        // Burn 연출용 코루틴 - 진행도를 0 -> 1로 올리고 끝나면 덮개를 끔
         IEnumerator Burn()
         {
             burnCover.enabled = true;

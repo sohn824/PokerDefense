@@ -3,7 +3,7 @@
  *
  * 교체한 카드 위에 Burn 연출을 그리는 셰이더 (카드를 덮는 UI Image용)
  * Burn 연출 정의 - 카드를 덮은 밝은 막이 불규칙하게 타들어 가며 새 카드가 드러남
- * _Progress는 CardView.cs가 0 -> 1로 올림 (0이면 카드를 다 덮고, 1이면 다 타서 안 보임)
+ * _Progress는 CardView.cs가 0 -> 1로 올림 (0이면 덮개가 카드를 다 가리고, 1이면 다 타서 안 보임)
  */
 Shader "PokerDefense/CardBurn"
 {
@@ -17,7 +17,7 @@ Shader "PokerDefense/CardBurn"
         _EdgeColor ("Edge Color", Color) = (1, 0.55, 0.15, 1)
         _EdgeWidth ("Edge Width", Range(0, 0.3)) = 0.07
 
-        // 노이즈 무늬 크기 (클수록 잘게 부서짐, UI 좌표 1픽셀 기준)
+        // 노이즈 무늬 크기 (UI 좌표에 곱하는 값, 클수록 잘게 부서짐)
         _NoiseScale ("Noise Scale", Float) = 0.035
     }
 
@@ -116,7 +116,9 @@ Shader "PokerDefense/CardBurn"
                 float noise = ValueNoise(input.noisePos) * 0.7 + ValueNoise(input.noisePos * 2.7) * 0.3;
 
                 // 3. Burn - 노이즈가 기준선 이상인 곳만 남기고, 기준선 바로 위 _EdgeWidth만큼은 경계 색으로 칠함
-                // 기준선은 _Progress 0 -> 1에 따라 -_EdgeWidth -> 1로 오름 (0에서 경계 색이 안 보이게)
+                // step(a, b) - b가 a 이상이면 1, 아니면 0
+                // 기준선은 _Progress 0 -> 1에 따라 -_EdgeWidth -> 1로 오름
+                // 0이 아닌 -_EdgeWidth에서 시작해야 진행도 0에서 경계 색이 안 보임
                 float threshold = lerp(-_EdgeWidth, 1.0, _Progress);
                 half visible = step(threshold, noise);
                 half edge = visible * (1.0 - step(threshold + _EdgeWidth, noise));

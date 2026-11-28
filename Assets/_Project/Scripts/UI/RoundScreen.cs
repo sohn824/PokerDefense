@@ -133,6 +133,7 @@ namespace PokerDefense.UI
         }
 
         // 손패 5장을 새로 표시하고 고른 카드를 모두 풂 (카드 상태는 이어서 부르는 Refresh가 다시 맞춤)
+        // 교체로 바뀐 자리는 Burn 연출
         void ShowHand(IReadOnlyList<Card> hand)
         {
             // 같은 라운드 안에서 바뀐 자리만 교체로 보고 Burn 연출 (이어하기 복원은 제외)
