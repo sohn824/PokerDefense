@@ -162,6 +162,9 @@ namespace PokerDefense.UI
             if (result == PlacementResult.Placed || result == PlacementResult.Replaced)
             {
                 AudioManager.Instance?.Play(AudioManager.Sfx.UnitPlace);
+
+                // 새 유닛이 들어온 칸에 Appear 연출
+                slots[index].PlayAppear();
             }
             else if (result == PlacementResult.Merged)
             {

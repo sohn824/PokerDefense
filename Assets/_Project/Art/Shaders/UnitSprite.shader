@@ -1,11 +1,13 @@
 /**
  * UnitSprite
  *
- * 유닛 아트에 머지·승급 Sweep 연출과 최고 성급 Rim 연출을 그리는 셰이더
+ * 유닛 아트에 머지·승급 Sweep, 최고 성급 Rim, 배치·교체 Appear 연출을 그리는 셰이더
  * Sweep 연출 정의 - 비스듬한 빛 띠가 왼쪽 아래에서 오른쪽 위로 유닛을 한 번 지나감
  * Rim 연출 정의 - 그림 가장자리 안쪽이 금빛으로 천천히 밝아졌다 어두워짐
+ * Appear 연출 정의 - 발끝부터 울퉁불퉁한 금빛 경계가 올라오며 유닛이 나타남
  * _SweepProgress는 UnitSlotView.cs가 0 -> 1로 올림 (0이면 효과 없음)
  * _RimAmount는 UnitSlotView.cs가 최고 성급이면 1, 아니면 0으로 넣음
+ * _AppearProgress는 UnitSlotView.cs가 0 -> 1로 올림 (다른 값과 반대로 1이면 효과 없음, 0이면 안 보임)
  */
 Shader "PokerDefense/UnitSprite"
 {
@@ -23,6 +25,10 @@ Shader "PokerDefense/UnitSprite"
         _RimColor ("Rim Color", Color) = (1, 0.8, 0.3, 1)
         _RimAmount ("Rim Amount", Range(0, 1)) = 0
         _RimWidth ("Rim Width", Range(1, 20)) = 6
+
+        // Appear 진행도·경계 두께 (경계 색은 _SweepColor를 같이 씀)
+        _AppearProgress ("Appear Progress", Range(0, 1)) = 1
+        _AppearEdge ("Appear Edge", Range(0.01, 0.3)) = 0.05
     }
 
     SubShader
@@ -75,6 +81,8 @@ Shader "PokerDefense/UnitSprite"
                 half4 _RimColor;
                 half _RimAmount;
                 half _RimWidth;
+                half _AppearProgress;
+                half _AppearEdge;
             CBUFFER_END
 
             // 텍스처 한 픽셀의 UV 크기 (x = 1/가로, y = 1/세로)
@@ -89,6 +97,30 @@ Shader "PokerDefense/UnitSprite"
                 float2(1, 0), float2(-1, 0), float2(0, 1), float2(0, -1),
                 float2(0.707, 0.707), float2(-0.707, 0.707), float2(0.707, -0.707), float2(-0.707, -0.707)
             };
+
+            // 좌표마다 고정된 0~1 난수 (EnemySprite와 같은 식)
+            // 같은 좌표는 늘 같은 값이라 프레임마다 깜빡이지 않음
+            float Hash(float2 p)
+            {
+                p = frac(p * float2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return frac(p.x * p.y);
+            }
+
+            // 격자 꼭짓점의 난수를 부드럽게 이은 노이즈 (0~1)
+            float ValueNoise(float2 p)
+            {
+                float2 cell = floor(p);
+                float2 f = frac(p);
+                // smoothstep 곡선 - 격자 경계가 각져 보이지 않게 함
+                float2 w = f * f * (3.0 - 2.0 * f);
+
+                float a = Hash(cell);
+                float b = Hash(cell + float2(1, 0));
+                float c = Hash(cell + float2(0, 1));
+                float d = Hash(cell + float2(1, 1));
+                return lerp(lerp(a, b, w.x), lerp(c, d, w.x), w.y);
+            }
 
             Varyings Vert(Attributes input)
             {
@@ -137,6 +169,19 @@ Shader "PokerDefense/UnitSprite"
                 // 7. 빛 더하기 - 띠 세기만큼 _SweepColor를 더해 밝힘
                 // 알파는 그대로라 유닛 바깥의 투명한 곳은 빛나지 않음
                 color.rgb += _SweepColor.rgb * _SweepColor.a * band;
+
+                // 8. Appear 높이 - 발끝 0 -> 머리 1(75%)에 노이즈(25%)를 섞어 경계를 울퉁불퉁하게 함
+                // UV × 9 - 그림 한 장에 노이즈 무늬가 가로·세로 9칸쯤 들어감
+                float height = input.uv.y * 0.75 + ValueNoise(input.uv * 9.0) * 0.25;
+
+                // 9. Appear - 높이가 기준선 이하인 픽셀만 남기고, 기준선 바로 아래 _AppearEdge만큼은 _SweepColor로 칠함
+                // 기준선은 _AppearProgress 0 -> 1에 따라 -_AppearEdge -> 1 + _AppearEdge로 오름
+                // 경계 두께만큼 바깥에서 시작하고 끝나야 0에서 아무것도 안 보이고 1에서 경계 색이 남지 않음
+                float appearLine = lerp(-_AppearEdge, 1.0 + _AppearEdge, _AppearProgress);
+                half shown = step(height, appearLine);
+                half edge = shown * (1.0 - step(height, appearLine - _AppearEdge));
+                color.rgb = lerp(color.rgb, _SweepColor.rgb, edge);
+                color.a *= shown;
                 return color;
             }
             ENDHLSL

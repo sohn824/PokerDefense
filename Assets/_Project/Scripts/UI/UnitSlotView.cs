@@ -55,6 +55,10 @@ namespace PokerDefense.UI
         // 최고 성급 Rim 연출용 프로퍼티
         static readonly int RimAmountId = Shader.PropertyToID("_RimAmount");
 
+        // 배치·교체 Appear 연출용 상수
+        const float AppearSeconds = 0.45f;
+        static readonly int AppearProgressId = Shader.PropertyToID("_AppearProgress");
+
         [SerializeField] SpriteRenderer highlight;
 
         [Tooltip("유닛 아트")]
@@ -84,8 +88,11 @@ namespace PokerDefense.UI
         // Sweep 연출을 시작한 Time.time (재생 중이 아니면 -1)
         float sweepStartedAt = -1f;
 
-        // 이 칸만 빛나게 하려고 Sweep 진행도·Rim 세기를 머티리얼 대신 여기에 넣음
-        // (UnitSprite.shader의 _SweepProgress·_RimAmount 프로퍼티)
+        // Appear 연출을 시작한 Time.time (재생 중이 아니면 -1)
+        float appearStartedAt = -1f;
+
+        // 이 칸만 빛나게 하려고 Sweep 진행도·Rim 세기·Appear 진행도를 머티리얼 대신 여기에 넣음
+        // (UnitSprite.shader의 _SweepProgress·_RimAmount·_AppearProgress 프로퍼티)
         MaterialPropertyBlock artBlock;
 
         public int Index { get; private set; }
@@ -159,6 +166,15 @@ namespace PokerDefense.UI
                 art.enabled = false;
                 HideMuzzles();
                 starLabel.text = string.Empty;
+
+                // 나타나는 도중에 칸이 비면 재생을 끝내고 다 보이는 값(1)으로 되돌림
+                // 다음에 들어오는 유닛이 반쯤 가려진 채 남지 않게 함
+                if (appearStartedAt >= 0f)
+                {
+                    appearStartedAt = -1f;
+                    SetArtValue(AppearProgressId, 1f);
+                }
+
                 return;
             }
 
@@ -208,6 +224,36 @@ namespace PokerDefense.UI
             // 반동으로 커진 만큼 muzzle 이펙트도 밀어줌
             ApplyMuzzle(direction, secondsSinceShot, shotCount, artScale / artFitScale);
             ApplySweep();
+            ApplyAppear();
+        }
+
+        // 배치·교체로 이 칸에 새 유닛이 들어왔을 때 BoardScreen이 호출하여 Appear 연출을 시작
+        // 첫 프레임에 다 보였다가 사라지지 않게 바로 0을 넣음
+        public void PlayAppear()
+        {
+            appearStartedAt = Time.time;
+            SetArtValue(AppearProgressId, 0f);
+        }
+
+        // Appear 진행도(0 -> 1)를 셰이더에 넣음 (SetAim에서 매 프레임 호출)
+        // 재생 중이 아니면 블록을 건드리지 않음
+        void ApplyAppear()
+        {
+            if (appearStartedAt < 0f)
+            {
+                return;
+            }
+
+            float progress = (Time.time - appearStartedAt) / AppearSeconds;
+
+            // 다 나타나면 1(효과 없음)로 고정하고 재생을 끝냄
+            if (progress >= 1f)
+            {
+                progress = 1f;
+                appearStartedAt = -1f;
+            }
+
+            SetArtValue(AppearProgressId, progress);
         }
 
         // 머지·승급으로 이 칸의 유닛이 강해졌을 때 BoardScreen이 호출하여 Sweep 연출을 시작
@@ -237,7 +283,7 @@ namespace PokerDefense.UI
             SetArtValue(SweepProgressId, progress);
         }
 
-        // 이 칸의 아트에만 셰이더 값 하나를 넣음 (Sweep 연출 진행도 / Rim 연출 세기)
+        // 이 칸의 아트에만 셰이더 값 하나를 넣음 (Sweep 연출 진행도 / Rim 연출 세기 / Appear 연출 진행도)
         void SetArtValue(int propertyId, float value)
         {
             // SetPropertyBlock은 렌더러의 블록을 통째로 바꾸므로
