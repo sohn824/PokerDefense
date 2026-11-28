@@ -58,7 +58,7 @@ namespace PokerDefense.Game
             public string startedUtc;
 
             // 규칙 식별자 (다른 규칙의 로그와 섞지 않기 위함)
-            public string ruleset = "hand-loop-v1";
+            public string ruleset = RunResult.CurrentRuleset;
 
             // 트랙 길이 (트랙이 바뀐 버전의 로그를 구분하기 위함)
             public float trackLength;

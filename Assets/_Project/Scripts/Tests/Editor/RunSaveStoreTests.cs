@@ -83,6 +83,12 @@ namespace PokerDefense.Tests
             Assert.AreEqual(saved.bestHand, loaded.bestHand);
             Assert.AreEqual(saved.bestUnitId, loaded.bestUnitId);
             Assert.AreEqual(saved.bestUnitStar, loaded.bestUnitStar);
+
+            // 형식이 같은 이전 규칙(hand-loop-v1) 저장도 이어서 함
+            var previous = Sample();
+            previous.ruleset = "hand-loop-v1";
+            new RunSaveStore(directory).Save(previous);
+            Assert.AreEqual(RunSaveLoadResult.Loaded, new RunSaveStore(directory).TryLoad(out _), "v1 저장");
         }
 
         [Test]
@@ -139,9 +145,9 @@ namespace PokerDefense.Tests
 
         [TestCase("{\"life\":", TestName = "JSON이 잘림")]
         [TestCase("not json", TestName = "JSON이 아님")]
-        [TestCase("{\"version\":999,\"ruleset\":\"hand-loop-v1\"}", TestName = "형식 버전이 다름")]
+        [TestCase("{\"version\":999,\"ruleset\":\"hand-loop-v2\"}", TestName = "형식 버전이 다름")]
         [TestCase("{\"version\":1,\"ruleset\":\"economy-v0\"}", TestName = "규칙이 다름")]
-        [TestCase("{\"version\":1,\"ruleset\":\"hand-loop-v1\",\"boardStars\":[1,2]}", TestName = "보드 칸 수가 다름")]
+        [TestCase("{\"version\":1,\"ruleset\":\"hand-loop-v2\",\"boardStars\":[1,2]}", TestName = "보드 칸 수가 다름")]
         public void 쓸_수_없는_저장은_Invalid이고_bad로_옮긴다(string json)
         {
             Directory.CreateDirectory(directory);

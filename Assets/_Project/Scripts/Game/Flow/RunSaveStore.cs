@@ -32,6 +32,9 @@ namespace PokerDefense.Game
         const string TempFileName = "current.tmp";
         const string BadFileName = "current.bad";
 
+        // 이어서 할 수 있는 이전 규칙 버전 (IsUsable 참고)
+        const string PreviousRuleset = "hand-loop-v1";
+
         readonly string directory;
 
         public RunSaveStore(string directory)
@@ -104,11 +107,12 @@ namespace PokerDefense.Game
 
         // 형식 버전·규칙이 지금과 같고 보드 배열 길이가 맞는지
         // 값 범위(라이프·성급 등)와 행동 기록은 복원하면서 Restore·Replay가 확인함
+        // hand-loop-v1 저장은 형식이 같고 라이프 규칙만 달라서 그대로 이어서 함 (다음 저장부터 v2로 기록됨)
         static bool IsUsable(RunSaveData data)
         {
             return data != null
                 && data.version == RunSaveData.FormatVersion
-                && data.ruleset == RunResult.CurrentRuleset
+                && (data.ruleset == RunResult.CurrentRuleset || data.ruleset == PreviousRuleset)
                 && data.boardUnitIds != null && data.boardUnitIds.Length == GridBoard.SlotCount
                 && data.boardStars != null && data.boardStars.Length == GridBoard.SlotCount
                 && data.roundActions != null;

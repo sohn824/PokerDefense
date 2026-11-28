@@ -73,8 +73,8 @@ namespace rank
         RunId runId{};
         std::string ruleset;       // 규칙 버전 Key
         uint16_t wave = 0;         // 마지막으로 치른 웨이브 번호 (1부터, 게임 오버를 낸 웨이브 포함)
-        uint16_t totalWaves = 0;   // 전체 웨이브 수 (hand-loop-v1은 50)
-        bool cleared = false;      // 모든 웨이브를 치르고 라이프가 남았는지 (예전 클라이언트는 마지막 웨이브에서 라이프가 0이어도 true로 보냄)
+        uint16_t totalWaves = 0;   // 전체 웨이브 수 (hand-loop-v2는 50)
+        bool cleared = false;      // 모든 웨이브를 치르고 라이프가 남았는지
         uint16_t life = 0;         // 남은 라이프 (게임 오버면 0)
         uint16_t summons = 0;      // 총 소환 수 (라운드당 최대 1, 소환 포기·퇴장한 유닛도 포함)
         uint8_t bestHand = NoHand; // 확정한 족보 중 가장 희귀한 것의 HandCategory 값, 확정한 적 없으면 NoHand

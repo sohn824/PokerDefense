@@ -6,9 +6,10 @@ namespace rank
 {
     namespace
     {
-        // hand-loop-v1 규칙에서 나올 수 있는 값의 범위
+        // hand-loop-v2 규칙에서 나올 수 있는 값의 범위
         // 게임 데이터(Stage_1.asset, HandCategory)가 바뀌면 같이 고침
-        constexpr const char* HandLoopRuleset = "hand-loop-v1";
+        // v2 - 클리어는 라이프가 남아야 함 (v1 기록은 받지 않고, 파일에 남은 v1 줄도 Load에서 건너뜀)
+        constexpr const char* HandLoopRuleset = "hand-loop-v2";
         constexpr uint16_t HandLoopTotalWaves = 50;
         constexpr uint16_t HandLoopStartingLife = 20;
         constexpr uint8_t HandLoopLastHand = 12;  // 가장 높은 족보 (RoyalStraightFlush)
@@ -153,8 +154,8 @@ namespace rank
             && record.summons <= record.wave
             && (record.bestHand <= HandLoopLastHand || record.bestHand == NoHand);
 
-        // 2) 값끼리 맞는지 확인: 클리어면 마지막 웨이브까지 갔어야 하고, 아니면 라이프 0으로 끝났어야 함
-        bool consistent = record.cleared ? record.wave == record.totalWaves : record.life == 0;
+        // 2) 값끼리 맞는지 확인: 클리어면 마지막 웨이브까지 가고 라이프가 남았어야 하고, 아니면 라이프 0으로 끝났어야 함
+        bool consistent = record.cleared ? record.wave == record.totalWaves && record.life > 0 : record.life == 0;
 
         return inRange && consistent ? RejectReason::None : RejectReason::OutOfRange;
     }

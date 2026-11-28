@@ -72,7 +72,7 @@ namespace
             record.runId[i] = i;
         }
 
-        record.ruleset = "hand-loop-v1";
+        record.ruleset = "hand-loop-v2";
         record.wave = 37;
         record.totalWaves = 50;
         record.cleared = false;
@@ -83,10 +83,10 @@ namespace
         return record;
     }
 
-    // [길이 45][버전 1][종류 1][runId 00~0f][ruleset 길이 12]["hand-loop-v1"]
+    // [길이 45][버전 1][종류 1][runId 00~0f][ruleset 길이 12]["hand-loop-v2"]
     // [wave 37][total 50][cleared 0][life 0][summons 37][bestHand 7][elapsedMs 812345]
     const char* SampleFrameHex =
-        "0000002d" "0101" "000102030405060708090a0b0c0d0e0f" "0c" "68616e642d6c6f6f702d7631"
+        "0000002d" "0101" "000102030405060708090a0b0c0d0e0f" "0c" "68616e642d6c6f6f702d7632"
         "0025" "0032" "00" "0000" "0025" "07" "000c6539";
 
     std::vector<uint8_t> FromHex(std::string hex)
@@ -153,7 +153,7 @@ TEST(제출_메시지를_다시_읽으면_같은_값이다)
     RunRecord decoded;
     CHECK(DecodeSubmit(payload.data(), payload.size(), decoded));
     CHECK(decoded.runId == SampleRecord().runId);
-    CHECK(decoded.ruleset == "hand-loop-v1");
+    CHECK(decoded.ruleset == "hand-loop-v2");
     CHECK(decoded.wave == 37 && decoded.life == 0 && decoded.summons == 37);
     CHECK(decoded.bestHand == 7 && decoded.elapsedMs == 812345 && decoded.cleared == false);
 }
@@ -202,6 +202,15 @@ TEST(규칙에_맞지_않는_값은_거부한다)
     RunRecord record = SampleRecord();
     record.ruleset = "economy-v0";
     CHECK(Validate(record) == RejectReason::UnknownRuleset);
+    record.ruleset = "hand-loop-v1";
+    CHECK(Validate(record) == RejectReason::UnknownRuleset);
+
+    // 클리어했는데 라이프가 0일 수는 없음 (마지막 웨이브에서 보스를 놓치면 패배)
+    record = SampleRecord();
+    record.wave = 50;
+    record.summons = 50;
+    record.cleared = true;
+    CHECK(Validate(record) == RejectReason::OutOfRange);
 
     record = SampleRecord();
     record.wave = 51;
@@ -309,10 +318,11 @@ TEST(파일에서_다시_읽고_잘린_마지막_줄은_버린다)
         CHECK(store.Submit(Record(2, 40, 0, 1000), outcome));
     }
 
-    // 쓰는 도중 꺼진 상황 - 줄 중간에서 끊긴 기록
+    // 이전 규칙(v1)이 쓴 줄은 건너뛰고, 쓰는 도중 꺼진 상황 - 줄 중간에서 끊긴 기록도 버림
     {
         std::ofstream file(path, std::ios::app | std::ios::binary);
-        file << "03000000000000000000000000000000 hand-loop-v1 25";
+        file << "04000000000000000000000000000000 hand-loop-v1 37 50 0 0 37 7 812345\n";
+        file << "03000000000000000000000000000000 hand-loop-v2 25";
     }
 
     RankingStore reloaded(path);
@@ -335,7 +345,7 @@ TEST(잘린_마지막_줄_뒤에_저장한_새_기록도_다시_읽힌다)
     // 쓰는 도중 꺼진 상황 - 줄바꿈 없이 끊긴 마지막 줄
     {
         std::ofstream file(path, std::ios::app | std::ios::binary);
-        file << "03000000000000000000000000000000 hand-loop-v1 25";
+        file << "03000000000000000000000000000000 hand-loop-v2 25";
     }
 
     // 다시 켠 뒤 새 기록을 저장 - 잘린 줄에 이어 붙으면 다음 Load 때 새 기록까지 깨진 줄로 버려짐

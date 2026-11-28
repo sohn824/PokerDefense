@@ -16,10 +16,10 @@ namespace PokerDefense.Tests
         // 서버와 클라이언트가 같은 바이트를 만드는지 확인하는 기준
         // C++ 서버 테스트(Server/tests/Tests.cpp)에도 같은 기록과 같은 정답 바이트열이 들어 있고,
         // 양쪽이 각자의 인코딩 결과를 이 바이트열과 비교함 - 형식이 어긋나면 어긋난 쪽 테스트가 실패
-        // [길이 45][버전 1][종류 1][runId 00~0f][ruleset 길이 12]["hand-loop-v1"]
+        // [길이 45][버전 1][종류 1][runId 00~0f][ruleset 길이 12]["hand-loop-v2"]
         // [wave 37][total 50][cleared 0][life 0][summons 37][bestHand 7][elapsedMs 812345]
         const string SampleFrameHex =
-            "0000002d" + "0101" + "000102030405060708090a0b0c0d0e0f" + "0c" + "68616e642d6c6f6f702d7631"
+            "0000002d" + "0101" + "000102030405060708090a0b0c0d0e0f" + "0c" + "68616e642d6c6f6f702d7632"
             + "0025" + "0032" + "00" + "0000" + "0025" + "07" + "000c6539";
 
         internal static RunResult Sample(Guid? runId = null)

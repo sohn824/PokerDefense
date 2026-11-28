@@ -200,7 +200,7 @@ namespace rank
 
     // ToLine - 기록 하나를 파일에 쓸 텍스트 한 줄로 만듦 (필드 사이는 공백 한 칸)
     //   순서: runId ruleset wave totalWaves cleared life summons bestHand elapsedMs  (각 이름 자리에 그 값이 들어감)
-    //   예:   000102030405060708090a0b0c0d0e0f hand-loop-v1 37 50 0 0 37 7 812345
+    //   예:   000102030405060708090a0b0c0d0e0f hand-loop-v2 37 50 0 0 37 7 812345
     //   끝에 줄바꿈은 안 붙임 (파일에 쓸 때 Append가 붙이기 때문)
     std::string ToLine(const RunRecord& record)
     {
