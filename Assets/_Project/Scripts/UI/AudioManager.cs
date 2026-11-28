@@ -261,11 +261,6 @@ namespace PokerDefense.UI
                     }
                 }
             }
-
-            if (bossWave)
-            {
-                Play(Sfx.BossAppear);
-            }
         }
 
         void OnCombatFinished(CombatOutcome outcome, int unresolved)

@@ -199,6 +199,8 @@ namespace PokerDefense.UI
         // 보스 등장 Warning 연출을 그리는 전체 화면 이미지 (머티리얼이 없으면 null)
         Image bossWarning;
         Coroutine bossWarningRoutine;
+        // 이번 전투에서 보스 등장 효과음·Warning 연출을 이미 틀었는지 (첫 보스 등장 때 한 번만 틂)
+        bool bossWarned;
 
         // 라이프 위험 Vignette 연출을 그리는 전체 화면 이미지 (머티리얼이 없으면 null)
         Image lifeVignette;
@@ -414,24 +416,7 @@ namespace PokerDefense.UI
                 splashPool[i].enabled = false;
             }
 
-            if (bossWarning != null && HasBoss(combat.Wave))
-            {
-                RestartCoroutine(ref bossWarningRoutine, PlayBossWarning());
-            }
-        }
-
-        // 이 웨이브에 보스가 나오는지
-        static bool HasBoss(WaveDefinition wave)
-        {
-            foreach (WaveDefinition.SpawnEntry entry in wave.Entries)
-            {
-                if (entry.count > 0 && entry.enemy != null && entry.enemy.Type == EnemyType.Boss)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            bossWarned = false;
         }
 
         // 보스 등장 Warning 연출용 코루틴
@@ -824,6 +809,17 @@ namespace PokerDefense.UI
                 {
                     view = CreateView(enemy);
                     views.Add(enemy, view);
+
+                    if (bossWarned == false && enemy.Definition.Type == EnemyType.Boss)
+                    {
+                        bossWarned = true;
+                        AudioManager.Instance?.Play(AudioManager.Sfx.BossAppear);
+
+                        if (bossWarning != null)
+                        {
+                            RestartCoroutine(ref bossWarningRoutine, PlayBossWarning());
+                        }
+                    }
                 }
 
                 Vector2 local = enemy.Position;
