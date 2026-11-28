@@ -23,6 +23,11 @@ namespace PokerDefense.Game
         public int Jokers { get; private set; }
         public int WaveIndex { get; private set; }
         public int TotalWaves => definition.Waves.Count;
+
+        // 한 웨이브에 잃을 수 있는 최대 라이프
+        // 라이프가 이 값 이하면 한 번 더 크게 지면 끝날 수 있음 (CombatScreen의 Vignette 기준)
+        public int MaxLifeDamagePerWave => definition.MaxLifeDamagePerWave;
+
         public bool IsGameOver => Life <= 0;
         public bool IsAllWavesCleared => WaveIndex >= TotalWaves;
         public WaveDefinition CurrentWave => IsAllWavesCleared ? null : definition.Waves[WaveIndex];

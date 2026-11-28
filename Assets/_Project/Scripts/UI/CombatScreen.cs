@@ -121,6 +121,9 @@ namespace PokerDefense.UI
         static readonly int WarningCenterId = Shader.PropertyToID("_Center");
         static readonly int WarningAspectId = Shader.PropertyToID("_Aspect");
 
+        // LifeVignette 셰이더 속성 ID
+        static readonly int VignetteIntensityId = Shader.PropertyToID("_Intensity");
+
         [SerializeField] CombatController controller;
         [SerializeField] Transform boardRoot;
         [SerializeField] Sprite enemySprite;
@@ -136,6 +139,9 @@ namespace PokerDefense.UI
 
         [Tooltip("보스 등장 화면 연출에 쓸 머티리얼 (BossWarning.mat)\nBossWarning 셰이더용")]
         [SerializeField] Material bossWarningMaterial;
+
+        [Tooltip("라이프 위험 화면 연출에 쓸 머티리얼 (LifeVignette.mat)\nLifeVignette 셰이더용")]
+        [SerializeField] Material lifeVignetteMaterial;
 
         [Tooltip("타격 이펙트")]
         [SerializeField] Sprite hitSprite;
@@ -188,11 +194,17 @@ namespace PokerDefense.UI
         string lastOutcome = string.Empty;
 
         Coroutine failFlashRoutine;
+        Coroutine lifePopRoutine;
 
         // 보스 등장 Warning 연출을 그리는 전체 화면 이미지 (머티리얼이 없으면 null)
         Image bossWarning;
         Coroutine bossWarningRoutine;
-        Coroutine lifePopRoutine;
+
+        // 라이프 위험 Vignette 연출을 그리는 전체 화면 이미지 (머티리얼이 없으면 null)
+        Image lifeVignette;
+
+        // 마지막으로 Vignette 세기를 넣은 라이프 (같으면 다시 넣지 않음)
+        int shownVignetteLife = -1;
 
         // 마지막으로 착탄음 / 처치음을 낸 시각 (CombatSfxMinGap 간격 확인용)
         float lastImpactSfxAt = -1f;
@@ -208,19 +220,35 @@ namespace PokerDefense.UI
             BuildSplashPool();
             BuildTrackFlow();
             BuildBossWarning();
+            BuildLifeVignette();
             enemyBlock = new MaterialPropertyBlock();
         }
 
-        // 보스 등장 Warning 연출용 이미지를 failFlash와 같은 자리에 만들어 둠
+        // 보스 등장 Warning 연출용 이미지를 만들어 둠
         // 머티리얼이 없으면 만들지 않음 (Warning 연출 없음)
         void BuildBossWarning()
         {
-            if (bossWarningMaterial == null)
+            if (bossWarningMaterial != null)
             {
-                return;
+                bossWarning = BuildScreenOverlay("BossWarning", bossWarningMaterial);
             }
+        }
 
-            GameObject go = new GameObject("BossWarning", typeof(RectTransform));
+        // 라이프 위험 Vignette 연출용 이미지를 만들어 둠
+        // 머티리얼이 없으면 만들지 않음 (Vignette 연출 없음)
+        void BuildLifeVignette()
+        {
+            if (lifeVignetteMaterial != null)
+            {
+                lifeVignette = BuildScreenOverlay("LifeVignette", lifeVignetteMaterial);
+            }
+        }
+
+        // failFlash와 같은 자리에 화면 전체를 덮는 꺼진 이미지를 만듦
+        // 실행 중 값을 바꾸므로 머티리얼 에셋 대신 복제본을 씀
+        Image BuildScreenOverlay(string name, Material source)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
             RectTransform rect = (RectTransform)go.transform;
             rect.SetParent(failFlash.transform.parent, false);
             rect.SetSiblingIndex(failFlash.transform.GetSiblingIndex());
@@ -229,12 +257,38 @@ namespace PokerDefense.UI
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
 
-            bossWarning = go.AddComponent<Image>();
-            bossWarning.raycastTarget = false;
-            bossWarning.enabled = false;
+            Image image = go.AddComponent<Image>();
+            image.raycastTarget = false;
+            image.enabled = false;
+            image.material = new Material(source);
+            return image;
+        }
 
-            // 재생 중 값을 바꾸므로 머티리얼 에셋 대신 복제본을 씀
-            bossWarning.material = new Material(bossWarningMaterial);
+        // 라이프가 한 웨이브 최대 손실(MaxLifeDamagePerWave) 이하면 Vignette를 켬
+        // 라이프가 낮을수록 진해지고, 0(게임 오버)이면 끔
+        void SyncLifeVignette()
+        {
+            if (lifeVignette == null)
+            {
+                return;
+            }
+
+            int life = controller.Stage.Life;
+            int danger = controller.Stage.MaxLifeDamagePerWave;
+            bool show = life > 0 && life <= danger;
+
+            // 값이 바뀔 때만 넣어 매 프레임 Canvas를 다시 그리지 않게 함
+            if (lifeVignette.enabled != show)
+            {
+                lifeVignette.enabled = show;
+            }
+
+            // 세기 = (danger + 1 - life) / danger (기준 라이프에서 1 / danger, 라이프 1에서 1)
+            if (show && life != shownVignetteLife)
+            {
+                lifeVignette.material.SetFloat(VignetteIntensityId, (danger + 1 - life) / (float)danger);
+                shownVignetteLife = life;
+            }
         }
 
         // 트랙을 한 바퀴 도는 선을 만들어 둠 (무늬와 움직임은 TrackFlow 셰이더가 그림)
@@ -477,6 +531,7 @@ namespace PokerDefense.UI
             SyncHitEffects();
             SyncSplashEffects();
             SyncTrackFlow();
+            SyncLifeVignette();
             UpdateLabels();
         }
 
