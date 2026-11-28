@@ -21,10 +21,10 @@ Shader "PokerDefense/UnitSprite"
         _SweepProgress ("Sweep Progress", Range(0, 1)) = 0
         _SweepWidth ("Sweep Width", Range(0.02, 0.5)) = 0.15
 
-        // Rim 색·세기·두께 (두께는 텍스처 픽셀 수)
+        // Rim 색·세기·두께 (두께는 화면 픽셀 수)
         _RimColor ("Rim Color", Color) = (1, 0.8, 0.3, 1)
         _RimAmount ("Rim Amount", Range(0, 1)) = 0
-        _RimWidth ("Rim Width", Range(1, 20)) = 6
+        _RimWidth ("Rim Width", Range(0.1, 4)) = 0.8
 
         // Appear 진행도·경계 두께 (경계 색은 _SweepColor를 같이 씀)
         _AppearProgress ("Appear Progress", Range(0, 1)) = 1
@@ -85,17 +85,10 @@ Shader "PokerDefense/UnitSprite"
                 half _AppearEdge;
             CBUFFER_END
 
-            // 텍스처 한 픽셀의 UV 크기 (x = 1/가로, y = 1/세로)
-            // 이름이 텍스처이름_TexelSize면 Unity가 값을 자동으로 넣음
-            // 위치가 CBUFFER 밖이라 SRP Batcher와 호환되지 않음
-            float4 _MainTex_TexelSize;
-
-            // 가장자리를 찾을 때 둘러보는 이웃 8방향 (상하좌우 + 대각선)
-            // 대각선은 0.707(√2/2)을 곱해 상하좌우와 같은 거리로 맞춤
-            static const float2 RimDirections[8] =
+            // 가장자리를 찾을 때 둘러보는 이웃 4방향 (상하좌우)
+            static const float2 RimDirections[4] =
             {
-                float2(1, 0), float2(-1, 0), float2(0, 1), float2(0, -1),
-                float2(0.707, 0.707), float2(-0.707, 0.707), float2(0.707, -0.707), float2(-0.707, -0.707)
+                float2(1, 0), float2(-1, 0), float2(0, 1), float2(0, -1)
             };
 
             // 좌표마다 고정된 0~1 난수 (EnemySprite와 같은 식)
@@ -126,7 +119,9 @@ Shader "PokerDefense/UnitSprite"
             {
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(input.positionOS);
-                output.color = input.color;
+                // unity_SpriteColor - SRP Batcher로 그릴 때 SpriteRenderer의 color가 들어오는 곳
+                // 그 외에는 정점 색으로 들어오므로 둘 다 곱함
+                output.color = input.color * unity_SpriteColor;
                 output.uv = input.uv;
                 return output;
             }
@@ -137,15 +132,22 @@ Shader "PokerDefense/UnitSprite"
                 half4 texel = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
                 half4 color = texel * input.color;
 
-                // 2. 가장자리 찾기 - _RimWidth 픽셀 떨어진 이웃 8곳 중 가장 투명한 곳의 알파를 구함
+                // 2. 가장자리 찾기 - 화면에서 _RimWidth 픽셀 떨어진 이웃 4곳 중 가장 투명한 곳의 알파를 구함
                 // 이웃 중 하나라도 투명하면 minAlpha가 0에 가까워져 가장자리로 판단
                 // 그림이 텍스처 끝에서 잘린 곳(발밑 등)은 바깥 UV가 끝 픽셀로 고정돼 가장자리가 아님
-                float2 rimOffset = _MainTex_TexelSize.xy * _RimWidth;
+                // fwidth - 화면 한 픽셀만큼 움직일 때 UV가 변하는 양
+                float2 rimOffset = fwidth(input.uv) * _RimWidth;
                 half minAlpha = 1.0;
 
-                for (int i = 0; i < 8; i++)
+                // Rim이 꺼져 있으면(_RimAmount 0) 이웃 샘플을 건너뜀
+                // 조건이 머티리얼 값이라 모든 픽셀이 같은 쪽으로 가므로 분기 안에서도 보통 샘플을 씀
+                UNITY_BRANCH
+                if (_RimAmount > 0.0)
                 {
-                    minAlpha = min(minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv + RimDirections[i] * rimOffset).a);
+                    for (int i = 0; i < 4; i++)
+                    {
+                        minAlpha = min(minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv + RimDirections[i] * rimOffset).a);
+                    }
                 }
 
                 // 3. Rim - 가장자리만큼 _RimColor로 덮고 세기는 0.75~1 사이에서 천천히 밝아졌다 어두워짐
@@ -172,7 +174,14 @@ Shader "PokerDefense/UnitSprite"
 
                 // 8. Appear 높이 - 발끝 0 -> 머리 1(75%)에 노이즈(25%)를 섞어 경계를 울퉁불퉁하게 함
                 // UV × 9 - 그림 한 장에 노이즈 무늬가 가로·세로 9칸쯤 들어감
-                float height = input.uv.y * 0.75 + ValueNoise(input.uv * 9.0) * 0.25;
+                // Appear가 끝났으면(_AppearProgress 1) 노이즈를 건너뜀 (높이가 1 이하라 결과가 같음)
+                float height = input.uv.y * 0.75;
+
+                UNITY_BRANCH
+                if (_AppearProgress < 1.0)
+                {
+                    height += ValueNoise(input.uv * 9.0) * 0.25;
+                }
 
                 // 9. Appear - 높이가 기준선 이하인 픽셀만 남기고, 기준선 바로 아래 _AppearEdge만큼은 _SweepColor로 칠함
                 // 기준선은 _AppearProgress 0 -> 1에 따라 -_AppearEdge -> 1 + _AppearEdge로 오름

@@ -126,7 +126,14 @@ Shader "PokerDefense/EnemySprite"
                 color.rgb = lerp(color.rgb, _FlashColor.rgb, _FlashAmount);
 
                 // 3. 노이즈 - 큰 무늬 70% + 잔무늬 30%
-                float noise = ValueNoise(input.noisePos) * 0.7 + ValueNoise(input.noisePos * 2.7) * 0.3;
+                // 살아 있는 적(_Dissolve 0)은 노이즈를 건너뜀 (아래 비교에서 결과가 같도록 1을 넣음)
+                float noise = 1.0;
+
+                UNITY_BRANCH
+                if (_Dissolve > 0.0)
+                {
+                    noise = ValueNoise(input.noisePos) * 0.7 + ValueNoise(input.noisePos * 2.7) * 0.3;
+                }
 
                 // 4. Dissolve - 노이즈 값을 기준선과 비교해 지우거나 경계 색으로 칠함
                 // step(a, b) - b가 a 이상이면 1, 아니면 0

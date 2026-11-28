@@ -30,7 +30,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _RimAmount: 0
-    - _RimWidth: 6
+    - _RimWidth: 0.8
     - _SweepProgress: 0
     - _SweepWidth: 0.15
     m_Colors:
