@@ -6,7 +6,7 @@ namespace PokerDefense.Game
      * EnemyType
      *
      * 적 분류 5종 (UI 이름·설명과 결과 화면 집계에 씀)
-     * 특수 능력은 없고 HP·이동속도·수량으로만 성격이 갈림, 단 Boss는 남으면 라이프를 상한만큼 깎음
+     * 특수 능력은 없고 HP·이동속도·수량으로만 성격이 갈림, 단 Boss는 남으면 라이프와 관계없이 패배
      * 값이 에셋에 정수로 저장되므로 새로운 타입은 맨 뒤에 추가해야 함
      */
     public enum EnemyType
@@ -17,7 +17,7 @@ namespace PokerDefense.Game
         // HP 낮음·수가 많음
         Swarm,
 
-        // HP 매우 높음 (하나라도 남으면 라이프가 상한만큼 깎임)
+        // HP 매우 높음 (하나라도 남으면 패배)
         Boss,
 
         // HP 낮음·속도 빠름

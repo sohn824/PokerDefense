@@ -266,7 +266,7 @@ namespace PokerDefense.UI
             return image;
         }
 
-        // 라이프가 한 웨이브 최대 손실(MaxLifeDamagePerWave) 이하면 Vignette를 켬
+        // 라이프가 위험 기준(DangerLife) 이하면 Vignette를 켬
         // 라이프가 낮을수록 진해지고, 0(게임 오버)이면 끔
         void SyncLifeVignette()
         {
@@ -276,7 +276,7 @@ namespace PokerDefense.UI
             }
 
             int life = controller.Stage.Life;
-            int danger = controller.Stage.MaxLifeDamagePerWave;
+            int danger = controller.Stage.DangerLife;
             bool show = life > 0 && life <= danger;
 
             // 값이 바뀔 때만 넣어 매 프레임 Canvas를 다시 그리지 않게 함
@@ -453,8 +453,10 @@ namespace PokerDefense.UI
             }
             else
             {
-                int damage = controller.Stage.LifeDamageFor(unresolved, controller.LatestCombatContext.UnresolvedBosses);
-                lastOutcome = $"시간 초과 - {unresolved}마리 남음, 라이프 -{damage}";
+                int damage = controller.Stage.LastLifeLost;
+                lastOutcome = controller.LatestCombatContext.UnresolvedBosses > 0
+                    ? "시간 초과 - 보스를 처치하지 못해 패배"
+                    : $"시간 초과 - {unresolved}마리 남음, 라이프 -{damage}";
 
                 if (damage > 0)
                 {

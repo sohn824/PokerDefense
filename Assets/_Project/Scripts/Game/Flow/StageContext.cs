@@ -24,15 +24,18 @@ namespace PokerDefense.Game
         public int WaveIndex { get; private set; }
         public int TotalWaves => definition.Waves.Count;
 
-        // 한 웨이브에 잃을 수 있는 최대 라이프
-        // 라이프가 이 값 이하면 한 번 더 크게 지면 끝날 수 있음 (CombatScreen의 Vignette 기준)
-        public int MaxLifeDamagePerWave => definition.MaxLifeDamagePerWave;
+        // 라이프 위험 기준 (CombatScreen의 Vignette 기준)
+        public int DangerLife => definition.DangerLife;
+
+        // 마지막 전투 결과로 깎인 라이프 (클리어면 0)
+        public int LastLifeLost { get; private set; }
 
         public bool IsGameOver => Life <= 0;
         public bool IsAllWavesCleared => WaveIndex >= TotalWaves;
         public WaveDefinition CurrentWave => IsAllWavesCleared ? null : definition.Waves[WaveIndex];
 
         // 시간 초과면 라이프를 깎고, 클리어면 승급권 보상을 줌 (어느 쪽이든 다음 웨이브로 넘어감)
+        // 깎는 라이프 - 처치하지 못한 적 수만큼 (상한 없음), 보스가 하나라도 남으면 남은 라이프 전부 (패배)
         public void ApplyResult(CombatOutcome outcome, int unresolvedEnemies, int unresolvedBosses)
         {
             if (outcome == CombatOutcome.InProgress || IsGameOver || IsAllWavesCleared)
@@ -45,20 +48,15 @@ namespace PokerDefense.Game
             }
             if (outcome == CombatOutcome.TimedOut)
             {
-                Life = Math.Max(0, Life - LifeDamageFor(unresolvedEnemies, unresolvedBosses));
+                LastLifeLost = unresolvedBosses > 0 ? Life : Math.Min(unresolvedEnemies, Life);
+                Life -= LastLifeLost;
             }
             else
             {
+                LastLifeLost = 0;
                 Jokers += CurrentWave.JokerReward;
             }
             WaveIndex++;
-        }
-
-        // 깎을 라이프 - 보스가 하나라도 남으면 상한, 아니면 남은 적 수만큼 (상한까지)
-        public int LifeDamageFor(int unresolvedEnemies, int unresolvedBosses)
-        {
-            return unresolvedBosses > 0 ? definition.MaxLifeDamagePerWave
-                : Math.Min(unresolvedEnemies, definition.MaxLifeDamagePerWave);
         }
 
         public bool TryUseJoker()
@@ -88,6 +86,7 @@ namespace PokerDefense.Game
             Life = life;
             Jokers = jokers;
             WaveIndex = waveIndex;
+            LastLifeLost = 0;
         }
     }
 }

@@ -11,7 +11,7 @@ namespace PokerDefense.Tests
      * StageTests
      *
      * 스테이지 규칙
-     * 라이프 피해 상한 / 승급권(Joker) 획득·사용 / Run 통계
+     * 라이프 피해 / 승급권(Joker) 획득·사용 / Run 통계
      */
     public class StageTests
     {
@@ -46,12 +46,12 @@ namespace PokerDefense.Tests
             return wave;
         }
 
-        StageDefinition MakeStage(int startingLife, int maxLifeDamage, params WaveDefinition[] waves)
+        StageDefinition MakeStage(int startingLife, int dangerLife, params WaveDefinition[] waves)
         {
             var stage = Make<StageDefinition>();
             var so = new UnityEditor.SerializedObject(stage);
             so.FindProperty("startingLife").intValue = startingLife;
-            so.FindProperty("maxLifeDamagePerWave").intValue = maxLifeDamage;
+            so.FindProperty("dangerLife").intValue = dangerLife;
 
             var list = so.FindProperty("waves");
             list.arraySize = waves.Length;
@@ -83,39 +83,42 @@ namespace PokerDefense.Tests
             return unit;
         }
 
-        // ---------- 라이프 피해 상한 ----------
+        // ---------- 라이프 피해 ----------
 
-        [TestCase(3, 3)]
-        [TestCase(5, 5)]
-        [TestCase(12, 5)]
-        public void 한_웨이브가_깎는_라이프에는_상한이_있다(int unresolved, int expectedDamage)
+        [TestCase(3, 12)]
+        [TestCase(12, 3)]
+        [TestCase(20, 0)]
+        public void 시간_초과하면_남은_적_수만큼_상한_없이_깎인다(int unresolved, int expectedLife)
         {
-            var stage = new StageContext(MakeStage(15, 5, MakeWave(1, 0)));
+            var stage = new StageContext(MakeStage(15, 3, MakeWave(1, 0), MakeWave(2, 0)));
 
             stage.ApplyResult(CombatOutcome.TimedOut, unresolved, 0);
 
-            Assert.AreEqual(15 - expectedDamage, stage.Life);
+            Assert.AreEqual(expectedLife, stage.Life);
+            Assert.AreEqual(15 - expectedLife, stage.LastLifeLost, "실제로 깎인 라이프만 기록한다");
         }
 
         [Test]
-        public void 보스가_남으면_한_기여도_상한만큼_깎인다()
+        public void 보스가_남으면_라이프와_관계없이_패배한다()
         {
-            // 보스 웨이브를 실패하고 라이프 1만 잃으면 보스가 벽으로 기능하지 못함
-            var stage = new StageContext(MakeStage(15, 5, MakeWave(1, 1), MakeWave(2, 0)));
+            var stage = new StageContext(MakeStage(15, 3, MakeWave(1, 1), MakeWave(2, 0)));
 
             stage.ApplyResult(CombatOutcome.TimedOut, 1, 1);
 
-            Assert.AreEqual(10, stage.Life);
+            Assert.IsTrue(stage.IsGameOver);
+            Assert.AreEqual(0, stage.Life);
+            Assert.AreEqual(15, stage.LastLifeLost);
         }
 
         [Test]
-        public void 클리어하면_상한과_무관하게_라이프가_그대로다()
+        public void 클리어하면_라이프가_그대로다()
         {
-            var stage = new StageContext(MakeStage(15, 5, MakeWave(1, 0)));
+            var stage = new StageContext(MakeStage(15, 3, MakeWave(1, 0)));
 
             stage.ApplyResult(CombatOutcome.Cleared, 0, 0);
 
             Assert.AreEqual(15, stage.Life);
+            Assert.AreEqual(0, stage.LastLifeLost);
         }
 
         // ---------- 승급권(Joker) ----------

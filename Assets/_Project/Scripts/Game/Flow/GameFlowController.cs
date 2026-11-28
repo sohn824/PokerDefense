@@ -167,7 +167,7 @@ namespace PokerDefense.Game
         RoundSummary BuildSummary(CombatOutcome outcome, int unresolved)
         {
             bool cleared = outcome == CombatOutcome.Cleared;
-            int lifeLost = cleared ? 0 : stage.Stage.LifeDamageFor(unresolved, combat.LatestCombatContext.UnresolvedBosses);
+            int lifeLost = stage.Stage.LastLifeLost;
             int jokerGained = cleared ? combat.LatestCombatContext.Wave.JokerReward : 0;
 
             // 11·21·31·41라운드가 각각 Act 2~5의 시작
