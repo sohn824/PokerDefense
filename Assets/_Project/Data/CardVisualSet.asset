@@ -19,3 +19,4 @@ MonoBehaviour:
   diamond: {fileID: 21300000, guid: 899664e056d7270409246e4c5dc25fdb, type: 3}
   club: {fileID: 21300000, guid: f137a29feec19b544944b78e226a7993, type: 3}
   foil: {fileID: 2100000, guid: 90f69e8fe9c96c24ab29caac3de99555, type: 2}
+  burn: {fileID: 2100000, guid: 0c9075949bd25fd48bc7b2762ff83e86, type: 2}

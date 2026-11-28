@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using PokerDefense.Game;
 using PokerDefense.Poker;
 using TMPro;
@@ -15,6 +16,7 @@ namespace PokerDefense.UI
      *
      * 상태(CardState)는 색이 아니라 크기·테두리·아래쪽 배지 문구로 구분
      * 스트레이트 이상 족보를 이룬 카드는 바탕에 Foil 셰이더 연출
+     * 교체로 바뀐 카드는 덮개를 태워 없애며 드러내는 Burn 셰이더 연출
      */
     public sealed class CardView : MonoBehaviour
     {
@@ -37,6 +39,11 @@ namespace PokerDefense.UI
         const float LockedScale = 0.92f;
         const float LockedAlpha = 0.5f;
 
+        // 교체 Burn 연출용 상수 (덮개는 카드 바탕과 비슷한 밝은 색)
+        const float BurnSeconds = 0.45f;
+        static readonly Color BurnCoverColor = new Color(1f, 0.96f, 0.85f, 1f);
+        static readonly int BurnProgressId = Shader.PropertyToID("_Progress");
+
         [SerializeField] TMP_Text rankLabel;
         [SerializeField] Image suitIcon;
         [SerializeField] Image selectionFrame;
@@ -57,6 +64,10 @@ namespace PokerDefense.UI
 
         Image badgeBg;
         TMP_Text badgeText;
+
+        // 카드 전체를 덮는 Burn 덮개 (처음 쓸 때 만듦)
+        Image burnCover;
+        Coroutine burnRoutine;
 
         void Awake()
         {
@@ -151,6 +162,76 @@ namespace PokerDefense.UI
             {
                 face.material = on ? visuals.Foil : null;
             }
+        }
+
+        // 교체로 이 자리 카드가 바뀌었을 때 RoundScreen이 호출하여 Burn 연출을 시작
+        // 머티리얼이 없으면 아무것도 하지 않음 (Burn 연출 없음)
+        public void PlayBurn()
+        {
+            if (visuals.Burn == null)
+            {
+                return;
+            }
+
+            if (burnCover == null)
+            {
+                BuildBurnCover();
+            }
+
+            if (burnRoutine != null)
+            {
+                StopCoroutine(burnRoutine);
+            }
+
+            burnRoutine = StartCoroutine(Burn());
+        }
+
+        // 카드 바탕과 같은 모양의 덮개를 맨 위 자식으로 만듦 (숫자·무늬·배지까지 덮음)
+        void BuildBurnCover()
+        {
+            GameObject go = new GameObject("BurnCover", typeof(RectTransform));
+            RectTransform rect = (RectTransform)go.transform;
+            rect.SetParent(transform, false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            burnCover = go.AddComponent<Image>();
+            burnCover.sprite = face.sprite;
+            burnCover.type = face.type;
+            burnCover.color = BurnCoverColor;
+            burnCover.raycastTarget = false;
+            burnCover.enabled = false;
+
+            // 카드마다 진행도가 달라 머티리얼 에셋 대신 복제본을 씀
+            burnCover.material = new Material(visuals.Burn);
+        }
+
+        // Burn 진행도를 0 -> 1로 올리고 끝나면 덮개를 끔
+        IEnumerator Burn()
+        {
+            burnCover.enabled = true;
+
+            for (float t = 0f; t < BurnSeconds; t += Time.deltaTime)
+            {
+                burnCover.material.SetFloat(BurnProgressId, t / BurnSeconds);
+                yield return null;
+            }
+
+            burnCover.enabled = false;
+            burnRoutine = null;
+        }
+
+        // 손패가 숨겨지면 코루틴이 멈추므로 덮개가 남지 않게 끔
+        void OnDisable()
+        {
+            if (burnCover != null)
+            {
+                burnCover.enabled = false;
+            }
+
+            burnRoutine = null;
         }
 
         static string BadgeFor(CardState s)

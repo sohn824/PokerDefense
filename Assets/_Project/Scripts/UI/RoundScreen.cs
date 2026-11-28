@@ -56,6 +56,12 @@ namespace PokerDefense.UI
 
         RoundPhase phase;
 
+        // 지금 화면에 보여 주는 손패 (교체로 바뀐 자리를 찾을 때 비교함, 처음 받기 전에는 null)
+        Card[] shownHand;
+
+        // 새 손패를 받는 중인지 (이때 바뀐 카드는 교체가 아니라 Burn 연출을 하지 않음)
+        bool dealing;
+
         void Awake()
         {
             for (int i = 0; i < cardViews.Length; i++)
@@ -118,6 +124,9 @@ namespace PokerDefense.UI
 
                 // 새 손패가 깔릴 때 딜 사운드를 한 번 재생
                 AudioManager.Instance?.Play(AudioManager.Sfx.CardDeal);
+
+                // 바로 이어서 오는 ShowHand는 새 손패라 Burn 연출을 하지 않음
+                dealing = true;
             }
 
             Refresh();
@@ -126,10 +135,26 @@ namespace PokerDefense.UI
         // 손패 5장을 새로 표시하고 고른 카드를 모두 풂 (카드 상태는 이어서 부르는 Refresh가 다시 맞춤)
         void ShowHand(IReadOnlyList<Card> hand)
         {
+            // 같은 라운드 안에서 바뀐 자리만 교체로 보고 Burn 연출 (이어하기 복원은 제외)
+            bool exchanged = shownHand != null && dealing == false && controller.IsRestoring == false;
+            dealing = false;
+
+            if (shownHand == null)
+            {
+                shownHand = new Card[cardViews.Length];
+            }
+
             for (int i = 0; i < cardViews.Length; i++)
             {
                 cardViews[i].Show(hand[i]);
                 cardViews[i].SetState(CardView.CardState.Normal);
+
+                if (exchanged && hand[i] != shownHand[i])
+                {
+                    cardViews[i].PlayBurn();
+                }
+
+                shownHand[i] = hand[i];
             }
 
             Refresh();
